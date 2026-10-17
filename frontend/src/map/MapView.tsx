@@ -6,6 +6,7 @@ import { addPins } from '../markers/pins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
+import { routeColour } from './routeColours';
 import { focusRoute, initRouteFocus } from './routeFocus';
 import { fitRoute, onStopClick, showRoutes } from './routes';
 
@@ -78,7 +79,8 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     const map = mapRef.current;
     if (!map) return;
     showRoutes(map, routes, selectedRouteId);
-    focusRoute(map, routes.find(route => route.id === selectedRouteId));
+    const selected = routes.find(route => route.id === selectedRouteId);
+    focusRoute(map, selected, selected && routeColour(routes, selected.id));
   }, [routes, selectedRouteId]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
