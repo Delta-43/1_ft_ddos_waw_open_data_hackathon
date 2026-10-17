@@ -19,6 +19,8 @@
 | 2026-10-17 (UTC+02:00) | Partial fixes link issues with `Refs #N`, not `Closes #N`. #8 was auto-closed by #38 and reopened for the routing-provider half | Delta | Keep issue status truthful |
 | 2026-10-17 18:30 (UTC+02:00) | Frontend direction for the demo (Aryna, PR #62): the real app keeps the dark Language-Explorer look over Alban's bright map; Delta's isometric mockup (`mockups/warsaw-2076/`) is the pitch backup, not the live demo; place cards also open as pop-ups above numbered stops (as in the mockup); the then-and-now era layer and social walking (#68) are slides only | Aryna | Real routes and data labels are in the real app; the mockup is mock data; PLAN.md requires a contract and sign-off for stretch items before the freeze |
 
+| 2026-10-17 19:05 (UTC+02:00) | Historical overlay (the 1935/1939/1945 toggle specifically, not #68's full then-and-now cultural-layer/social-walking scope) moves from "slides only" (PR #71, 18:30) to a live demo feature, built in PR #74 | Sonia, confirmed by the user in-session; Delta to confirm formally in #74's review | PR #71's "slides only" call predates discovering a real, working, freely-reusable data source (the city's own WMS orthophotomaps/plans, confirmed fee-exempt with mandatory attribution under Polish PSI reuse law) and verifying it end-to-end in a browser. Scope stays narrow: just the image toggle, not curated cards or social walking |
+
 Record contract changes, provider choice, scope cuts, and any grace-period authorisation here.
 
 Onboarding: STACK.md and SETUP.md contain the shared prerequisites. No personal agent skills or private infrastructure are required. Fresh Saturday implementation must be validated separately from the reference scaffold.

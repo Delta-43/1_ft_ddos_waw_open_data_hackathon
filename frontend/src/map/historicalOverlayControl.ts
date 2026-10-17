@@ -1,5 +1,42 @@
-import type { IControl, Map } from 'maplibre-gl';
-import { addHistoricalOverlays, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
+import type { ErrorEvent, IControl, Map } from 'maplibre-gl';
+import { addHistoricalOverlays, attributionText, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
+
+/** Floating attribution label, bottom-left (clear of the top-right toggle and
+ * the bottom-right chat widget). The team's convention is that base-tile
+ * attribution lives in the fixed bottom bar (MapCredits), not floating over
+ * the map - this is the one exception, agreed in review, because the
+ * overlay is optional and only sometimes on screen.
+ *
+ * A plain absolutely-positioned element appended to the map container,
+ * not a second MapLibre IControl: adding a control from inside another
+ * control's own onAdd (a re-entrant map.addControl call while the outer
+ * one is still being processed) left the map's style never finishing
+ * initialisation - found by testing, not assumed - so this avoids
+ * map.addControl entirely. */
+class HistoricalAttributionLabel {
+  private readonly element: HTMLDivElement;
+
+  constructor(map: Map) {
+    const element = document.createElement('div');
+    element.className = 'historical-attribution';
+    element.hidden = true;
+    map.getContainer().append(element);
+    this.element = element;
+  }
+
+  show(text: string): void {
+    this.element.textContent = text;
+    this.element.hidden = false;
+  }
+
+  hide(): void {
+    this.element.hidden = true;
+  }
+
+  remove(): void {
+    this.element.remove();
+  }
+}
 
 /**
  * Single-button control that cycles through the historical overlays (off ->
@@ -16,14 +53,31 @@ import { addHistoricalOverlays, HISTORICAL_LAYERS, showHistoricalLayer } from '.
 export class HistoricalOverlayControl implements IControl {
   private container?: HTMLDivElement;
   private button?: HTMLButtonElement;
+  private attribution?: HistoricalAttributionLabel;
   private index = -1; // -1 = off
+  private unavailable = new Set<string>(); // layer ids whose image failed to load
 
   private label(): string {
-    return this.index === -1 ? '🕰' : String(HISTORICAL_LAYERS[this.index].year);
+    if (this.index === -1) return '🕰';
+    const layer = HISTORICAL_LAYERS[this.index];
+    return this.unavailable.has(layer.id) ? '⚠' : String(layer.year);
   }
 
   private title(): string {
-    return this.index === -1 ? 'Show historical map overlay' : HISTORICAL_LAYERS[this.index].title;
+    if (this.index === -1) return 'Show historical map overlay';
+    const layer = HISTORICAL_LAYERS[this.index];
+    return this.unavailable.has(layer.id) ? `${layer.title} — unavailable right now` : layer.title;
+  }
+
+  private applyIndex(map: Map): void {
+    showHistoricalLayer(map, this.index); // no-op before the layers exist; the sync below catches up
+    if (this.button) {
+      this.button.textContent = this.label();
+      this.button.title = this.title();
+    }
+    const active = this.index !== -1 && !this.unavailable.has(HISTORICAL_LAYERS[this.index].id);
+    if (active) this.attribution?.show(attributionText(HISTORICAL_LAYERS[this.index]));
+    else this.attribution?.hide();
   }
 
   onAdd(map: Map): HTMLElement {
@@ -37,17 +91,27 @@ export class HistoricalOverlayControl implements IControl {
     button.textContent = this.label();
     button.addEventListener('click', () => {
       this.index = this.index === HISTORICAL_LAYERS.length - 1 ? -1 : this.index + 1;
-      showHistoricalLayer(map, this.index); // no-op before the layers exist; the sync below catches up
-      button.textContent = this.label();
-      button.title = this.title();
+      this.applyIndex(map);
     });
     container.append(button);
     this.container = container;
     this.button = button;
+    this.attribution = new HistoricalAttributionLabel(map);
+
+    // A failed image load (WMS slow/unreachable during the pitch) must not
+    // silently leave the toggle looking dead - mark that year unavailable
+    // and fall back to "off" if it was the one on screen.
+    map.on('error', (event: ErrorEvent & { sourceId?: string }) => {
+      const failed = HISTORICAL_LAYERS.find(layer => event.sourceId === `historical-${layer.id}`);
+      if (!failed || this.unavailable.has(failed.id)) return;
+      this.unavailable.add(failed.id);
+      if (HISTORICAL_LAYERS[this.index]?.id === failed.id) this.index = -1;
+      this.applyIndex(map);
+    });
 
     const sync = () => {
       addHistoricalOverlays(map);
-      showHistoricalLayer(map, this.index);
+      this.applyIndex(map);
     };
     if (map.isStyleLoaded()) sync();
     else map.once('load', sync);
@@ -56,6 +120,8 @@ export class HistoricalOverlayControl implements IControl {
   }
 
   onRemove(): void {
+    this.attribution?.remove();
+    this.attribution = undefined;
     this.container?.remove();
     this.container = undefined;
     this.button = undefined;

@@ -18,6 +18,13 @@ export interface HistoricalLayer {
  * queryable attributes - GetFeatureInfo was tested and returns nothing). */
 export const HISTORICAL_LAYERS: HistoricalLayer[] = historicalLayers.layers as HistoricalLayer[];
 
+/** Required on screen whenever an overlay is active (not just in API responses) -
+ * fee-exempt reuse under Polish PSI law requires crediting the source and the
+ * data's creation date; see docs/DATA.md. */
+export function attributionText(layer: HistoricalLayer): string {
+  return `Historical overlay · Warsaw ${layer.year} · © Urząd m.st. Warszawy (architektura.um.warszawa.pl)`;
+}
+
 const SOURCE_PREFIX = 'historical-';
 const LAYER_PREFIX = 'historical-layer-';
 
