@@ -184,6 +184,8 @@
   width: min(30rem, calc(100vw - 1.5rem));
 }
 .sources-popover .sources-drawer {
+  /* Opaque, so the panels behind it never show through the drawer text. */
+  background: #161717;
   max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 2rem);
   overflow-y: auto;
   animation: drawer-in 0.6s var(--ease-signature);
@@ -330,6 +332,4 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
   .top-bar__sources { width: 40px; padding: 0; }
   .top-bar__sources-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .sources-popover { top: calc(var(--top-chrome-height) + 4px); right: 8px; width: calc(100vw - 1rem); }
-  /* Opaque over the results sheet, so the drawer text stays readable. */
-  .sources-popover .sources-drawer { background: #161717; }
 }
