@@ -51,14 +51,20 @@ export function AssistantWidget() {
           </div>
         )}
       </section>
-      <button
-        type="button"
-        className="assistant__guy"
-        aria-label={open ? 'Close assistant' : 'Open assistant'}
-        aria-expanded={open}
-        onClick={() => setOpen(value => !value)}
-      >
-        <svg viewBox="0 0 48 56" width="40" height="46" aria-hidden="true">
+      <div className="assistant__row">
+        {!open && (
+          <button type="button" className="assistant__bubble" onClick={() => setOpen(true)}>
+            What's up for today?
+          </button>
+        )}
+        <button
+          type="button"
+          className="assistant__guy"
+          aria-label={open ? 'Close assistant' : 'Open assistant'}
+          aria-expanded={open}
+          onClick={() => setOpen(value => !value)}
+        >
+          <svg viewBox="0 0 48 56" width="40" height="46" aria-hidden="true">
           <line x1="24" y1="4" x2="24" y2="11" stroke="currentColor" strokeWidth="2" />
           <circle cx="24" cy="4" r="3" fill="currentColor" />
           <rect x="8" y="11" width="32" height="26" rx="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
@@ -67,7 +73,8 @@ export function AssistantWidget() {
           <path d="M18 31 Q24 35 30 31" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <rect x="14" y="40" width="20" height="12" rx="4" fill="none" stroke="currentColor" strokeWidth="2.5" />
         </svg>
-      </button>
+        </button>
+      </div>
     </div>
   );
 }
