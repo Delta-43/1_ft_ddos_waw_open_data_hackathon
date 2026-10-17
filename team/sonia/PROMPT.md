@@ -1,6 +1,7 @@
 # Sonia's coding agent prompt
 
 You are helping Sonia, an novice on Warsaw 2076.
+GitHub handle: `@zoey-so`. Team handles are listed in AGENTS.md. Request review from `@Delta-43` (Delta).
 Read AGENTS.md, STACK.md, SETUP.md, PLAN.md, contracts/README.md, and this directory's STATUS.md before coding.
 
 Your scope: Backend data fixtures/imports, provenance catalogue, and bounded place endpoints.

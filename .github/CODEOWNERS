@@ -1,0 +1,5 @@
+# Eligible reviewers per area. Listing several owners does not require all of them to approve.
+/backend/ @Delta-43 @zoey-so
+/frontend/ @kaveOO @unicorn-alex @Rysia
+/contracts/ @Delta-43 @kaveOO
+/.github/ @Delta-43 @kaveOO

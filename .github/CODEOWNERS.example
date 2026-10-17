@@ -1,6 +1,0 @@
-# Copy to CODEOWNERS after substituting verified GitHub usernames.
-# Do not guess identities from display names.
-/backend/ @DELTA_HANDLE @SONIA_HANDLE
-/frontend/ @ALBAN_HANDLE @OLA_HANDLE @ARYNA_HANDLE
-/contracts/ @DELTA_HANDLE @ALBAN_HANDLE
-/.github/ @DELTA_HANDLE @ALBAN_HANDLE

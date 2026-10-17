@@ -12,6 +12,18 @@ Read `IDEA.md` for the broader concept. `PLAN.md` controls scope and deadlines.
 - Alban (expert) + Ola (novice) + Aryna (novice): frontend. Alban owns map/rendering, frontend integration, and presentation design. Ola owns preference forms and loading/error states. Aryna owns place cards and data-source labels.
 - Delta leads pitch conception and delivery. Alban leads presentation design. Sonia, Ola and Aryna support evidence, screenshots, and rehearsal.
 
+## Team GitHub accounts
+
+Verified by Delta on 2026-10-17. Use these handles for assignees, reviewers and `@` mentions. Do not guess other handles.
+
+| Person | Role | GitHub |
+| --- | --- | --- |
+| Delta | Backend expert, integration lead | `@Delta-43` |
+| Sonia | Backend novice | `@zoey-so` |
+| Alban | Frontend expert | `@kaveOO` |
+| Ola | Frontend novice | `@unicorn-alex` |
+| Aryna | Frontend novice | `@Rysia` |
+
 ## Mandatory stop
 
 Stop feature work five hours before the confirmed submission deadline. Reserve the remainder for pitch, slides, rehearsal, and submission.

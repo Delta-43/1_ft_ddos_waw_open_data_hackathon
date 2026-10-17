@@ -22,7 +22,7 @@ Use squash merging and delete merged branches. Do not require a merge queue for 
 If a merge queue is enabled later, add `merge_group` to CI triggers first.
 If the account plan cannot enforce protection, document that limitation and enforce the same review/check procedure manually; do not claim protection is enabled.
 
-Replace placeholders in `.github/CODEOWNERS.example` with real handles, copy it to `.github/CODEOWNERS`, and review in a PR.
+`.github/CODEOWNERS` uses the verified handles listed in AGENTS.md.
 CODEOWNERS lists eligible reviewers; listing Delta and Alban does not require both to approve. Request both explicitly for shared contract changes.
 
 ## Issues and board
