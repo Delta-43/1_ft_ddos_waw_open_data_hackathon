@@ -1,18 +1,46 @@
-/* Shared colours for the HTML overlay; map colours live in src/map/style.ts.
-   Palette after Google Research's Language Explorer: near-black panels, grey until active,
-   white when active, hairline greys, one blue accent. */
+/* Shared tokens for the HTML overlay; map colours live in src/map/style.ts.
+   Moon Design System v1 (Figma community kit): white surfaces, black as the one accent,
+   pill buttons, 4% black fills, Averta type scale (text-md 14/24, text-sm semibold 12/16). */
 :root {
-  --bg: #000;
-  /* Opaque enough to read without backdrop-filter, which re-blurs on every map frame. */
-  --panel: rgba(22, 23, 23, 0.94);
-  --rim: #8ab4f8;
-  --rim-faint: #3c4043;
-  --text: #e8eaed;
-  --muted: #9aa0a6;
-  --accent-strong: #1a73e8;
-  --ink: #202124;
+  /* Surfaces */
+  --moon-gohan: #fff;                       /* cards, panels */
+  --moon-goku: #f6f7f9;                     /* page background behind the map */
+  --moon-fill: rgba(0, 0, 0, 0.04);         /* subtle fill, as in the date-range rows */
+  --moon-fill-hover: rgba(0, 0, 0, 0.08);
+  --moon-beerus: #ebebeb;                   /* hairline borders */
+  /* Content */
+  --moon-bulma: #000;                       /* text and primary actions */
+  --moon-goten: #fff;                       /* text on black */
+  --moon-trunks: rgba(0, 0, 0, 0.6);        /* secondary text (AA on white) */
+  --moon-faint: rgba(0, 0, 0, 0.25);        /* disabled and weekday-style labels only */
+  /* Support colours, used only with a text label */
+  --moon-krillin: #ffb319;
+  --moon-krillin-ink: #7a5300;
+  --moon-chichi: #ff4e64;
+  --moon-chichi-ink: #b3001b;
+  /* Shape */
+  --moon-radius-sm: 8px;
+  --moon-radius-md: 16px;
+  --moon-radius-lg: 24px;
+  --moon-radius-full: 100px;
+  --moon-shadow-sm: 0 6px 6px -6px rgba(0, 0, 0, 0.16), 0 0 1px rgba(0, 0, 0, 0.4);
+  --moon-shadow-lg: 0 12px 12px -6px rgba(0, 0, 0, 0.16), 0 0 1px rgba(0, 0, 0, 0.4);
+  /* Type: Averta Std is licensed; the stack falls back to close geometric sans faces. */
+  --moon-font: 'Averta Std', 'Averta', 'Avenir Next', Avenir, 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --moon-focus: 0 0 0 2px var(--moon-gohan), 0 0 0 4px var(--moon-bulma);
+
+  /* Legacy names, kept so older selectors on open branches still render in Moon colours. */
+  --bg: var(--moon-goku);
+  --panel: var(--moon-gohan);
+  --rim: var(--moon-bulma);
+  --rim-faint: var(--moon-beerus);
+  --text: var(--moon-bulma);
+  --muted: var(--moon-trunks);
+  --accent-strong: var(--moon-bulma);
+  --ink: var(--moon-bulma);
+
   --banner-height: 5.5rem;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -23,9 +51,12 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--moon-goku);
+  color: var(--moon-bulma);
+  font-family: var(--moon-font);
+  font-size: 14px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
@@ -43,63 +74,48 @@ body {
   bottom: calc(1rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: min(40rem, calc(100% - 2rem));
-  padding: 0.85rem 1.5rem 0.9rem;
+  padding: 12px 24px;
   text-align: center;
-  background: var(--panel);
-  border-top: 1px solid var(--rim-faint);
-  border-bottom: 1px solid var(--rim-faint);
+  background: var(--moon-gohan);
+  border-radius: var(--moon-radius-lg);
+  box-shadow: var(--moon-shadow-lg);
   pointer-events: none; /* never block map gestures */
 }
 
-/* Thin accent lines at both ends, echoing the game-UI reference. */
-.banner::before,
-.banner::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 2.5rem;
-  height: 1px;
-  background: var(--rim);
-}
-.banner::before { left: -2.5rem; }
-.banner::after { right: -2.5rem; }
-
 .banner__title {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 500;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
 }
 
 .banner__subtitle {
-  margin: 0.3rem 0 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  color: var(--muted);
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--moon-trunks);
 }
 
 @media (max-width: 600px) {
   :root { --banner-height: 4.75rem; }
-  .banner { padding: 0.65rem 1rem; }
-  .banner::before, .banner::after { display: none; }
-  .banner__title { font-size: 0.9rem; letter-spacing: 0.22em; }
-  .banner__subtitle { font-size: 0.68rem; }
+  .banner { padding: 10px 16px; }
+  .banner__title { font-size: 16px; }
 }
 
-/* ---------- MapLibre controls, restyled dark ---------- */
+/* ---------- MapLibre controls in Moon style ---------- */
 .maplibregl-ctrl-group {
-  background: var(--panel);
-  border: 1px solid var(--rim-faint);
-  box-shadow: none;
+  background: var(--moon-gohan);
+  border: 0;
+  border-radius: var(--moon-radius-sm);
+  box-shadow: var(--moon-shadow-sm);
+  overflow: hidden;
 }
-.maplibregl-ctrl-group button + button { border-top: 1px solid var(--rim-faint); }
-.maplibregl-ctrl-group button:not(:disabled):hover { background-color: rgba(127, 180, 230, 0.12); }
-/* Built-in icons are dark SVGs; invert them to light blue-grey. */
-.maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(0.85) sepia(0.2) hue-rotate(180deg); }
+.maplibregl-ctrl-group:not(:empty) { box-shadow: var(--moon-shadow-sm); }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--moon-beerus); }
+.maplibregl-ctrl-group button:not(:disabled):hover { background-color: var(--moon-fill); }
 
 .reset-view-button {
-  color: var(--text);
+  color: var(--moon-bulma);
   font-size: 1.15rem;
   line-height: 1;
 }
@@ -109,50 +125,88 @@ body {
   bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
 }
 .maplibregl-ctrl.maplibregl-ctrl-attrib {
-  background: rgba(11, 18, 32, 0.75);
-  color: var(--muted);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--moon-trunks);
   font-size: 0.68rem;
 }
-.maplibregl-ctrl-attrib a { color: var(--text); }
+.maplibregl-ctrl-attrib a { color: var(--moon-bulma); }
 
 /* ---------- Pin popup ---------- */
 .pin-popup .maplibregl-popup-content {
-  background: var(--panel);
-  border: 1px solid var(--rim-faint);
-  border-radius: 2px;
-  color: var(--text);
-  padding: 0.75rem 1rem;
+  background: var(--moon-gohan);
+  border-radius: var(--moon-radius-md);
+  box-shadow: var(--moon-shadow-lg);
+  color: var(--moon-bulma);
+  font-family: var(--moon-font);
+  padding: 12px 16px;
 }
 .pin-popup .maplibregl-popup-tip { display: none; }
-.pin-popup .maplibregl-popup-close-button { color: var(--muted); font-size: 1rem; }
+.pin-popup .maplibregl-popup-close-button {
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--moon-radius-full);
+  color: var(--moon-trunks);
+  font-size: 16px;
+}
+.pin-popup .maplibregl-popup-close-button:hover { background: var(--moon-fill); color: var(--moon-bulma); }
 
 .pin-popup__category {
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--rim);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--moon-trunks);
 }
 .pin-popup__title {
-  margin: 0.2rem 1rem 0.4rem 0;
-  font-size: 1rem;
-  font-weight: 500;
+  margin: 2px 24px 8px 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
 }
 .pin-popup__badge {
   display: inline-block;
-  margin-bottom: 0.4rem;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid #e6c27a;
-  color: #e6c27a;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding: 0 8px;
+  border-radius: var(--moon-radius-full);
+  background: color-mix(in srgb, var(--moon-krillin) 20%, transparent);
+  color: var(--moon-krillin-ink);
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 600;
 }
 .pin-popup dl {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.15rem 0.6rem;
+  gap: 2px 12px;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 12px;
+  line-height: 16px;
 }
-.pin-popup dt { color: var(--muted); }
+.pin-popup dt { color: var(--moon-trunks); }
 .pin-popup dd { margin: 0; }
+
+/* ---------- Shared Moon button shapes ---------- */
+.moon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--moon-radius-full);
+  background: var(--moon-bulma);
+  color: var(--moon-goten);
+  font: inherit;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+.moon-button:hover { background: #262626; }
+.moon-button:disabled { opacity: 0.5; cursor: default; }
+.moon-button:focus-visible { outline: none; box-shadow: var(--moon-focus); }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
