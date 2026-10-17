@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // a self-contained worker chunk (the dist worker imports a sibling shared file).
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
+import { hideUnflaggedOutlines } from './buildingOutlines';
 import { ResetViewControl } from './controls';
 import { buildStyle, palette } from './style';
 
@@ -27,5 +28,7 @@ export function createMap(container: HTMLElement): Map {
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new ResetViewControl(), 'top-right');
   map.addControl(new AttributionControl({ compact: false }), 'bottom-right');
+  // Show detailed building parts (Palace of Culture tiers, spires) instead of solid outlines.
+  hideUnflaggedOutlines(map);
   return map;
 }

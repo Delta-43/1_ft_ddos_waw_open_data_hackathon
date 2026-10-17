@@ -27,7 +27,7 @@ MapLibre 6 requires WebGL2, which every current desktop and mobile browser suppo
 ```
 src/
   map/       createMap.ts (map + controls), style.ts (dark style), config.ts (camera, tiles),
-             controls.ts (reset view), MapView.tsx (React wrapper)
+             controls.ts (reset view), buildingOutlines.ts (show building parts), MapView.tsx (React wrapper)
   markers/   types.ts (Pin), pins.ts (addPins/clearPins + popups), icons.ts (hexagon icons),
              samplePins.ts (PLACEHOLDER pins)
   data/      types.ts (PinProvider), warsawOpenData.ts (empty stub), index.ts (registry/loadPins)
@@ -39,6 +39,7 @@ src/
 - **Colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
 - **Layers:** `buildStyle()` in the same file is an ordinary MapLibre style object using the [OpenMapTiles schema](https://openmaptiles.org/schema/): `building`, `water`, `park`, `transportation`, and so on. Add, remove or reorder layers there.
 - **Buildings:** height is `render_height` from the tiles, falling back to `FALLBACK_HEIGHT` (12 m). A thin lighter slab on top of each building (`building-roof`) gives the rim highlight.
+- **Detailed buildings:** in OpenStreetMap, landmarks such as the Palace of Culture are mapped as several `building:part` shapes (podium, tower tiers, spire) plus one outline carrying the total height. OpenMapTiles is meant to flag that outline with `hide_3d`, but it misses many, including the Palace, Varso, Warsaw Spire and Złota 44. Left alone, the outline renders as a solid box over the parts. `src/map/buildingOutlines.ts` detects these outlines in the loaded tiles and collapses them, using feature-state, to zero height. An outline is hidden only if its ground-level parts cover at least 80% of its footprint and the parts reach its height, so a missed detection shows a box rather than leaving a hole.
 - **Light, sky and fog:** the `light` and `sky` blocks of the style. Keep the light colour near white; a saturated light colour tints shadowed walls with its complement.
 - **Camera and limits:** start view, Warsaw bounds, zoom range and the 75° pitch cap are in `src/map/config.ts`.
 - **Overlay UI:** the banner, controls and popups are styled in `src/style.css`.

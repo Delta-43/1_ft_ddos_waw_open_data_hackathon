@@ -38,9 +38,17 @@ const FALLBACK_HEIGHT = 12;
 /** Thickness of the lighter "roof cap" slab that gives buildings a rim highlight (metres). */
 const ROOF_CAP = 0.6;
 
+/** Vector source id; also used by buildingOutlines.ts. */
+export const BUILDING_SOURCE = 'openmaptiles';
+/** Feature-state flag set by buildingOutlines.ts on outlines that would hide their parts. */
+export const OUTLINE_STATE = 'unflaggedOutline';
+
 const height: ExpressionSpecification = ['coalesce', ['get', 'render_height'], FALLBACK_HEIGHT];
 const minHeight: ExpressionSpecification = ['coalesce', ['get', 'render_min_height'], 0];
 const notHidden: ExpressionSpecification = ['!=', ['get', 'hide_3d'], true];
+// Filters cannot read feature-state, so detected outlines are collapsed to zero height instead.
+const isOutline: ExpressionSpecification = ['boolean', ['feature-state', OUTLINE_STATE], false];
+const unlessOutline = (value: ExpressionSpecification | number): ExpressionSpecification => ['case', isOutline, 0, value];
 
 /** Road width that grows with zoom: [zoom, width] stops. */
 function roadWidth(stops: [number, number][]): ExpressionSpecification {
@@ -49,7 +57,7 @@ function roadWidth(stops: [number, number][]): ExpressionSpecification {
 
 /** Builds the custom dark style from a palette (OpenMapTiles schema). */
 export function buildStyle(p: Palette = palette): StyleSpecification {
-  const source = 'openmaptiles';
+  const source = BUILDING_SOURCE;
   return {
     version: 8,
     name: 'Warsaw dark',
@@ -176,8 +184,8 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         paint: {
           // Taller buildings are slightly lighter, which helps the skyline read.
           'fill-extrusion-color': ['interpolate', ['linear'], height, 0, p.buildingLow, 120, p.buildingHigh],
-          'fill-extrusion-height': height,
-          'fill-extrusion-base': minHeight,
+          'fill-extrusion-height': unlessOutline(height),
+          'fill-extrusion-base': unlessOutline(minHeight),
           'fill-extrusion-opacity': 0.92,
           'fill-extrusion-vertical-gradient': true,
         },
@@ -192,8 +200,8 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         filter: notHidden,
         paint: {
           'fill-extrusion-color': p.buildingRoof,
-          'fill-extrusion-base': height,
-          'fill-extrusion-height': ['+', height, ROOF_CAP],
+          'fill-extrusion-base': unlessOutline(height),
+          'fill-extrusion-height': unlessOutline(['+', height, ROOF_CAP]),
           'fill-extrusion-opacity': 0.92,
         },
       },
