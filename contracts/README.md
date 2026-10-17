@@ -64,3 +64,11 @@ Requests carry no user identifiers or profile references, and the backend does n
 ## Compatibility
 
 Additive changes (new optional fields) need agreement but no version bump. Removing or renaming a field, or changing a type, bumps `contract_version` and must update both sides in one PR.
+
+## City-data store and layers (additive, not part of contract 1.0 schema)
+
+- `GET /api/places` now reads the SQLite store `data/local/city.db` (built automatically from fixtures on first request; `python -m app.db` rebuilds). Response shape is unchanged.
+- `GET /api/layers` lists open-data layers: `air_quality`, `aed`, `toilets`, `events`, with feature counts.
+- `GET /api/layers/{layer}?bbox=min_lon,min_lat,max_lon,max_lat&limit=200` returns a GeoJSON `FeatureCollection` (lon, lat) that MapLibre can use as a source directly. Each feature has `properties.name`, `layer`, `source_id` plus layer-specific fields; `sources[]` carries attribution, mode (`cached`) and retrieval time for the source label.
+- Until the full Warsaw cache exists in `data/local`, layers hold only the committed samples (8 features each); `sources[].method` says so.
+- Needs Delta + Alban sign-off before being added to `api.schema.json`.

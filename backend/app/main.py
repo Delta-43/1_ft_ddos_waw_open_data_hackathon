@@ -1,10 +1,11 @@
 """API starter for contract 1.0. Responses are labelled fixtures, not navigable routes."""
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 
+from app import db
 from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest
 from app.data.catalogue import places_response as load_places_response
 
@@ -29,28 +30,56 @@ def routes(request: RouteRequest):
     return load_fixture("route-response.json")
 
 
+def parse_bbox(bbox: str | None) -> tuple[float, float, float, float] | None:
+    if not bbox:
+        return None
+    try:
+        min_lon, min_lat, max_lon, max_lat = (float(v) for v in bbox.split(","))
+    except ValueError:
+        raise HTTPException(422, "bbox must be min_lon,min_lat,max_lon,max_lat") from None
+    if not (min_lon <= max_lon and min_lat <= max_lat):
+        raise HTTPException(422, "bbox minimums must not exceed maximums")
+    return min_lon, min_lat, max_lon, max_lat
+
+
+BBox = Annotated[
+    str | None, Query(description="min_lon,min_lat,max_lon,max_lat", max_length=100)
+]
+
+
 @app.get("/api/places")
 def places(
     category: PlaceCategory | None = None,
-    bbox: Annotated[
-        str | None, Query(description="min_lon,min_lat,max_lon,max_lat", max_length=100)
-    ] = None,
+    bbox: BBox = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
-    data = load_places_response()
-    items = data["places"]
-    if category:
-        items = [p for p in items if p["category"] == category]
-    if bbox:
-        try:
-            min_lon, min_lat, max_lon, max_lat = (float(v) for v in bbox.split(","))
-        except ValueError:
-            raise HTTPException(422, "bbox must be min_lon,min_lat,max_lon,max_lat") from None
-        if not (min_lon <= max_lon and min_lat <= max_lat):
-            raise HTTPException(422, "bbox minimums must not exceed maximums")
-        items = [
-            p for p in items
-            if min_lon <= p["longitude"] <= max_lon and min_lat <= p["latitude"] <= max_lat
-        ]
-    data["places"] = items[:limit]
+    data = load_places_response()  # envelope: mode, notice, generated_at
+    data["places"], data["sources"] = db.query_places(category, parse_bbox(bbox), limit)
     return data
+
+
+@app.get("/api/layers")
+def layers():
+    """Open-data layers available as GeoJSON, with feature counts held in the store."""
+    counts = db.layer_counts()
+    return {"layers": [
+        {"id": k, "label": label, "count": counts.get(k, 0), "url": f"/api/layers/{k}"}
+        for k, (_, label) in db.LAYERS.items()
+    ]}
+
+
+@app.get("/api/layers/{layer}")
+def layer(
+    layer: Literal["air_quality", "aed", "toilets", "events"],
+    bbox: BBox = None,
+    limit: Annotated[int, Query(ge=1, le=500)] = 200,
+):
+    """GeoJSON FeatureCollection (lon,lat) for MapLibre; `sources` carries attribution."""
+    features, sources = db.query_layer(layer, parse_bbox(bbox), limit)
+    return {
+        "type": "FeatureCollection",
+        "contract_version": CONTRACT_VERSION,
+        "mode": "cached",
+        "features": features,
+        "sources": sources,
+    }
