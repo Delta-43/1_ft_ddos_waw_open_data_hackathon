@@ -65,7 +65,7 @@
         "preferences": { "$ref": "#/$defs/Preferences" },
         "destination_place_id": {
           "$ref": "#/$defs/PlaceId",
-          "description": "Refs #85. Resolved against the catalogue (GET /api/places); unknown ids return 422. The response visits it last, but opening hours and max_duration_s are not yet enforced against it - see GET /api/health capabilities.ordered_stops."
+          "description": "Refs #85. Resolved against the catalogue (GET /api/places); unknown ids return 422. The response visits it last; closed/unknown opening hours and an exceeded max_duration_s are reported in the route's explanation rather than silently dropped, but there's no separate no-feasible-route outcome yet and no applied_itinerary field to confirm what was honoured - see GET /api/health capabilities.ordered_stops."
         },
         "via_place_ids": {
           "type": "array",
@@ -215,7 +215,17 @@
         "generated_at": { "$ref": "#/$defs/Timestamp" },
         "preferences": { "$ref": "#/$defs/InterpretedPreferences" },
         "routes": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/Route" } },
-        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Source" } }
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Source" } },
+        "applied_itinerary": {
+          "description": "Refs #85 step 4. Null for a museum-outing response. Set when destination_place_id/via_place_ids were honoured, so the UI can confirm what the backend actually used - always exactly the request's own ids, never substituted.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["destination_place_id", "via_place_ids"],
+          "properties": {
+            "destination_place_id": { "$ref": "#/$defs/PlaceId" },
+            "via_place_ids": { "type": "array", "maxItems": 5, "uniqueItems": true, "items": { "$ref": "#/$defs/PlaceId" } }
+          }
+        }
       }
     },
     "PlacesResponse": {

@@ -16,7 +16,7 @@ Delta and Alban jointly approve changes here before either pair implements them.
 
 | Method and path | Request | Success response |
 | --- | --- | --- |
-| `GET /api/health` | None | `{ "status": "ok", "mode": "fixture", "contract_version": "1.0" }` |
+| `GET /api/health` | None | `{ "status": "ok", "mode": "fixture", "contract_version": "1.0", "capabilities": { "ordered_stops": bool, "place_search": bool } }` (`capabilities`, #85 step 4: true only once that feature has actually shipped — gate a feature's UI on its flag here, not on a request field merely being accepted) |
 | `POST /api/routes` | `RouteRequest` | `RouteResponse` |
 | `GET /api/places` | Query: `category` (`museum`, `landmark`, `park`, `generic`), `bbox=min_lon,min_lat,max_lon,max_lat`, `q` (case-insensitive name/address match, trimmed, 1–100 characters), `limit` 1–100 (default 50) | `PlacesResponse` |
 
@@ -40,7 +40,7 @@ Invalid requests return HTTP 422 with FastAPI's standard `detail` body. The fron
 - `query` is required, 1–1000 characters. Everything in `preferences` is optional.
 - `travel_mode`: `walk` or `bike`. `max_duration_s`: 900–28800. Priorities: 0 (ignore) to 1 (most important).
 - Unknown fields are rejected with 422, at every level.
-- `destination_place_id` and `via_place_ids` (#85, steps 1-2 of 4): optional catalogue place ids (`GET /api/places`'s `id`, e.g. `osm:node/123`). `via_place_ids` is an ordered list of 0–5 unique ids, visited before `destination_place_id`, which must not also appear in it. Unknown ids, duplicates, or more than 5 stops return 422. When `destination_place_id` is set, the response is a single route (`routes` has one entry) that visits the via stops in the given order and ends at the destination — real street geometry from OSRM (or a labelled straight-line fallback), never a museum-outing template; its `places[].source_id` points at a new `osm-places-demo` entry in `sources[]` (the same catalogue `GET /api/places` reads), not the museum-outing candidates' `osm-places` entry. **Not yet enforced**: opening hours and `max_duration_s` aren't checked against this itinerary (#85 step 3), and there's no `applied_itinerary` field yet to let the UI confirm what was honoured (#85 step 4) — gate structured itinerary submission on `GET /api/health`'s future `capabilities.ordered_stops`, not on these fields being accepted. `comment` (0–500 characters) may only influence preference reading, never geometry, hours or facts, and is never stored or logged.
+- `destination_place_id` and `via_place_ids` (#85, steps 1-3 of 4): optional catalogue place ids (`GET /api/places`'s `id`, e.g. `osm:node/123`). `via_place_ids` is an ordered list of 0–5 unique ids, visited before `destination_place_id`, which must not also appear in it. Unknown ids, duplicates, or more than 5 stops return 422. When `destination_place_id` is set, the response is a single route (`routes` has one entry) that visits the via stops in the given order and ends at the destination — real street geometry from OSRM (or a labelled straight-line fallback), never a museum-outing template; its `places[].source_id` points at a new `osm-places-demo` entry in `sources[]` (the same catalogue `GET /api/places` reads), not the museum-outing candidates' `osm-places` entry. Closed or unknown opening hours (checked for every stop, not just museums — any of the user's own picks may carry a real `opening_hours` tag) and an itinerary that runs over the requested `max_duration_s` are stated in the route's `explanation`, never silently dropped. `RouteResponse.applied_itinerary` echoes back exactly the ids the backend used (null for a museum-outing response), so the UI can confirm the request was honoured without parsing route names. **Not yet done**: there's no separate no-feasible-route outcome when the budget can't be met — it's reported in the explanation, not enforced as a hard failure. Gate structured itinerary submission on `GET /api/health`'s `capabilities.ordered_stops`, not on these fields merely being accepted. `comment` (0–500 characters) may only influence preference reading, never geometry, hours or facts, and is never stored or logged.
 
 ## RouteResponse
 
@@ -53,6 +53,7 @@ Invalid requests return HTTP 422 with FastAPI's standard `detail` body. The fron
   - `places`: the place cards for this route.
   - `explanation`: short text grounded only in this response's metrics and places.
 - `sources`: provenance for every `source_id`. `mode` is `real`, `historical`, `proxy` or `simulated`; `attribution` must be shown; `method` explains proxies and simulations.
+- `applied_itinerary` (#85 step 4): `{ "destination_place_id", "via_place_ids" }`, exactly as the request supplied them, or `null` if the request had no `destination_place_id`.
 
 ## Place
 

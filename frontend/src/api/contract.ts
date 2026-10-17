@@ -12,6 +12,20 @@ export type TravelMode = 'walk' | 'bike';
 /** Matches the map pin icons. */
 export type PlaceCategory = 'museum' | 'landmark' | 'park' | 'generic';
 
+/** Refs #85 step 4. Gate a feature's UI on the matching flag here, not on a request
+ * field merely being accepted - a flag is only true once that feature actually ships. */
+export interface HealthResponse {
+  status: 'ok';
+  mode: 'fixture';
+  contract_version: typeof CONTRACT_VERSION;
+  capabilities: {
+    /** POST /api/routes honours destination_place_id/via_place_ids (#85). */
+    ordered_stops: boolean;
+    /** GET /api/places?q= search (#84/#87). */
+    place_search: boolean;
+  };
+}
+
 export interface Point {
   longitude: number;
   latitude: number;
@@ -39,8 +53,10 @@ export interface RouteRequest {
   preferences?: Preferences;
   /**
    * Refs #85. Resolved against the catalogue (GET /api/places); unknown ids get a 422.
-   * The response visits it last, but opening hours and max_duration_s aren't enforced
-   * against it yet - gate structured itinerary submission on the future
+   * The response visits it last; closed/unknown opening hours and an exceeded
+   * max_duration_s are reported in the route's explanation rather than silently
+   * dropped, but there's no no-feasible-route outcome or applied_itinerary field yet -
+   * gate structured itinerary submission on the future
    * HealthResponse.capabilities.ordered_stops, not on this field existing.
    */
   destination_place_id?: string;
@@ -137,6 +153,12 @@ export interface RouteResponse {
   /** 1 to 3 candidates. */
   routes: Route[];
   sources: Source[];
+  /**
+   * Refs #85 step 4. Null for a museum-outing response. Set when destination_place_id/
+   * via_place_ids were honoured, so the UI can confirm what the backend actually used -
+   * always exactly the request's own ids, never substituted.
+   */
+  applied_itinerary: { destination_place_id: string; via_place_ids: string[] } | null;
 }
 
 export interface PlacesResponse {
