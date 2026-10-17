@@ -1,13 +1,12 @@
-import { Map, NavigationControl, setWorkerUrl } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { Map, NavigationControl, setWorkerUrl } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 // MapLibre v6 cannot locate its worker inside a bundle; `?worker&url` makes Vite emit
 // a self-contained worker chunk (the dist worker imports a sibling shared file).
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
-import { hideUnflaggedOutlines } from './buildingOutlines';
-import { ResetViewControl } from './controls';
-import { HistoricalOverlayControl } from './historicalOverlayControl';
-import { buildStyle, palette } from './style';
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+import { CAMERA_LIMITS, INITIAL_VIEW } from "./config";
+import { hideUnflaggedOutlines } from "./buildingOutlines";
+import { ResetViewControl } from "./controls";
+import { buildStyle, palette } from "./style";
 
 setWorkerUrl(workerUrl);
 
@@ -16,7 +15,10 @@ setWorkerUrl(workerUrl);
  * else) only needs to supply an element and call `map.remove()` on teardown.
  * Default handlers already cover mouse, trackpad and touch pan/zoom/rotate/tilt.
  */
-export function createMap(container: HTMLElement, view: typeof INITIAL_VIEW = INITIAL_VIEW): Map {
+export function createMap(
+  container: HTMLElement,
+  view: typeof INITIAL_VIEW = INITIAL_VIEW,
+): Map {
   const map = new Map({
     container,
     style: buildStyle(palette),
@@ -31,9 +33,24 @@ export function createMap(container: HTMLElement, view: typeof INITIAL_VIEW = IN
     fadeDuration: 0,
   });
 
-  map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-  map.addControl(new ResetViewControl(), 'top-right');
-  map.addControl(new HistoricalOverlayControl(), 'top-right');
+  // Route every camera control through the same accessibility preference.
+  const reduced = () =>
+    document.documentElement.dataset.motion === "reduced" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ease = map.easeTo.bind(map);
+  const fly = map.flyTo.bind(map);
+  map.easeTo = (options, eventData) =>
+    ease(
+      { ...options, ...(reduced() ? { duration: 0, animate: false } : {}) },
+      eventData,
+    );
+  map.flyTo = (options, eventData) =>
+    fly(
+      { ...options, ...(reduced() ? { duration: 0, animate: false } : {}) },
+      eventData,
+    );
+  map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
+  map.addControl(new ResetViewControl(), "top-right");
   // Show detailed building parts (Palace of Culture tiers, spires) instead of solid outlines.
   hideUnflaggedOutlines(map);
   return map;

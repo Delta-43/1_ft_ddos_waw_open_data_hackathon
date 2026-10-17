@@ -9,7 +9,7 @@ const LAYER_ID = 'pins';
 /** Route source drawn by map/routes.ts; while it has routes, city pins step back. */
 const ROUTE_SOURCE = 'candidate-routes';
 /** Pin opacity while a route is shown: still findable, but the numbered stops lead. */
-const DIMMED_OPACITY = 0.3;
+const DIMMED_OPACITY = 0.18;
 
 const CATEGORY_LABEL: Record<PinCategory, string> = {
   landmark: 'Landmark',

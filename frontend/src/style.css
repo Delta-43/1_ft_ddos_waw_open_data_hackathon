@@ -1,234 +1,182 @@
-/* Shared tokens for the HTML overlay; map colours live in src/map/style.ts.
-   Moon Design System v1 (Figma community kit): white surfaces, black as the one accent,
-   pill buttons, 4% black fills, Averta type scale (text-md 14/24, text-sm semibold 12/16). */
+@import "../../design/tokens/moon.css";
 :root {
-  /* Surfaces */
-  --moon-gohan: #fff;                       /* cards, panels */
-  --moon-goku: #f6f7f9;                     /* page background behind the map */
-  --moon-fill: rgba(0, 0, 0, 0.04);         /* subtle fill, as in the date-range rows */
-  --moon-fill-hover: rgba(0, 0, 0, 0.08);
-  --moon-beerus: #ebebeb;                   /* hairline borders */
-  /* Content */
-  --moon-bulma: #000;                       /* text and primary actions */
-  --moon-goten: #fff;                       /* text on black */
-  --moon-trunks: rgba(0, 0, 0, 0.6);        /* secondary text (AA on white) */
-  --moon-faint: rgba(0, 0, 0, 0.25);        /* disabled and weekday-style labels only */
-  /* Support colours, used only with a text label */
-  --moon-krillin: #ffb319;
-  --moon-krillin-ink: #7a5300;
-  --moon-chichi: #ff4e64;
-  --moon-chichi-ink: #b3001b;
-  /* Shape */
-  --moon-radius-sm: 8px;
-  --moon-radius-md: 16px;
-  --moon-radius-lg: 24px;
-  --moon-radius-full: 100px;
-  --moon-shadow-sm: 0 6px 6px -6px rgba(0, 0, 0, 0.16), 0 0 1px rgba(0, 0, 0, 0.4);
-  --moon-shadow-lg: 0 12px 12px -6px rgba(0, 0, 0, 0.16), 0 0 1px rgba(0, 0, 0, 0.4);
-  /* Type: Averta Std is licensed; the stack falls back to close geometric sans faces. */
-  --moon-font: 'Averta Std', 'Averta', 'Avenir Next', Avenir, 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --moon-focus: 0 0 0 2px var(--moon-gohan), 0 0 0 4px var(--moon-bulma);
-
-  /* Legacy names, kept so older selectors on open branches still render in Moon colours. */
-  --bg: var(--moon-goku);
   --panel: var(--moon-gohan);
-  --rim: var(--moon-bulma);
-  --rim-faint: var(--moon-beerus);
   --text: var(--moon-bulma);
   --muted: var(--moon-trunks);
-  --accent-strong: var(--moon-bulma);
+  --rim: var(--moon-bulma);
+  --rim-faint: var(--moon-beerus);
+  --bg: var(--moon-goku);
   --ink: var(--moon-bulma);
-
-  --banner-height: 5.5rem;
-  color-scheme: light;
+  --moon-focus: 0 0 0 2px var(--moon-gohan), 0 0 0 4px var(--moon-bulma);
 }
-
-* { box-sizing: border-box; }
-
-html, body, #root {
-  height: 100%;
-  margin: 0;
+* {
+  box-sizing: border-box;
 }
-
 body {
-  background: var(--moon-goku);
-  color: var(--moon-bulma);
+  margin: 0;
   font-family: var(--moon-font);
   font-size: 14px;
-  line-height: 24px;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  line-height: 1.5;
+  color: var(--moon-bulma);
+  background: var(--paper);
 }
-
-/* Full-viewport map; dvh avoids the mobile browser toolbar cutting it off. */
+html,
+body,
+#root {
+  height: 100%;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+button {
+  color: inherit;
+}
+::selection {
+  background: var(--mood);
+  color: #12251d;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--moon-trunks) transparent;
+}
+input,
+textarea {
+  caret-color: var(--mood-ink);
+}
+:focus-visible {
+  outline: 2px solid var(--moon-bulma);
+  outline-offset: 3px;
+}
+button,
+input,
+select,
+textarea {
+  border: 1px solid transparent;
+}
+button svg {
+  flex: none;
+}
+button {
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+[hidden] {
+  display: none !important;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .map {
   position: fixed;
   inset: 0;
-  height: 100dvh;
+  background: var(--paper);
 }
-
-/* ---------- Bottom banner ---------- */
-.banner {
-  position: fixed;
-  left: 50%;
-  bottom: calc(1rem + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  width: min(40rem, calc(100% - 2rem));
-  padding: 12px 24px;
-  text-align: center;
-  background: var(--moon-gohan);
-  border-radius: var(--moon-radius-lg);
-  box-shadow: var(--moon-shadow-lg);
-  pointer-events: none; /* never block map gestures */
+.maplibregl-ctrl-top-right {
+  top: 95px !important;
+  right: 20px !important;
 }
-
-.banner__title {
-  margin: 0;
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 600;
-}
-
-.banner__subtitle {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--moon-trunks);
-}
-
-@media (max-width: 600px) {
-  :root { --banner-height: 4.75rem; }
-  .banner { padding: 10px 16px; }
-  .banner__title { font-size: 16px; }
-}
-
-/* ---------- MapLibre controls in Moon style ---------- */
 .maplibregl-ctrl-group {
-  background: var(--moon-gohan);
-  border: 0;
-  border-radius: var(--moon-radius-sm);
-  box-shadow: var(--moon-shadow-sm);
+  background: var(--moon-gohan) !important;
+  border-radius: var(--moon-radius-md) !important;
+  box-shadow: var(--moon-shadow-sm) !important;
   overflow: hidden;
 }
-.maplibregl-ctrl-group:not(:empty) { box-shadow: var(--moon-shadow-sm); }
-.maplibregl-ctrl-group button + button { border-top: 1px solid var(--moon-beerus); }
-.maplibregl-ctrl-group button:not(:disabled):hover { background-color: var(--moon-fill); }
-
+.maplibregl-ctrl-group button {
+  width: 44px !important;
+  height: 44px !important;
+  border-color: var(--moon-beerus) !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--moon-beerus) !important;
+}
+[data-theme="dark"] .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
 .reset-view-button {
+  font-size: 20px;
+}
+.maplibregl-popup-content {
+  background: var(--moon-gohan) !important;
+  color: var(--moon-bulma) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+}
+.maplibregl-popup-close-button {
+  width: 44px;
+  height: 44px;
   color: var(--moon-bulma);
-  font-size: 1.15rem;
-  line-height: 1;
 }
-
-.historical-overlay-button {
-  color: var(--text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1;
-  min-width: 2rem;
+.maplibregl-popup-tip {
+  display: none;
 }
-
-/* Keep attribution visible and clear of the banner. */
-.maplibregl-ctrl-bottom-right {
-  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
-}
-/* Plain element appended to the map container (not a MapLibre control - see
- * historicalOverlayControl.ts), so it is positioned by hand, matching where
- * a bottom-left MapLibre control would otherwise sit. */
-.historical-attribution {
-  position: absolute;
-  left: 10px;
-  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
-  background: rgba(11, 18, 32, 0.75);
-  color: var(--muted);
-  font-size: 0.68rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 2px;
-  pointer-events: none;
-}
-.maplibregl-ctrl.maplibregl-ctrl-attrib {
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--moon-trunks);
-  font-size: 0.68rem;
-}
-.maplibregl-ctrl-attrib a { color: var(--moon-bulma); }
-
-/* ---------- Pin popup ---------- */
-.pin-popup .maplibregl-popup-content {
-  background: var(--moon-gohan);
-  border-radius: var(--moon-radius-md);
-  box-shadow: var(--moon-shadow-lg);
-  color: var(--moon-bulma);
-  font-family: var(--moon-font);
-  padding: 12px 16px;
-}
-.pin-popup .maplibregl-popup-tip { display: none; }
-.pin-popup .maplibregl-popup-close-button {
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--moon-radius-full);
-  color: var(--moon-trunks);
-  font-size: 16px;
-}
-.pin-popup .maplibregl-popup-close-button:hover { background: var(--moon-fill); color: var(--moon-bulma); }
-
-.pin-popup__category {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
+.map-credits {
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--moon-trunks);
 }
-.pin-popup__title {
-  margin: 2px 24px 8px 0;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 600;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
-.pin-popup__badge {
-  display: inline-block;
-  margin-bottom: 8px;
-  padding: 0 8px;
-  border-radius: var(--moon-radius-full);
-  background: color-mix(in srgb, var(--moon-krillin) 20%, transparent);
-  color: var(--moon-krillin-ink);
-  font-size: 12px;
-  line-height: 20px;
-  font-weight: 600;
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
-.pin-popup dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 12px;
-  margin: 0;
-  font-size: 12px;
-  line-height: 16px;
+@media (forced-colors: active) {
+  button,
+  article,
+  .planner-panel,
+  .tool-panel,
+  .map-callout {
+    border: 1px solid CanvasText !important;
+  }
+  .context-dot {
+    background: Highlight !important;
+  }
 }
-.pin-popup dt { color: var(--moon-trunks); }
-.pin-popup dd { margin: 0; }
 
-/* ---------- Shared Moon button shapes ---------- */
-.moon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: var(--moon-radius-full);
-  background: var(--moon-bulma);
-  color: var(--moon-goten);
-  font: inherit;
-  font-size: 14px;
-  line-height: 24px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+.theme-changing *,
+.theme-changing *::before,
+.theme-changing *::after {
+  transition: none !important;
 }
-.moon-button:hover { background: #262626; }
-.moon-button:disabled { opacity: 0.5; cursor: default; }
-.moon-button:focus-visible { outline: none; box-shadow: var(--moon-focus); }
-
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:root[data-motion="reduced"] .primary:active,
+:root[data-motion="reduced"] .icon-button:active {
+  scale: 1;
+}

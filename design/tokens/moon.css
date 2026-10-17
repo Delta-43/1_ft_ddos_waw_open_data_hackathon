@@ -1,0 +1,111 @@
+/* Moon Design System v1. Base values carried forward from PR #82.
+   Dark semantic mappings and mood colours are project extensions, not a fresh Figma extraction.
+   Averta is not distributed: the existing licensed-font fallback stack is preserved. */
+:root {
+  --moon-gohan: #fff;
+  --moon-goku: #f6f7f9;
+  --moon-bulma: #000;
+  --moon-goten: #fff;
+  --moon-trunks: #595b62;
+  --moon-beerus: #ebebeb;
+  --moon-fill: #f3f4f5;
+  --moon-fill-hover: #e9eaed;
+  --moon-krillin: #ffb319;
+  --moon-krillin-ink: #715000;
+  --moon-chichi: #ff4e64;
+  --moon-chichi-ink: #ae1835;
+  --moon-radius-sm: 8px;
+  --moon-radius-md: 16px;
+  --moon-radius-lg: 24px;
+  --moon-radius-full: 100px;
+  --moon-shadow-sm: 0 4px 12px -5px #19202024;
+  --moon-shadow-lg: 0 12px 45px -14px #19202030;
+  --moon-font:
+    "Averta Std", "Averta", "Avenir Next", Avenir, "Nunito Sans", system-ui,
+    sans-serif;
+  --paper: #eeede8;
+  --map-ground: #e8e7e1;
+  --map-land: #e3e2dc;
+  --map-park: #d6ddd1;
+  --map-wood: #c9d5c5;
+  --map-water: #c4d8db;
+  --map-road: #fafaf7;
+  --map-line: #c9c9c0;
+  --map-building: #bfc8bd;
+  --map-roof: #eff2e6;
+  --mood-calm: #51e2b5;
+  --mood-culture: #bb9bff;
+  --mood-discover: #ffbe67;
+  --mood-active: #79cfff;
+  --mood-ink: #14654e;
+  --mood: var(--mood-calm);
+  --mood-soft: #e7f7ee;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-panel: 300ms;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --moon-gohan: #202326;
+  --moon-goku: #171a1c;
+  --moon-bulma: #f4f4ef;
+  --moon-goten: #16191b;
+  --moon-trunks: #bbc1c1;
+  --moon-beerus: #3e4447;
+  --moon-fill: #2d3235;
+  --moon-fill-hover: #3a4144;
+  --moon-krillin-ink: #ffd48c;
+  --moon-chichi-ink: #ff9bae;
+  --paper: #20282a;
+  --map-ground: #20282a;
+  --map-land: #252e30;
+  --map-park: #2d3c35;
+  --map-wood: #30463a;
+  --map-water: #263f49;
+  --map-road: #4b5557;
+  --map-line: #343f42;
+  --map-building: #647c73;
+  --map-roof: #9caf9d;
+  --mood-ink: #8eebc5;
+  --mood-soft: #283d35;
+  --moon-shadow-lg: 0 12px 45px -14px #0009;
+  color-scheme: dark;
+}
+:root[data-mood="culture"] {
+  --mood: var(--mood-culture);
+  --mood-ink: #6940a5;
+  --mood-soft: #f2edfc;
+}
+:root[data-mood="discover"] {
+  --mood: var(--mood-discover);
+  --mood-ink: #8a5008;
+  --mood-soft: #fff3df;
+}
+:root[data-mood="active"] {
+  --mood: var(--mood-active);
+  --mood-ink: #176384;
+  --mood-soft: #e8f5fb;
+}
+:root[data-theme="dark"][data-mood="culture"] {
+  --mood-ink: #d2bbff;
+  --mood-soft: #383044;
+}
+:root[data-theme="dark"][data-mood="discover"] {
+  --mood-ink: #ffd192;
+  --mood-soft: #40382a;
+}
+:root[data-theme="dark"][data-mood="active"] {
+  --mood-ink: #9dddff;
+  --mood-soft: #293e49;
+}
+:root[data-contrast="true"] {
+  --moon-trunks: var(--moon-bulma);
+  --moon-beerus: var(--moon-bulma);
+}

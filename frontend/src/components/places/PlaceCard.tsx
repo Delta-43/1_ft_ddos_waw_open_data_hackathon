@@ -32,6 +32,7 @@ interface PlaceCardProps {
 }
 
 export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }: PlaceCardProps) {
+  const safeWebsite = place.website && /^https?:\/\//i.test(place.website) ? place.website : undefined;
   return (
     <article className={`place-card${selected ? ' place-card--selected' : ''}`}>
       <header className="place-card__header">
@@ -60,10 +61,10 @@ export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }
             <dd>{place.address}</dd>
           </>
         )}
-        {place.website && (
+        {safeWebsite && (
           <>
             <dt>Website</dt>
-            <dd><a href={place.website} target="_blank" rel="noreferrer">{websiteLabel(place.website)}</a></dd>
+            <dd><a href={safeWebsite} target="_blank" rel="noreferrer">{websiteLabel(safeWebsite)}</a></dd>
           </>
         )}
       </dl>

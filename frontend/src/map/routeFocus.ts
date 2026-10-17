@@ -1,155 +1,237 @@
-import type { ExpressionSpecification, Map } from 'maplibre-gl';
-import type { Route } from '../api/contract';
-import { BUILDING_MINZOOM, BUILDING_SOURCE } from './style';
+import type { ExpressionSpecification, GeoJSONSource, Map } from "maplibre-gl";
+import type { Route } from "../api/contract";
+import { BUILDING_SOURCE } from "./style";
 
-/**
- * Route focus (Delta's mockup idea): while a route is selected, only buildings within
- * CORRIDOR_M of it stay 3D; the rest sink to flat footprints so the route holds attention.
- * Buildings are marked with feature-state in short slices when the map is idle, like
- * buildingOutlines.ts, so panning never stalls.
- */
+/** Normalize tiled clusters into footprints so a full-route overview still has 3D. */
+const SOURCE = "route-buildings";
 const CORRIDOR_M = 220;
-const NEAR_STATE = 'nearRoute';
-const SLICE_MS = 6;
-const LAYER_PROPERTIES = [
-  ['building-3d', 'fill-extrusion-height'],
-  ['building-3d', 'fill-extrusion-base'],
-  ['building-roof', 'fill-extrusion-height'],
-  ['building-roof', 'fill-extrusion-base'],
+const EMPTY = { type: "FeatureCollection" as const, features: [] };
+const PROPERTIES = [
+  ["building-3d", "fill-extrusion-height"],
+  ["building-3d", "fill-extrusion-base"],
+  ["building-roof", "fill-extrusion-height"],
+  ["building-roof", "fill-extrusion-base"],
 ] as const;
-
-type Segment = [number, number, number, number];
+type Point = [number, number];
+type Segment = [Point, Point];
 interface FocusState {
   originals: globalThis.Map<string, ExpressionSpecification | number>;
   segments: Segment[] | null;
-  near: Set<string | number>;
-  checked: Set<string | number>;
   dirty: boolean;
   scanning: boolean;
+  generation: number;
+  disposed: boolean;
   timer?: ReturnType<typeof setTimeout>;
 }
 const states = new WeakMap<Map, FocusState>();
-
-// Local metres around Warsaw (equirectangular is accurate enough for a few kilometres).
-const M_PER_DEG_LAT = 110_540;
-const M_PER_DEG_LNG = 111_320 * Math.cos((52.23 * Math.PI) / 180);
-const toMetres = ([lng, lat]: number[]): [number, number] => [lng * M_PER_DEG_LNG, lat * M_PER_DEG_LAT];
-
-function segmentsOf(route: Route): Segment[] {
-  const points = route.geometry.coordinates.map(toMetres);
-  return points.slice(1).map((point, i) => [points[i][0], points[i][1], point[0], point[1]]);
+const toMetres = ([lng, lat]: number[]): Point => [
+  lng * 111320 * Math.cos((52.23 * Math.PI) / 180),
+  lat * 110540,
+];
+function pointDistance(p: Point, [a, b]: Segment): number {
+  const dx = b[0] - a[0],
+    dy = b[1] - a[1];
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1),
+    ),
+  );
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 }
-
-function distanceToSegments([x, y]: [number, number], segments: Segment[]): number {
-  let best = Infinity;
-  for (const [ax, ay, bx, by] of segments) {
-    const dx = bx - ax;
-    const dy = by - ay;
-    const length = dx * dx + dy * dy;
-    const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / length));
-    best = Math.min(best, Math.hypot(x - (ax + t * dx), y - (ay + t * dy)));
+function cross(a: Point, b: Point, c: Point) {
+  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+}
+function nearCorridor(ring: number[][], segments: Segment[]): boolean {
+  const points = ring.map(toMetres);
+  const xs = points.map((p) => p[0]),
+    ys = points.map((p) => p[1]);
+  const minX = Math.min(...xs),
+    maxX = Math.max(...xs),
+    minY = Math.min(...ys),
+    maxY = Math.max(...ys);
+  for (const [a, b] of segments) {
+    if (
+      Math.max(a[0], b[0]) < minX - CORRIDOR_M ||
+      Math.min(a[0], b[0]) > maxX + CORRIDOR_M ||
+      Math.max(a[1], b[1]) < minY - CORRIDOR_M ||
+      Math.min(a[1], b[1]) > maxY + CORRIDOR_M
+    )
+      continue;
+    for (let i = 1; i < points.length; i++) {
+      const c = points[i - 1],
+        d = points[i];
+      if (
+        pointDistance(c, [a, b]) <= CORRIDOR_M ||
+        pointDistance(a, [c, d]) <= CORRIDOR_M ||
+        pointDistance(b, [c, d]) <= CORRIDOR_M
+      )
+        return true;
+      if (
+        Math.max(a[0], b[0]) >= Math.min(c[0], d[0]) &&
+        Math.min(a[0], b[0]) <= Math.max(c[0], d[0]) &&
+        Math.max(a[1], b[1]) >= Math.min(c[1], d[1]) &&
+        Math.min(a[1], b[1]) <= Math.max(c[1], d[1]) &&
+        cross(a, b, c) * cross(a, b, d) <= 0 &&
+        cross(c, d, a) * cross(c, d, b) <= 0
+      )
+        return true;
+    }
   }
-  return best;
+  return false;
 }
-
-/** First vertex of a (multi)polygon: cheap and within a building's width of its centre. */
-function anchorOf(geometry: { coordinates?: unknown }): number[] | null {
-  let value: unknown = geometry.coordinates;
-  while (Array.isArray(value) && Array.isArray(value[0])) value = value[0];
-  return Array.isArray(value) && typeof value[0] === 'number' ? (value as number[]) : null;
-}
-
-/** Height expressions: grow with zoom (the intro), and with focus only near buildings keep height. */
-function applyHeights(map: Map, state: FocusState, focus: boolean): void {
-  const near: ExpressionSpecification = ['boolean', ['feature-state', NEAR_STATE], false];
-  for (const [layer, property] of LAYER_PROPERTIES) {
-    const original = state.originals.get(`${layer}|${property}`);
-    if (original === undefined || !map.getLayer(layer)) continue;
-    // Intro: rise between zoom 13.5 and 14.8. Focus: buildings along the route are full height from 14.
-    const value = focus ? (['case', near, original, 0] as ExpressionSpecification) : original;
-    const [from, to] = focus ? [13.2, 14] : [13.5, 14.8];
-    map.setPaintProperty(layer, property, ['interpolate', ['linear'], ['zoom'], from, 0, to, value]);
-  }
-}
-
-function setNear(map: Map, id: string | number, value: boolean): void {
-  map.setFeatureState({ source: BUILDING_SOURCE, sourceLayer: 'building', id }, { [NEAR_STATE]: value });
-}
-
 function scan(map: Map, state: FocusState): void {
-  clearTimeout(state.timer);
-  if (!state.segments || !state.dirty || map.getZoom() < BUILDING_MINZOOM || !map.getSource(BUILDING_SOURCE)) return;
+  // Never cancel an in-progress slice from idle. Tile arrivals retain dirty for the next pass.
+  if (
+    state.disposed ||
+    state.scanning ||
+    !state.segments ||
+    !state.dirty ||
+    map.isMoving()
+  )
+    return;
   state.dirty = false;
   state.scanning = true;
-  const segments = state.segments;
-  const features = map.querySourceFeatures(BUILDING_SOURCE, { sourceLayer: 'building' });
+  const generation = state.generation,
+    segments = state.segments;
+  const footprints = map
+    .querySourceFeatures(BUILDING_SOURCE, { sourceLayer: "building" })
+    .flatMap((feature) => {
+      const geometry = feature.geometry;
+      const polygons =
+        geometry.type === "Polygon"
+          ? [geometry.coordinates]
+          : geometry.type === "MultiPolygon"
+            ? geometry.coordinates
+            : [];
+      return polygons.map((coordinates: number[][][]) => ({
+        coordinates,
+        properties: feature.properties,
+      }));
+    });
+  const selected: {
+      type: "Feature";
+      geometry: { type: "Polygon"; coordinates: number[][][] };
+      properties: { height: number; base: number };
+    }[] = [],
+    seen = new Set<string>();
   let index = 0;
   const slice = () => {
-    if (state.segments !== segments) return; // the route changed; a new scan follows
-    const deadline = performance.now() + SLICE_MS;
-    while (index < features.length && performance.now() < deadline) {
-      const feature = features[index++];
-      const id = feature.id;
-      if (id === undefined || state.checked.has(id)) continue;
-      state.checked.add(id);
-      const anchor = anchorOf(feature.geometry as { coordinates?: unknown });
-      if (anchor && distanceToSegments(toMetres(anchor), segments) <= CORRIDOR_M) {
-        state.near.add(id);
-        setNear(map, id, true);
-      }
+    if (state.disposed || generation !== state.generation) return;
+    const deadline = performance.now() + 6;
+    while (index < footprints.length && performance.now() < deadline) {
+      const { coordinates, properties } = footprints[index++];
+      if (
+        !coordinates[0]?.length ||
+        properties.hide_3d === true ||
+        !nearCorridor(coordinates[0], segments)
+      )
+        continue;
+      // Tile feature IDs can cover hundreds of distinct buildings. Deduplicate exact geometry only.
+      const key = JSON.stringify(coordinates);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const height = Number(properties.render_height),
+        base = Number(properties.render_min_height);
+      selected.push({
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates },
+        properties: {
+          height: Number.isFinite(height) && height > 0 ? height : 12,
+          base: Number.isFinite(base) && base >= 0 ? base : 0,
+        },
+      });
     }
-    if (index < features.length) state.timer = setTimeout(slice, 0);
-    else state.scanning = false;
+    if (index < footprints.length) state.timer = setTimeout(slice, 0);
+    else {
+      (map.getSource(SOURCE) as GeoJSONSource).setData({
+        type: "FeatureCollection",
+        features: selected,
+      });
+      state.scanning = false;
+      if (state.dirty) state.timer = setTimeout(() => scan(map, state), 100);
+    }
   };
   slice();
 }
-
-/** Call once after the style loads (it takes over the building heights from the intro). */
 export function initRouteFocus(map: Map): void {
-  const originals = new globalThis.Map<string, ExpressionSpecification | number>();
-  for (const [layer, property] of LAYER_PROPERTIES) {
-    if (!map.getLayer(layer)) continue;
-    const value = map.getPaintProperty(layer, property) as ExpressionSpecification | number | undefined;
+  const originals = new globalThis.Map<
+    string,
+    ExpressionSpecification | number
+  >();
+  for (const [layer, property] of PROPERTIES) {
+    const value = map.getPaintProperty(layer, property) as
+      | ExpressionSpecification
+      | number
+      | undefined;
     if (value !== undefined) originals.set(`${layer}|${property}`, value);
   }
-  const state: FocusState = { originals, segments: null, near: new Set(), checked: new Set(), dirty: false, scanning: false };
+  map.addSource(SOURCE, { type: "geojson", data: EMPTY });
+  map.addLayer(
+    {
+      id: SOURCE,
+      source: SOURCE,
+      type: "fill-extrusion",
+      minzoom: 12,
+      paint: {
+        "fill-extrusion-height": ["get", "height"],
+        "fill-extrusion-base": ["get", "base"],
+        "fill-extrusion-color": "#b8c8bd",
+        "fill-extrusion-opacity": 1,
+      },
+    },
+    "place-label",
+  );
+  const state: FocusState = {
+    originals,
+    segments: null,
+    dirty: false,
+    scanning: false,
+    generation: 0,
+    disposed: false,
+  };
   states.set(map, state);
   if (import.meta.env.DEV) Object.assign(window, { routeFocusState: state });
-  applyHeights(map, state, false);
-  // Scan when the map settles: at 'idle', and also shortly after moves and tile loads, so a
-  // brief route animation (which delays 'idle') never leaves new buildings unchecked.
-  let soon: ReturnType<typeof setTimeout> | undefined;
-  const scanSoon = () => {
+  let soon: ReturnType<typeof setTimeout>;
+  const schedule = () => {
     clearTimeout(soon);
-    soon = setTimeout(() => { if (!map.isMoving()) scan(map, state); }, 250);
+    soon = setTimeout(() => scan(map, state), 250);
   };
-  map.on('sourcedata', event => {
-    if (event.sourceId !== BUILDING_SOURCE || !('tile' in event) || !event.tile) return;
-    state.dirty = true;
-    scanSoon();
+  map.on("sourcedata", (event) => {
+    if (event.sourceId === BUILDING_SOURCE && "tile" in event && event.tile) {
+      state.dirty = true;
+      schedule();
+    }
   });
-  map.on('moveend', scanSoon);
-  // A move interrupts a running scan; finish it at the next idle (checked buildings are kept).
-  map.on('movestart', () => {
-    if (!state.scanning) return;
+  map.on("moveend", () => {
+    state.dirty = true;
+    schedule();
+  });
+  map.on("idle", () => scan(map, state));
+  map.once("remove", () => {
+    state.disposed = true;
+    state.generation++;
+    clearTimeout(soon);
     clearTimeout(state.timer);
-    state.scanning = false;
-    state.dirty = true;
   });
-  map.on('idle', () => scan(map, state));
 }
-
-/** Focus the map on `route` (or show every building again when it is undefined). */
 export function focusRoute(map: Map, route: Route | undefined): void {
   const state = states.get(map);
   if (!state) return;
-  for (const id of state.near) setNear(map, id, false);
-  state.near.clear();
-  state.checked.clear();
-  state.segments = route ? segmentsOf(route) : null;
-  state.dirty = true;
-  state.scanning = false;
   clearTimeout(state.timer);
-  applyHeights(map, state, route !== undefined);
+  state.generation++;
+  state.scanning = false;
+  state.dirty = true;
+  const points = route?.geometry.coordinates.map(toMetres);
+  state.segments = points
+    ? points.slice(1).map((p, i) => [points[i], p])
+    : null;
+  (map.getSource(SOURCE) as GeoJSONSource).setData(EMPTY);
+  for (const [layer, property] of PROPERTIES) {
+    const original = state.originals.get(`${layer}|${property}`);
+    if (original !== undefined)
+      map.setPaintProperty(layer, property, route ? 0 : original);
+  }
   scan(map, state);
 }

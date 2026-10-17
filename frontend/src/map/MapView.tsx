@@ -1,93 +1,113 @@
-import type { Map, PaddingOptions } from 'maplibre-gl';
-import { useEffect, useRef } from 'react';
-import type { Route } from '../api/contract';
-import { loadPins } from '../data';
-import { addPins } from '../markers/pins';
-import { INITIAL_VIEW } from './config';
-import { createMap } from './createMap';
-import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
-import { focusRoute, initRouteFocus } from './routeFocus';
-import { fitRoute, onStopClick, showRoutes } from './routes';
-
-interface MapViewProps {
+import type { Map, PaddingOptions } from "maplibre-gl";
+import { useEffect, useRef, useState } from "react";
+import type { Route } from "../api/contract";
+import { loadPins } from "../data";
+import { addPins } from "../markers/pins";
+import { INITIAL_VIEW } from "./config";
+import { createMap } from "./createMap";
+import { focusRoute, initRouteFocus } from "./routeFocus";
+import { fitRoute, onStopClick, showRoutes } from "./routes";
+import { applyAppearance } from "./appearance";
+interface Props {
   routes?: Route[];
   selectedRouteId?: string;
-  /** Space the floating panels cover, so a fitted route stays visible. */
   padding?: PaddingOptions;
-  /** Map is ready and the intro is starting: the black curtain can lift. */
-  onIntroStart?: () => void;
-  /** Intro finished; `located` is false when it landed on the central-Warsaw fallback. */
-  onIntroDone?: (located: boolean) => void;
-  /** The map instance, once created (for pop-ups anchored to places). */
   onMapReady?: (map: Map | null) => void;
-  /** A numbered stop marker was clicked. */
-  onStopClick?: (placeId: string) => void;
+  onStopClick?: (id: string) => void;
+  appearance?: string;
 }
-
-// Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
-
-/** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop }: MapViewProps) {
-  const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<Map | null>(null);
-  const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
-  callbacks.current = { onIntroStart, onIntroDone, onMapReady, onStop };
-
+export function MapView({
+  routes = NO_ROUTES,
+  selectedRouteId,
+  padding,
+  onMapReady,
+  onStopClick: onStop,
+  appearance,
+}: Props) {
+  const container = useRef<HTMLDivElement>(null),
+    ref = useRef<Map | null>(null);
+  const callbacks = useRef({ onMapReady, onStop });
+  callbacks.current = { onMapReady, onStop };
+  const [ready, setReady] = useState(false),
+    [failed, setFailed] = useState(false);
   useEffect(() => {
-    const map = createMap(container.current!, INTRO_START);
-    mapRef.current = map;
-    callbacks.current.onMapReady?.(map);
-    onStopClick(map, placeId => callbacks.current.onStop?.(placeId));
-    // Dev-only handle for the browser console and automated checks.
-    if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
+    let map: Map;
+    try {
+      map = createMap(container.current!, {
+        ...INITIAL_VIEW,
+        center: [21.031, 52.218],
+        zoom: 13.8,
+        pitch: 40,
+      });
+    } catch {
+      setFailed(true);
+      return;
+    }
+    ref.current = map;
     const abort = new AbortController();
-    const location = locateVisitor();
-    loadPins(undefined, abort.signal)
-      .then(pins => !abort.signal.aborted && addPins(map, pins))
-      .catch(error => console.warn('Loading pins failed', error));
-    map.once('load', () => {
-      // Buildings rise with zoom during the intro, and later sink away from the selected route.
+    if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
+    onStopClick(map, (id) => callbacks.current.onStop?.(id));
+    const timeout = window.setTimeout(() => setFailed(true), 15000);
+    map.once("load", () => {
+      clearTimeout(timeout);
+      setFailed(false);
       initRouteFocus(map);
-      // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
-      let landed = false;
-      let located = false;
-      callbacks.current.onIntroStart?.();
-      playIntro(map, INITIAL_VIEW.center, () => {
-        landed = true;
-        callbacks.current.onIntroDone?.(located);
-      });
-      void location.then(point => {
-        if (!point || abort.signal.aborted) return;
-        located = true;
-        markVisitor(map, point);
-        retargetIntro(map, point, landed);
-        if (landed) callbacks.current.onIntroDone?.(true);
-      });
+      applyAppearance(map);
+      setReady(true);
+      callbacks.current.onMapReady?.(map);
     });
-    // Cleanup also makes React StrictMode's double mount safe.
+    loadPins(undefined, abort.signal)
+      .then((pins) => {
+        if (!abort.signal.aborted) addPins(map, pins);
+      })
+      .catch(() => {});
     return () => {
+      clearTimeout(timeout);
       abort.abort();
-      mapRef.current = null;
+      ref.current = null;
       callbacks.current.onMapReady?.(null);
       map.remove();
     };
   }, []);
-
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const map = ref.current;
+    if (!map || !ready) return;
     showRoutes(map, routes, selectedRouteId);
-    focusRoute(map, routes.find(route => route.id === selectedRouteId));
-  }, [routes, selectedRouteId]);
-
-  // Fit the camera when a new set of routes arrives or the selection changes.
+    focusRoute(
+      map,
+      routes.find((r) => r.id === selectedRouteId),
+    );
+    applyAppearance(map);
+  }, [ready, routes, selectedRouteId]);
   useEffect(() => {
-    const map = mapRef.current;
-    const route = routes.find(candidate => candidate.id === selectedRouteId);
-    if (map && route && padding) fitRoute(map, route, padding);
-    // padding is recomputed each render on purpose: only routes or selection move the camera.
-  }, [routes, selectedRouteId]);
-
-  return <div ref={container} className="map" />;
+    const map = ref.current,
+      route = routes.find((r) => r.id === selectedRouteId);
+    if (map && ready && route && padding) {
+      const frame = requestAnimationFrame(() => {
+        map.resize();
+        fitRoute(map, route, padding);
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [ready, routes, selectedRouteId, padding]);
+  useEffect(() => {
+    if (ref.current && ready) applyAppearance(ref.current);
+  }, [appearance, ready]);
+  return (
+    <>
+      <div
+        ref={container}
+        className="map"
+        role="region"
+        aria-label="Interactive Warsaw map"
+      />
+      {failed && (
+        <p className="map-failure" role="status">
+          Map tiles are unavailable. You can still plan and explore the route
+          list.
+        </p>
+      )}
+    </>
+  );
 }

@@ -1,7 +1,7 @@
-import type { Map } from 'maplibre-gl';
+import type { Map } from "maplibre-gl";
 // Mirrors data/fixtures/historical-layers.json (the backend-generated source of
 // truth - regenerate both with `python -m app.data.historical_layers`).
-import historicalLayers from '../data/historicalLayers.json';
+import historicalLayers from "../data/historicalLayers.json";
 
 export interface HistoricalLayer {
   id: string;
@@ -16,7 +16,8 @@ export interface HistoricalLayer {
  * See data/fixtures/historical-layers.json and docs/DATA.md for provenance; the
  * image is a single bounded render, not a tiled basemap (that service has no
  * queryable attributes - GetFeatureInfo was tested and returns nothing). */
-export const HISTORICAL_LAYERS: HistoricalLayer[] = historicalLayers.layers as HistoricalLayer[];
+export const HISTORICAL_LAYERS: HistoricalLayer[] =
+  historicalLayers.layers as HistoricalLayer[];
 
 /** Required on screen whenever an overlay is active (not just in API responses) -
  * fee-exempt reuse under Polish PSI law requires crediting the source and the
@@ -25,8 +26,8 @@ export function attributionText(layer: HistoricalLayer): string {
   return `Historical overlay · Warsaw ${layer.year} · © Urząd m.st. Warszawy (architektura.um.warszawa.pl)`;
 }
 
-const SOURCE_PREFIX = 'historical-';
-const LAYER_PREFIX = 'historical-layer-';
+const SOURCE_PREFIX = "historical-";
+const LAYER_PREFIX = "historical-layer-";
 
 function sourceId(layer: HistoricalLayer): string {
   return `${SOURCE_PREFIX}${layer.id}`;
@@ -38,7 +39,9 @@ function layerId(layer: HistoricalLayer): string {
 
 /** Image-source corners in MapLibre's clockwise order: top-left, top-right,
  * bottom-right, bottom-left. `bounds` is [[minLon, minLat], [maxLon, maxLat]]. */
-function corners(layer: HistoricalLayer): [[number, number], [number, number], [number, number], [number, number]] {
+function corners(
+  layer: HistoricalLayer,
+): [[number, number], [number, number], [number, number], [number, number]] {
   const [[minLon, minLat], [maxLon, maxLat]] = layer.bounds;
   return [
     [minLon, maxLat],
@@ -65,21 +68,51 @@ function corners(layer: HistoricalLayer): [[number, number], [number, number], [
  */
 function ensureHistoricalLayer(map: Map, layer: HistoricalLayer): void {
   if (map.getSource(sourceId(layer))) return; // already added (or StrictMode double-mount)
-  map.addSource(sourceId(layer), { type: 'image', url: layer.image_url, coordinates: corners(layer) });
-  const beforeId = map.getLayersOrder().find(id => id === 'pins' || id.startsWith('route-'));
+  map.addSource(sourceId(layer), {
+    type: "image",
+    url: layer.image_url,
+    coordinates: corners(layer),
+  });
+  const beforeId = map
+    .getLayersOrder()
+    .find((id) => id === "pins" || id.startsWith("route-"));
   map.addLayer(
-    { id: layerId(layer), type: 'raster', source: sourceId(layer), paint: { 'raster-opacity': 0.75 }, layout: { visibility: 'none' } },
+    {
+      id: layerId(layer),
+      type: "raster",
+      source: sourceId(layer),
+      paint: {
+        "raster-opacity": 0,
+        "raster-opacity-transition": { duration: 240, delay: 0 },
+      },
+    },
     beforeId,
   );
 }
 
 /** Shows exactly one historical layer (or none, for `layerIndex === -1`),
  * hiding the others. Call only after the style has loaded. */
-export function showHistoricalLayer(map: Map, layerIndex: number): void {
+export function showHistoricalLayer(
+  map: Map,
+  layerIndex: number,
+  opacity = 0.75,
+  animate = true,
+): void {
   const selected = HISTORICAL_LAYERS[layerIndex];
   if (selected) ensureHistoricalLayer(map, selected);
   HISTORICAL_LAYERS.forEach((layer, index) => {
     if (!map.getLayer(layerId(layer))) return;
-    map.setLayoutProperty(layerId(layer), 'visibility', index === layerIndex ? 'visible' : 'none');
+    const reduced =
+      document.documentElement.dataset.motion === "reduced" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    map.setPaintProperty(layerId(layer), "raster-opacity-transition", {
+      duration: reduced || !animate ? 0 : 240,
+      delay: 0,
+    });
+    map.setPaintProperty(
+      layerId(layer),
+      "raster-opacity",
+      index === layerIndex ? opacity : 0,
+    );
   });
 }

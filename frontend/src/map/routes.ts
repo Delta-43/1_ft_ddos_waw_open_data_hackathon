@@ -1,6 +1,7 @@
 import type { ExpressionSpecification, FilterSpecification, GeoJSONSource, LngLatBoundsLike, Map, PaddingOptions } from 'maplibre-gl';
 import type { Route } from '../api/contract';
 import { TILES } from './config';
+import { applyAppearance } from './appearance';
 
 const ROUTE_SOURCE = 'candidate-routes';
 const STOP_SOURCE = 'candidate-stops';
@@ -46,6 +47,11 @@ function stopFeatures(route: Route | undefined): Collection {
 /** Adds the route layers once. Glow only ever marks data: the selected line and its stops. */
 function ensureLayers(map: Map): void {
   if (map.getSource(ROUTE_SOURCE)) return;
+  const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduce = () => { if (media.matches || document.documentElement.dataset.motion === 'reduced') { stopAnimation(map); map.stop(); } };
+  media.addEventListener('change', reduce);
+  window.addEventListener('warsaw-motion', reduce);
+  map.once('remove', () => { stopAnimation(map); animatedKeys.delete(map); media.removeEventListener('change', reduce); window.removeEventListener('warsaw-motion', reduce); });
   map.addSource(ROUTE_SOURCE, { type: 'geojson', data: empty() });
   map.addSource(STOP_SOURCE, { type: 'geojson', data: empty() });
   const selected: ExpressionSpecification = ['get', 'selected'];
@@ -132,7 +138,7 @@ function stopAnimation(map: Map): void {
 /** Runs the dash and a soft glow pulse for a few seconds after a route is selected. */
 function animateSelected(map: Map, active: boolean): void {
   stopAnimation(map);
-  if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!active || document.documentElement.dataset.motion === 'reduced' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let step = 0;
   const started = performance.now();
   const timer = window.setInterval(() => {
@@ -145,7 +151,6 @@ function animateSelected(map: Map, active: boolean): void {
     map.setPaintProperty('route-glow', 'line-opacity', 0.6 + 0.25 * Math.sin((step / DASH_STEPS.length) * 2 * Math.PI));
   }, FRAME_MS);
   animations.set(map, timer);
-  map.once('remove', () => window.clearInterval(timer));
 }
 
 /** Calls `handler` with the place id when a numbered stop is clicked. Keyboard users use "Show on map" in the stops panel. */
@@ -166,6 +171,7 @@ function listenToStops(map: Map): void {
 export function showRoutes(map: Map, routes: Route[], selectedId: string | undefined): void {
   const apply = () => {
     ensureLayers(map);
+    applyAppearance(map);
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
     (map.getSource(STOP_SOURCE) as GeoJSONSource).setData(stopFeatures(routes.find(route => route.id === selectedId)));
     const key = routes.some(route => route.id === selectedId) ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
@@ -184,7 +190,7 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
 /** Closest overview for a selected route: 3D buildings along it must be visible (route focus). */
 const MIN_FOCUS_ZOOM = 14.4;
 
-/** Moves the camera so the route fits between the floating panels, but never so far out that the 3D corridor disappears. */
+/** Fit the entire route between the panels; normalized footprints retain corridor detail at overview zoom. */
 export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void {
   const coordinates = route.geometry.coordinates;
   if (coordinates.length === 0) return;
@@ -193,5 +199,5 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void 
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
   const camera = map.cameraForBounds(bounds, { padding, bearing: -20, maxZoom: 16 });
   if (!camera) return;
-  map.easeTo({ ...camera, zoom: Math.max(camera.zoom ?? MIN_FOCUS_ZOOM, MIN_FOCUS_ZOOM), pitch: 55, bearing: -20, duration: 600 });
+  map.easeTo({ ...camera, zoom: camera.zoom ?? MIN_FOCUS_ZOOM, pitch: 55, bearing: -20, duration: document.documentElement.dataset.motion === 'reduced' ? 0 : 600 });
 }

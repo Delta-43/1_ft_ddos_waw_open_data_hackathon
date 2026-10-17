@@ -1,6 +1,8 @@
-# Warsaw 2076 frontend: 3D map
+# Warsaw 2076 frontend: Moon route experience
 
-A full-screen, bright game-style 3D map of Warsaw built with MapLibre GL JS 6 on free OpenFreeMap vector tiles. It needs no API key, account or backend. React only mounts the map; the map, pin and data modules are plain TypeScript.
+A map-first route planner using React, Vite, TypeScript and MapLibre. Moon components sit over a paper-style Warsaw map in light or dark mode. The core flow calls the existing backend; the labelled example flow works without it. Map tiles and historical imagery need network access.
+
+See `DESIGN.md`, `PRODUCT.md` and `docs/Frontend_Experience_QA.md` at the repository root for the design direction, demo boundaries and validation.
 
 ## Run
 
@@ -40,12 +42,20 @@ src/
 ## Map style
 
 - **Look:** a bright game map that merges two references. The ground follows the GTA V map: cyan water, soft green parks, light urban ground, white roads with grey casings, dark district outlines and dark labels on white halos. The 3D buildings follow the Assassin's Creed Unity map: pale steel-blue walls and light roofs. Pins and the banner keep the dark hexagon / panel style from that map.
-- **Colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
+- **Base map colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
 - **District outlines:** Warsaw's 18 districts (OSM `admin_level` 9) are drawn as solid dark green lines, and neighbourhoods (`admin_level` 10) as dashed lines from zoom 14.
 - **Layers:** `buildStyle()` in the same file is an ordinary MapLibre style object using the [OpenMapTiles schema](https://openmaptiles.org/schema/) (`building`, `water`, `park`, `transportation` and so on). Add, remove or reorder layers there.
 - **Light, sky and fog:** the `light` and `sky` blocks of the style. The light sits 55° from vertical with intensity 0.5, so roofs don't catch full light and walls show clear light and shade; lit faces reach 1.0 × their colour, faces turned away 0.5 ×. Keep the light colour near white. MapLibre adds (1 − light colour) as ambient light, so a saturated light tints shadowed walls with its complementary colour.
 - **Camera and limits:** start view, Warsaw bounds, zoom range and the 75° pitch cap are in `src/map/config.ts`.
 - **Overlay UI:** the banner, controls and popups are styled in `src/style.css`.
+
+## Experience and tokens
+
+`design/tokens/moon.css` is the shared token source, imported by `src/style.css`. It extends the Moon values from PR #82 with dark mappings and four named mood accents. `src/experience/` contains the planner, route comparison, map callouts, history, feedback and component styles. `src/map/appearance.ts` applies the same tokens to the map, including after asynchronously created route layers.
+
+Describe an outing, compare routes, open places, or return to the planner for a follow-up. Destination and ordered stops can be composed now; submission waits for the explicit `capabilities.ordered_stops` health flag and matching `applied_itinerary` response (backend issue #85). Catalogue search currently filters up to 100 loaded places; issue #84 requests bounded server search. No shared schema changed in this frontend branch.
+
+Promotions and AR are explicitly fictional/concept views. Feedback is a browser-local demo notebook with export and deletion, not a municipality submission. Historical WMS overlays retain their dates and source credit. Preferences are sent only in stateless route requests; no account, tracking or backend personal storage was added.
 
 ## Buildings
 
@@ -56,6 +66,8 @@ src/
   - at least one part starts above the ground (the `building:part` signature);
   - the parts' footprints add up to at least 30% of its own.
 - **Known limitation:** a few OSM relations bundle many separate blocks into one feature with a single height. They can't be hidden piecemeal, so one block may still z-fight with its parts.
+
+When a route is selected, `routeFocus.ts` splits tiled MultiPolygons into individual footprints and selects polygons within a 220 m corridor. A dedicated GeoJSON extrusion layer preserves detail even below zoom 14, where the provider groups buildings into clusters. Heights come from tile properties or the disclosed illustrative 12 m fallback. Geometry is deduplicated per tile piece, work is sliced, and stale scans are cancelled on route replacement/removal. The unselected map retains the existing detailed building implementation. Simplified corridor footprints are not architectural models; clipped tile overlaps and incomplete OSM heights remain possible.
 
 ## Performance rules
 
