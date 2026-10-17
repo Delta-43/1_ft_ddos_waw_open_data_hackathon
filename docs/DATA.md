@@ -112,6 +112,26 @@ DATA-10's full acceptance ("stop each provider in turn and run the demo") needs 
   - The full open-data cache (`data/local/warsaw_open_data_raw.json`, also gitignored — absent on a fresh checkout or a teammate's machine) missing → the build falls back to the committed 8-record sample and says so honestly in the source's `method` text, rather than silently claiming the full dataset. **Pass.**
   - `city.db` present but corrupted (not a valid SQLite file) → **fails**: `app.db.connect()` only checks the file's age against its fixtures, never that it's actually readable, so a corrupted-but-newer file produces an unhandled `sqlite3.DatabaseError` → 500, not a graceful fallback. Captured as `test_corrupted_db_does_not_crash_the_places_endpoint`, marked `xfail(strict=True)` so it documents the gap without failing CI. `backend/app/db.py` is Delta's file (outside this issue's `backend/tests/`+docs boundary), so this is flagged, not fixed, here — filed as [#56](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/56).
 
+## Historical map layers (1930s–40s Warsaw), explored not implemented
+
+Checked 2026-10-17 in response to a "could we show the historic city shape" question. The same `wms.um.warszawa.pl/serwis` WMS server already catalogued above (DATA-02, noise/greenery) also carries a rich set of historical layers, confirmed reachable and real:
+
+| Layer | What it is |
+| --- | --- |
+| `HISTORIA_GRANICA_1916`/`1930`/`1938`/`1939_1945`/`1951`/`1957`/`1977`/`1992` | Warsaw city-boundary outline for each year — confirmed by rendering `HISTORIA_GRANICA_1930` and visually comparing to the modern extent (noticeably smaller, as expected pre-1951 annexation) |
+| `HISTORIA_ULICE_1939` | 1939 street network |
+| `RASTER_PLAN_1939` | Georeferenced scanned 1939 city plan |
+| `RASTER_FOTOPLAN_1935` | 1935 aerial orthophoto |
+| `RASTER_ORTOFOTO_1945` | 1945 aerial orthophoto (reportedly built from Soviet reconnaissance photography of the post-uprising, heavily destroyed city) |
+| `MPZP_OBIEKTY_WPISANE_DO_REJESTRU_ZABYTKOW` / `MPZP_BUDYNKI_WPISANE_DO_REJESTRU_ZABYTKOW` | Current official heritage/monument register |
+| `MPZP_GRANICE_OBSZAROW_OBJETYCH_OCHRONA_KONSERWATORSKA` | Heritage-conservation-zone boundaries |
+
+**Render-only, not queryable — tested, not assumed.** Capabilities marks `HISTORIA_GRANICA_1930` `queryable="true"`, but `GetFeatureInfo` returns an empty-but-valid `<GetFeatureInfo_Result>` for every request tried: WMS 1.1.1 and 1.3.0, `text/xml`/`text/html`/default `INFO_FORMAT`, at a point confirmed (by rendering the exact same bbox) to sit dead-centre on the rendered line. As a control, the same request pattern against the `ORTO` basemap layer returned a real Oracle MapViewer server error instead of a silent empty result, confirming the server does process these requests — `HISTORIA_GRANICA_1930` and likely its sibling layers simply have no attribute data exposed for query, a known Oracle MapViewer pattern for cartographic-only themes. **Conclusion: usable as a raster overlay (fade/opacity-slider between the modern basemap and a historical year, the same pattern used by existing sites like staremapy.waw.pl), not usable for "is this point inside the 1930 boundary" style vector queries** without separately digitising the boundary or finding it as real vector data elsewhere (OpenHistoricalMap — `overpass-api.openhistoricalmap.org` — was not checked for Warsaw coverage and is the obvious next place to look if a vector boundary becomes a requirement).
+
+**Rich per-building historical context**: not a new data source, an extension of what's already fetched. OSM frequently tags historic buildings with `wikipedia`/`wikidata`/`start_date`, which DATA-05's query doesn't currently request. Adding those tags, then resolving `wikipedia` values through Wikipedia's free `pl.wikipedia.org/api/rest_v1/page/summary/<title>` REST endpoint (no key), would give an AI-ready paragraph per landmark already in `osm-places-sample.json`. `fotopolska.eu` and `warszawa1939.pl` have much richer crowdsourced archival photography for this era but are browse-only websites, not APIs — useful for manual pitch-deck material, not a live integration.
+
+**Status: exploratory only, not built.** No code changes from this; a candidate for a follow-up issue if the team wants the overlay slider or the Wikipedia-summary extension before freeze.
+
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
