@@ -71,6 +71,22 @@ Expose city data and route capabilities to personal agents on users' devices.
 
 The original notes mention Muse (Meta) and Dots (OpenAI) as examples. These names and possible integrations need verification before the pitch.
 
+### Milestones and achievements
+
+Reward people for exploring Warsaw and make repeat use more engaging.
+
+- Track progress such as total distance walked or cycled, places visited, museums seen, parks crossed, and districts explored.
+- Unlock achievements, for example "First 10 km on foot", "Five museums", "Every district on the Vistula", or "Quiet-route regular".
+- Show progress on the map and in a small profile panel, with a short celebration when a milestone unlocks.
+- Link achievements to Warsaw 2076: count greener choices, such as distance by foot or bike instead of car.
+
+Constraints:
+
+- Compute progress on the user's device from their own trip history. See [Privacy and security](#privacy-and-security).
+- Count only completed or confirmed trips. A planned route is not a visited place.
+- Do not invent environmental savings. Label estimates, such as CO2 avoided, as estimates and state the method.
+- Status: stretch idea. Not in the core build until the experts select it. A demo could show a mock achievements panel with clearly fictional progress.
+
 ## Data requirements
 
 These are desired data categories. Availability, coverage, freshness, and access still need to be checked.
@@ -91,6 +107,23 @@ These are desired data categories. Availability, coverage, freshness, and access
 - Mock missing data needed to demonstrate the concept.
 - Clearly identify mocked data in the demo.
 - Treat personal context as optional user-provided information.
+
+## Privacy and security
+
+Target design for a production version. The hackathon demo does not implement it, but must not contradict it.
+
+- **User-side storage:** Preferences, habits, saved places, trip history, and achievements stay on the user's device by default. The server does not keep user profiles.
+- **Token-scoped requests:** When a service needs personal context, the client sends only the fields that request needs, with a short-lived, scoped access token. The server uses the data for that request and does not store it.
+- **Least privilege:** Each token grants one purpose, such as route planning, for a limited time. Users can revoke access at any time.
+- **Personal agents:** The same rules apply to agents that call the MCP server. The agent asks the user's device for context through a token; the server never holds the user's history.
+- **Transport and secrets:** HTTPS only. API keys and provider credentials stay on the backend and never reach the browser.
+- **User control:** Users can view, export, and delete their local data.
+
+### What this means for the demo
+
+- Keep route requests stateless. Do not store preferences or trip history in the backend SQLite database; it holds city data only.
+- Demo profiles and trip history are fictional fixtures, labelled as such.
+- In the pitch, describe token-based access as the planned design, not as a working feature.
 
 ## Planned deliverables
 

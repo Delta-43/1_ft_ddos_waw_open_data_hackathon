@@ -29,7 +29,7 @@ Verified by Delta on 2026-10-17. Use these handles for assignees, reviewers and 
 Stop feature work five hours before the confirmed submission deadline. Reserve the remainder for pitch, slides, rehearsal, and submission.
 Only Delta may invoke a grace period of up to 30 minutes for an existing demo-blocking defect. No new features or redesigns.
 The absolute coding stop is 4.5 hours before submission. Record any grace decision in `docs/DECISIONS.md`.
-See `PLAN.md` for the provisional Warsaw times. Recalculate if organisers change the deadline.
+The deadline is confirmed: 11:00 Sunday 18 October 2026, so feature freeze is 06:00 and the absolute coding stop is 06:30 (Europe/Warsaw). Recalculate if organisers change it.
 
 ## Agent workflow
 
@@ -53,6 +53,7 @@ Use GeoJSON coordinates in longitude, latitude order. Units are metres and secon
 The model interprets preferences and explains grounded results; code/API data supplies routes, opening times, and estimates.
 REST and MCP call shared Python services. Do not implement two route planners.
 Clearly label mock/live/cached data and straight-line demo geometry. Fixtures must not masquerade as real routes.
+Privacy by design: do not store user preferences, profiles, trip history or achievements in the backend or SQLite; it holds city data only. Keep personal state in the browser. Demo profiles are fictional and labelled. Token-based access to personal context is the planned design (IDEA.md), not a demo feature.
 
 ## Shared development and access
 
