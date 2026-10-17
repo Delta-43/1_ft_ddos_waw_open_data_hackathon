@@ -1,0 +1,84 @@
+/* Assistant widget + preferences flow. Colours come from the shared tokens in src/style.css. */
+.assistant {
+  position: fixed;
+  left: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: calc(100% - 2rem);
+}
+
+.assistant__guy {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  color: var(--rim);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rim-faint);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.assistant__guy:hover, .assistant__guy:focus-visible { border-color: var(--rim); }
+
+.assistant__panel[hidden] { display: none; }
+.assistant__panel {
+  position: relative;
+  width: min(24rem, 100%);
+  max-height: calc(100dvh - 8rem);
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rim-faint);
+  color: var(--text);
+}
+.assistant__close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.6rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.assistant__results { margin-top: 1rem; }
+.assistant__notice { margin: 0 0 0.75rem; font-size: 0.75rem; color: var(--muted); }
+
+.preferences-form { display: grid; gap: 0.35rem; }
+.preferences-form label, .preferences-form h2 { font-size: 1rem; font-weight: 500; margin: 0 1.5rem 0.25rem 0; }
+.preferences-form textarea {
+  width: 100%;
+  padding: 0.6rem;
+  font: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--rim-faint);
+  resize: vertical;
+}
+.preferences-form textarea[aria-invalid="true"] { outline: 2px solid #f87171; }
+.preferences-form button {
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  color: var(--text);
+  background: rgba(127, 180, 230, 0.12);
+  border: 1px solid var(--rim-faint);
+  cursor: pointer;
+}
+.preferences-form button:disabled { opacity: 0.5; cursor: default; }
+.preferences-form .hint { margin: 0; color: var(--muted); font-size: 0.75rem; }
+.preferences-form .error { margin: 0; color: #fca5a5; font-size: 0.85rem; }
+.preferences-form .prompt-echo { margin: 0; padding-left: 0.75rem; border-left: 3px solid var(--rim-faint); color: var(--muted); overflow-wrap: anywhere; }
+.preferences-form .summary { margin: 0; display: grid; gap: 0.4rem; }
+.preferences-form .summary div { display: flex; justify-content: space-between; gap: 1rem; }
+.preferences-form .summary dt { color: var(--muted); }
+.preferences-form .summary dd { margin: 0; text-align: right; }
+.preferences-form .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }

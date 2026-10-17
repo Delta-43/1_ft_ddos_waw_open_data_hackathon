@@ -1,40 +1,10 @@
-import { useState } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PreferencesForm, type RequestStatus } from './components/PreferencesForm';
+import { App } from './App';
 import './style.css';
 
-async function errorMessage(response: Response): Promise<string> {
-  if (response.status === 422) return 'The request was not valid. Check your description (1–1000 characters).';
-  return `The server returned an error (${response.status}). Please try again.`;
-}
-
-function App() {
-  const [status, setStatus] = useState<RequestStatus>({ state: 'idle' });
-  const [result, setResult] = useState('No request yet.');
-
-  async function search(query: string) {
-    setStatus({ state: 'loading' });
-    try {
-      const response = await fetch('/api/routes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query}) });
-      if (!response.ok) {
-        setStatus({ state: 'error', message: await errorMessage(response) });
-        return;
-      }
-      setResult(JSON.stringify(await response.json(), null, 2));
-      setStatus({ state: 'success' });
-    } catch {
-      setStatus({ state: 'error', message: 'Could not reach the server. Is the backend running?' });
-    }
-  }
-
-  return <div className="layout">
-    <section className="map-area" aria-label="Map">Map placeholder (Alban's MapLibre map goes here)</section>
-    <aside className="sidebar">
-      <h1>Warsaw 2076</h1>
-      <p className="hint">Integration starter — synthetic route data only.</p>
-      <PreferencesForm status={status} onSubmit={search} />
-      <pre aria-live="polite">{result}</pre>
-    </aside>
-  </div>;
-}
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

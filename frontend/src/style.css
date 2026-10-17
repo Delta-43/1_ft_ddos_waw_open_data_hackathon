@@ -1,25 +1,155 @@
-body { font-family: system-ui, sans-serif; margin: 0; background: #101827; color: #eee; } input, button { padding: .75rem; margin: .5rem; } pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-
-.preferences-form { display: grid; gap: .25rem; }
-.preferences-form textarea { padding: .75rem; font: inherit; width: 100%; box-sizing: border-box; }
-.preferences-form textarea[aria-invalid="true"] { outline: 2px solid #f87171; }
-.preferences-form .hint { margin: 0 .5rem; color: #9ca3af; font-size: .875rem; }
-.preferences-form .error { margin: .25rem .5rem; color: #fca5a5; }
-.preferences-form .examples { display: flex; flex-wrap: wrap; align-items: center; }
-
-/* Page layout: map fills the left, preferences sidebar sits on the right. */
-.layout { display: grid; grid-template-columns: 1fr 24rem; height: 100vh; }
-.map-area { display: grid; place-items: center; background: #1f2937; color: #9ca3af; }
-.sidebar { overflow-y: auto; padding: 1rem; box-sizing: border-box; border-left: 1px solid #374151; }
-.sidebar h1 { margin-top: 0; }
-@media (max-width: 700px) {
-  .layout { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; height: auto; min-height: 100vh; }
-  .sidebar { border-left: 0; border-top: 1px solid #374151; }
+/* Shared colours for the HTML overlay; map colours live in src/map/style.ts. */
+:root {
+  --bg: #0b1220;
+  --panel: rgba(11, 18, 32, 0.82);
+  --rim: #7fb4e6;
+  --rim-faint: rgba(127, 180, 230, 0.35);
+  --text: #dce8f5;
+  --muted: #8aa4c4;
+  --banner-height: 5.5rem;
+  color-scheme: dark;
 }
-.preferences-form h2 { margin: 0 0 .5rem; font-size: 1.1rem; }
-.preferences-form .prompt-echo { margin: 0 .5rem .5rem; padding-left: .75rem; border-left: 3px solid #374151; color: #d1d5db; overflow-wrap: anywhere; }
-.preferences-form .summary { margin: 0 .5rem; display: grid; gap: .5rem; }
-.preferences-form .summary div { display: flex; justify-content: space-between; gap: 1rem; }
-.preferences-form .summary dt { color: #9ca3af; }
-.preferences-form .summary dd { margin: 0; text-align: right; }
-.preferences-form .actions { display: flex; flex-wrap: wrap; }
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* Full-viewport map; dvh avoids the mobile browser toolbar cutting it off. */
+.map {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+}
+
+/* ---------- Bottom banner ---------- */
+.banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(40rem, calc(100% - 2rem));
+  padding: 0.85rem 1.5rem 0.9rem;
+  text-align: center;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--rim-faint);
+  border-bottom: 1px solid var(--rim-faint);
+  pointer-events: none; /* never block map gestures */
+}
+
+/* Thin accent lines at both ends, echoing the game-UI reference. */
+.banner::before,
+.banner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--rim);
+}
+.banner::before { left: -2.5rem; }
+.banner::after { right: -2.5rem; }
+
+.banner__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+.banner__subtitle {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  :root { --banner-height: 4.75rem; }
+  .banner { padding: 0.65rem 1rem; }
+  .banner::before, .banner::after { display: none; }
+  .banner__title { font-size: 0.9rem; letter-spacing: 0.22em; }
+  .banner__subtitle { font-size: 0.68rem; }
+}
+
+/* ---------- MapLibre controls, restyled dark ---------- */
+.maplibregl-ctrl-group {
+  background: var(--panel);
+  border: 1px solid var(--rim-faint);
+  box-shadow: none;
+}
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--rim-faint); }
+.maplibregl-ctrl-group button:not(:disabled):hover { background-color: rgba(127, 180, 230, 0.12); }
+/* Built-in icons are dark SVGs; invert them to light blue-grey. */
+.maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(0.85) sepia(0.2) hue-rotate(180deg); }
+
+.reset-view-button {
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* Keep attribution visible and clear of the banner. */
+.maplibregl-ctrl-bottom-right {
+  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
+}
+.maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: rgba(11, 18, 32, 0.75);
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.maplibregl-ctrl-attrib a { color: var(--text); }
+
+/* ---------- Pin popup ---------- */
+.pin-popup .maplibregl-popup-content {
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rim-faint);
+  border-radius: 2px;
+  color: var(--text);
+  padding: 0.75rem 1rem;
+}
+.pin-popup .maplibregl-popup-tip { display: none; }
+.pin-popup .maplibregl-popup-close-button { color: var(--muted); font-size: 1rem; }
+
+.pin-popup__category {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rim);
+}
+.pin-popup__title {
+  margin: 0.2rem 1rem 0.4rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.pin-popup__badge {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid #e6c27a;
+  color: #e6c27a;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pin-popup dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  margin: 0;
+  font-size: 0.75rem;
+}
+.pin-popup dt { color: var(--muted); }
+.pin-popup dd { margin: 0; }

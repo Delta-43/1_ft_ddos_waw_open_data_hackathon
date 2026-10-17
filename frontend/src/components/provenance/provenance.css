@@ -1,0 +1,15 @@
+/* Fallback colours keep the badge readable before the shared theme variables exist. */
+.data-mode-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-mode-badge--mock { color: #e6c27a; }
+.data-mode-badge--cached { color: #9cc3e8; }
+.data-mode-badge--live { color: #8fd19e; }

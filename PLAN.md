@@ -14,7 +14,7 @@ Each person owns a bounded feature and uses a coding agent. Novices produce thei
 
 The official agenda currently ends project work at **11:00 on Sunday 18 October 2026**, Europe/Warsaw (UTC+02:00).
 Source: https://42warsaw.pl/pl/hackathon-otwarte-dane-warszawa/
-Confirm submission mechanics and time with organisers at kickoff; update this file if they differ.
+Confirmed with organisers on 17 October 2026. Update this file if they change it.
 
 - **06:00 Sunday:** stop all feature work, five hours before submission. Start pitch and presentation preparation.
 - **06:00–06:30 only if needed:** Delta may authorise fixes to existing demo blockers. Other members continue pitch work.
@@ -29,7 +29,7 @@ The grace period does not move the submission deadline or justify a new feature.
 
 ## Build milestones
 
-1. First 45 minutes: confirm scope/deadline, create repository, make CI green, enable protection, agree contract and demo scenario.
+1. First 45 minutes: confirm scope/deadline, create repository, make CI green, enable protection, agree contract and demo scenario. Done on 17 October except the contract (API-01, #7) and the demo scenario.
 2. First two hours: integrated preference request → mocked API response → visible frontend result. Verify teammate device access.
 3. Next: Sonia prepares real data and provenance; Ola builds forms; Aryna builds place cards; experts integrate map and candidate-route services.
 4. Once core works: grounded AI interpretation/explanation and MCP tools using the same services.
@@ -90,8 +90,8 @@ Provider details: https://mkuran.pl/gtfs/ .
 
 ### Saturday implementation policy
 
-Start implementation from scratch on Saturday. The other project is research evidence only: do not import its code, snapshots, database, or deployment.
-Earlier cached files demonstrate that sources have worked; they do not establish current availability. The starter in this folder is planning material, not work to present as built during the event.
+The organisers approved building on this starter. The other project is research evidence only: do not import its code, snapshots, database, or deployment.
+Earlier cached files demonstrate that sources have worked; they do not establish current availability. Do not present starter files as work built during the event.
 
 ### What to fetch and what to simulate
 
@@ -132,3 +132,8 @@ Keep this new project's feature-freeze rules, team ownership, fixture policy, an
 ## Portable onboarding
 
 STACK.md is the shared technical/source entry point; SETUP.md covers a clean local environment. No shared task requires owner-specific skills, SSH accounts or private infrastructure. Delta handles repository/network administration separately.
+
+## Stretch ideas and principles added on 17 October
+
+- Milestones and achievements (distance, places, districts, greener choices): stretch only; see IDEA.md.
+- Privacy and security: User data stays on the user's device. The backend keeps no user profiles, preferences or trip history; route requests are stateless. A future version sends personal context only per request, with a short-lived scoped token. See IDEA.md, Privacy and security.
