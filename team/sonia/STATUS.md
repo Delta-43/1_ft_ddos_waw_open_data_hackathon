@@ -1,11 +1,9 @@
 # Handover
 
-- Current issue: none assigned yet. BE-02 (#13) done via [PR #43](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/43) (approved and merged). DATA-01 (#9), DATA-04 (#21) and my half of DATA-02 (#8, PR #38) merged; Delta still owns the routing-provider half of #8.
-- Branch / PR: none open
-- Last verified result: `GET /api/places` serves the real DATA-01 OSM sample (26 places, `mode: cached`) via `backend/app/data/catalogue.py`; `ruff check backend` and `pytest backend/tests` pass on main (33 tests)
-- Blocker: None
-- Review follow-ups from Delta (PRs #33 and #43): replace the personal email in `osm_places.py` `USER_AGENT` with the repository URL; keep `pyproject.toml` dependencies in sync with `backend/requirements.txt` (CI installs from the latter). Use `Refs #N`, not `Closes #N`, for a partial fix
-- Next action: ask Delta for the next issue. Candidates: QA-01 (#17, demo checks) once BE-01/FE-01 land, or widening `/api/places` with Warsaw open-data amenities if Delta and Alban agree a wider category enum
-- Updated at (include timezone): 2026-10-17 16:25 +02:00 (follow-ups added by Delta)
-
-Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
+- Current issue: [#22 DATA-05: Include museum/historic tags in the new OSM query](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/22) → [PR #48](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/48), **approved by Delta**, blocked only on this rebase (now done). Auto-merge is on; lands once CI passes.
+- Branch / PR: `sonia/data-05-historic-tags` → PR #48, rebased onto main.
+- Last verified result: Added `node/way["historic"]` to the Overpass query. Real named places went from 26 to 75: historic buildings, castles, a church and ruins join the existing museums/parks/gardens/galleries. Filtered `historic=memorial` (~90 records) and `historic=yes` (~45 records) unless the element also carries a genuine `tourism`/`leisure` tag. `catalogue.py` maps `castle`/`church`/`manor`/`ruins`/`building`→`landmark`, `artwork`/`attraction`/`information`→`generic`. Delta confirmed in review this works with main: #47's SQLite store rebuilds from `osm-places-sample.json` automatically, and #40's planner only selects museum/gallery/park so the new landmarks don't change routes.
+- Review follow-ups from Delta (not yet actioned, carried forward from PRs #33/#43): replace the personal email in `osm_places.py`'s `USER_AGENT` with the repository URL; keep `pyproject.toml` dependencies in sync with `backend/requirements.txt` (CI installs from the latter); use `Refs #N`, not `Closes #N`, in PR descriptions for a partial fix (e.g. a joint issue where only Sonia's half is done).
+- Blocker: None on #48 itself. [#49 SIM-01](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/49) also approved, blocked on the same `STATUS.md` conflict — rebasing that one next, after #48 merges (same file, would conflict with itself otherwise).
+- Next action: Rebase #49 after #48 merges. Then start [#20 DATA-03](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/20) (cache/document event-time source responses — unblocked, largely a verification pass over the existing `docs/DATA.md` entries). Also action Delta's three follow-ups above in a small PR.
+- Updated at (include timezone): 2026-10-17 16:50 Europe/Warsaw
