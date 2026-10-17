@@ -1,0 +1,99 @@
+{
+  "notice": "SIM-01 (#24). Every record in this file is simulated or modelled demo data, not a live measurement. None of these categories (noise, route air score, traffic, incidents, roadworks) exist as a field in contracts/api.schema.json yet - see docs/DATA.md's note under the historical-overlay catalogue row for why a new contract field was deliberately not invented without Delta+Alban's sign-off. This file is reference/demo data only: nothing in backend/app reads it. Whoever integrates a real source later should replace these records, not relabel them.",
+  "generated_at": "2026-10-18T01:30:00+02:00",
+  "mode": "simulated",
+  "categories": {
+    "noise": {
+      "mode": "simulated",
+      "real_basis": "The city's own WMS (wms.um.warszawa.pl/serwis) carries real modelled 2017/2022 day-evening-night noise bands (e.g. HALAS_DROGOWY_LN_2022) - see docs/DATA.md, DATA-02. It is WMS/GetMap raster tiles only, not a queryable per-point value, so nothing below is derived from it.",
+      "method": "Values are invented round numbers on a 0-1 scale (higher = quieter), chosen only to look plausible next to the quiet_score proxy already in the live response (app/services/scoring.py). Never present as measured decibels.",
+      "samples": [
+        {
+          "id": "sim:noise/centrum",
+          "name": "Centrum (city centre, near Marszałkowska)",
+          "longitude": 21.0122, "latitude": 52.2297,
+          "quiet_band": 0.2,
+          "label": "Busy junction area - invented low value for demo contrast"
+        },
+        {
+          "id": "sim:noise/lazienki",
+          "name": "Łazienki Królewskie (park interior)",
+          "longitude": 21.0358, "latitude": 52.2151,
+          "quiet_band": 0.85,
+          "label": "Park interior - invented high value for demo contrast"
+        }
+      ]
+    },
+    "route_air_score": {
+      "mode": "simulated",
+      "real_basis": "GET /api/layers/air_quality already serves real station readings (141 stations, dane.um.warszawa.pl, DATA-04) - but those are point readings at fixed stations, not a per-route score along an arbitrary walking/cycling path.",
+      "method": "Invented 0-1 score per sample route, not interpolated from the real stations above. Never present as a measured route-level air quality figure.",
+      "samples": [
+        {
+          "id": "sim:air-route/demo-green",
+          "route_ref": "fixture:demo-green (data/fixtures/route-response.json)",
+          "air_score": 0.68,
+          "label": "Invented - plausible score for a park-heavy route"
+        },
+        {
+          "id": "sim:air-route/demo-direct",
+          "route_ref": "fixture:demo-direct (data/fixtures/route-response.json)",
+          "air_score": 0.41,
+          "label": "Invented - plausible score for a road-heavy route"
+        }
+      ]
+    },
+    "traffic": {
+      "mode": "simulated",
+      "real_basis": "No live traffic feed was checked or integrated this event (see docs/Build_State_For_Pitch.md). Fully invented.",
+      "method": "A fixed, fictional congestion label per sample road segment, for demo narration only.",
+      "samples": [
+        {
+          "id": "sim:traffic/marszalkowska-centrum",
+          "name": "Marszałkowska at Centrum",
+          "longitude": 21.0122, "latitude": 52.2297,
+          "congestion": "heavy",
+          "label": "Invented - illustrates why the quiet proxy avoids this road"
+        },
+        {
+          "id": "sim:traffic/ujazdow-side-street",
+          "name": "Side street, Ujazdów",
+          "longitude": 21.0300, "latitude": 52.2180,
+          "congestion": "light",
+          "label": "Invented"
+        }
+      ]
+    },
+    "incidents": {
+      "mode": "simulated",
+      "real_basis": "No real incident/accident feed was checked this event. Fully invented - do not confuse with the real AED/toilets/events layers already committed.",
+      "method": "One fictional incident record, timestamped in the past relative to generated_at so a freshness check would correctly mark it stale, not live.",
+      "samples": [
+        {
+          "id": "sim:incident/0",
+          "name": "Fictional minor obstruction - demo only",
+          "longitude": 21.0210, "latitude": 52.2240,
+          "reported_at": "2026-10-17T22:00:00+02:00",
+          "description": "Invented example: a parked delivery van narrowing a footpath. No such report exists in reality.",
+          "label": "Invented for demo narration about disruption-aware routing, a stretch idea not built"
+        }
+      ]
+    },
+    "roadworks": {
+      "mode": "simulated",
+      "real_basis": "The city portal lists a real roadworks dataset (get_bin_utrudnienia_drogowe, refresh 1 minute) but it needs an API key that was not available on the shared host this event - see docs/DATA.md, DATA-09. Not fetched; the record below is not derived from it.",
+      "method": "One fictional roadworks record in the demo area, for narration only.",
+      "samples": [
+        {
+          "id": "sim:roadworks/0",
+          "name": "Fictional pavement repair - demo only",
+          "longitude": 21.0260, "latitude": 52.2200,
+          "starts_at": "2026-10-10T00:00:00+02:00",
+          "ends_at": "2026-11-01T00:00:00+02:00",
+          "description": "Invented example. Would replace this record with get_bin_utrudnienia_drogowe once a key is available.",
+          "label": "Invented"
+        }
+      ]
+    }
+  }
+}
