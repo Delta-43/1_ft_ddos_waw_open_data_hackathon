@@ -12,14 +12,13 @@ committed fixtures (plus an optional gitignored full cache). So the
 resilience: can the demo survive its own cache being missing or
 damaged right before the pitch?
 
-These tests operate on the real data/local/city.db (gitignored, and
-db.py's own docstring says it is "safe to delete") rather than a
-monkeypatched path: db.build()'s `path: Path = DB_PATH` default
-argument is captured once at function-definition time, so swapping
-the module-level db.DB_PATH at test time does not actually redirect
-connect()'s zero-argument call to build() - a real, if minor, quirk
-in app/db.py worth knowing if anyone tries to unit-test it in
-isolation later.
+Every test here runs against an isolated tmp_path database, never the
+real data/local/city.db. db.build()'s `path: Path = DB_PATH` default
+argument is captured once at function-definition time, so merely
+monkeypatching the module-level db.DB_PATH does not redirect
+connect()'s zero-argument call to build() - the autouse fixture below
+also rewrites build()'s captured default via __defaults__ to cover
+that.
 """
 import json
 from pathlib import Path
@@ -40,19 +39,21 @@ def validator(name: str) -> Draft202012Validator:
 
 
 @pytest.fixture(autouse=True)
-def _clean_db():
-    """Every test in this file starts from no local city.db, so each one
-    exercises a real rebuild rather than reusing a cache another test (or
-    another test file) happened to build first."""
-    db.DB_PATH.unlink(missing_ok=True)
-    yield
-    db.DB_PATH.unlink(missing_ok=True)
+def _isolated_db(monkeypatch, tmp_path):
+    """Redirect every test in this file to a throwaway city.db, so running
+    this suite never touches, corrupts or deletes the real
+    data/local/city.db a live demo server might be reading."""
+    path = tmp_path / "city.db"
+    monkeypatch.setattr(db, "DB_PATH", path)
+    monkeypatch.setattr(db.build, "__defaults__", (path,))
+    return path
 
 
-def test_places_endpoint_rebuilds_a_missing_db():
-    """Deleting data/local/city.db must not break the demo - the next
-    request should transparently rebuild it from the committed fixtures."""
-    assert not db.DB_PATH.exists()
+def test_places_endpoint_rebuilds_a_missing_db(_isolated_db):
+    """A missing city.db (gitignored, and db.py's own docstring says it is
+    "safe to delete") must not break the demo - the next request should
+    transparently rebuild it from the committed fixtures."""
+    assert not _isolated_db.exists()
 
     response = client.get("/api/places", params={"category": "museum"})
 
@@ -60,7 +61,7 @@ def test_places_endpoint_rebuilds_a_missing_db():
     data = response.json()
     validator("PlacesResponse").validate(data)
     assert data["places"]
-    assert db.DB_PATH.exists()  # rebuilt
+    assert _isolated_db.exists()  # rebuilt
 
 
 def test_layers_endpoint_rebuilds_a_missing_db():
@@ -100,8 +101,8 @@ def test_db_build_falls_back_to_committed_sample_when_full_cache_is_absent(monke
     ),
     strict=True,
 )
-def test_corrupted_db_does_not_crash_the_places_endpoint():
-    db.DB_PATH.write_text("not actually a sqlite database")
+def test_corrupted_db_does_not_crash_the_places_endpoint(_isolated_db):
+    _isolated_db.write_text("not actually a sqlite database")
 
     response = client.get("/api/places")
 
