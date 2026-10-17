@@ -147,6 +147,14 @@ Timeboxed to 30 minutes, run 2026-10-17 from 18:14 +02:00 by Delta. Rule applied
 | GTFS (`https://mkuran.pl/gtfs/warsaw.zip`) | Reachable, HTTP 200, 99.8 MB, `Last-Modified` 2026-10-16 23:03 UTC. Read the zip directory with range requests without downloading the file. `feed_info`: feed version 2026-10-17 00:15:22, publisher Mikołaj Kuranowski. 7,246 stops, 329 routes; `stop_times.txt` is 511.8 MB unzipped | **Defer.** Real and fresh, but full multimodal routing is out of scope (AGENTS.md) and `stop_times` is too large to parse for the demo. A stops-only layer (0.6 MB `stops.txt`) is possible later; it adds nothing to a quiet museum walk |
 
 Not verified: GTFS licence/terms (check `attributions.txt` and the publisher page before any reuse), the content of the roadworks response, and event dates beyond the committed sample. The dependency on INT-01 (#14) was not met when this ran; nothing was integrated, so it does not matter.
+## Stale live-feed rule
+
+A feed that answers is not a feed that is current. Vehicle locations, departures and station readings can stop updating during repairs, holdbacks or technical stops. Rule for every live-style input (implemented in `backend/app/services/freshness.py`):
+
+- Judge each record by its own timestamp. More than 30 minutes old, missing, unreadable or in the future means **not live**.
+- Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
+- Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
+- Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
 ## Routing provider verification (DATA-06)
 
 Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
