@@ -22,6 +22,17 @@ Preference interpretation falls back to keyword rules (`interpreted_by: rules`) 
 and rewords explanations from planner facts. A worded explanation with any number not in those facts is discarded,
 and the template stays. No key, a timeout or a bad reply all fall back to rules, with `interpreted_by: rules`.
 
+## Stale live data (freshness.py)
+
+Warsaw open data and GTFS-derived feeds can go quiet for a vehicle or station (repairs, holdbacks, technical stops) while the
+feed still answers 200. `freshness.py` judges each record by its own timestamp: older than 30 minutes (`MAX_AGE_S`), missing,
+unreadable or dated in the future means not live. `split_live` separates live from stale records; `has_gap` flags a series that
+skips more than 30 minutes. Naive feed times are read as Europe/Warsaw.
+
+Any future live transit integration (vehicle positions, departures) must pass records through `split_live` before use:
+show stale vehicles as "last seen HH:MM" or drop them, never as live; never extrapolate a position across a gap; fall back to
+the schedule, labelled as schedule. Air-quality features already carry `properties.freshness` (`updated_at`, `age_s`, `fresh`,
+`reason`); cached readings are therefore reported as stale, which is accurate.
 ## MCP (MCP-01)
 
 `app/adapters/mcp_server.py` is a Streamable HTTP MCP server (official `mcp` SDK, stateless JSON). Its tools call
