@@ -281,4 +281,3 @@ button.preference-chip:hover { background: var(--moon-fill-hover); }
   .top-bar__sources-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .sources-popover { top: calc(var(--top-chrome-height) + 4px); right: 8px; width: calc(100vw - 1rem); }
 }
-}
