@@ -13,7 +13,7 @@ from functools import cache
 from pathlib import Path
 
 from app.contract import CONTRACT_VERSION, RouteRequest
-from app.services import osm_context, routing, scoring
+from app.services import ai, osm_context, routing, scoring
 
 ROOT = Path(__file__).resolve().parents[3]
 PLACES_SNAPSHOT = ROOT / "data/fixtures/osm-places-sample.json"
@@ -41,8 +41,8 @@ class Interpreted:
     interpreted_by: str = "rules"
 
 
-def interpret(request: RouteRequest) -> Interpreted:
-    """Keyword rules; explicit preferences always win."""
+def interpret(request: RouteRequest, use_model: bool = True) -> Interpreted:
+    """Model reading if configured, else keyword rules; explicit preferences always win."""
     q = request.query.lower()
     prefs = request.preferences
     hours = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:h\b|hour|godz)", q)
@@ -55,6 +55,9 @@ def interpret(request: RouteRequest) -> Interpreted:
     )
     if result.max_duration_s is not None:
         result.max_duration_s = max(900, min(28800, result.max_duration_s))
+    model = ai.model_preferences(request.query) if use_model else None
+    if model:
+        result = Interpreted(**model, interpreted_by="model")
     if prefs:
         result.interests = prefs.interests or result.interests
         result.travel_mode = prefs.travel_mode or result.travel_mode
@@ -277,6 +280,9 @@ def plan(request: RouteRequest) -> dict:
         route["rank"] = rank
         route["recommended"] = rank == 1
         route["explanation"] = _explain(route["name"], route, prefs, baseline)
+    worded = ai.model_explanations(request.query, routes)
+    for route in routes:
+        route["explanation"] = worded.get(route["id"], route["explanation"])
     if "straight_line" in origins:
         mode = "mock"
         notice = ("Routing service unavailable: some routes are straight lines, not street directions. "
@@ -287,6 +293,8 @@ def plan(request: RouteRequest) -> dict:
                   + (" (some from a cached response)" if mode == "cached" else "")
                   + ". Green and quiet scores are proxies from OSM parks and major roads, "
                     "not measured greenery or noise.")
+    if worded:
+        notice += " Explanations were worded by an AI model from these facts only."
     return {
         "contract_version": CONTRACT_VERSION,
         "mode": mode,
