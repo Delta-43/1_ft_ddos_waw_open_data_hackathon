@@ -23,6 +23,8 @@ export function createMap(container: HTMLElement): Map {
     ...CAMERA_LIMITS,
     // Added below in non-compact form so tile/OSM credits are always visible.
     attributionControl: false,
+    // 3× phone screens would shade 2.25× the pixels of 2× for little visible gain.
+    pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
   });
 
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');

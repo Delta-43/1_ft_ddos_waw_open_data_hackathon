@@ -1,5 +1,5 @@
 import type { GeoJSONFeature, Map } from 'maplibre-gl';
-import { BUILDING_SOURCE, OUTLINE_STATE } from './style';
+import { BUILDING_MINZOOM, BUILDING_SOURCE, OUTLINE_STATE } from './style';
 
 /**
  * Hides building outlines that the tiles forgot to flag.
@@ -10,16 +10,19 @@ import { BUILDING_SOURCE, OUTLINE_STATE } from './style';
  * outlines with `hide_3d`, but misses many (e.g. multipolygon outlines): the Palace of
  * Culture, Varso, Warsaw Spire and Złota 44 all arrive as full-height boxes.
  *
- * Detection (per loaded tile piece): a ground-based building is an unflagged outline when
- * other buildings sit inside it, the tallest reaches the outline's height, none is taller,
- * and ground-level parts cover most of its footprint (so hiding it leaves no hole). Matching
- * outlines get feature-state `{ [OUTLINE_STATE]: true }`, which the building layers collapse
- * to zero height. When unsure, the outline stays: a solid block beats a missing building.
+ * Detection: a ground-based building is an unflagged outline when smaller buildings sit
+ * inside it, at least one of them is raised (starts above ground: a tier, spire or arcade;
+ * ordinary buildings never are, so this is the `building:part` signature), the tallest
+ * reaches the outline's height (none taller), and their footprints add up to a fair share
+ * of its own (so a lone mapped penthouse does not leave the rest of the building floating).
+ * Kept outlines with parts also z-fight with them: coplanar walls flicker in two colours.
+ * Matching outlines get feature-state `{ [OUTLINE_STATE]: true }`, which the building layers
+ * collapse to zero height. When unsure, the outline stays: a solid block beats a hole.
  */
 
 const TOLERANCE_M = 1;
-/** Share of the outline's footprint that ground-level parts must cover (landmarks: 0.91–1.0). */
-const MIN_GROUND_COVER = 0.8;
+/** Share of the outline's footprint its parts must add up to (stacked tiers each count). */
+const MIN_PART_COVER = 0.3;
 /** Grid cell size (degrees) for the centroid index; roughly 140 × 220 m in Warsaw. */
 const CELL = 0.002;
 
@@ -113,14 +116,19 @@ export interface OutlineEvidence {
   height: number;
   /** Footprint area (square degrees), from its largest tile piece. */
   area: number;
-  /** Summed footprint of the distinct ground-level buildings inside it. */
+  /** Summed footprint of the distinct smaller buildings inside it (any level). */
   covered: number;
   /** Height of the tallest building inside it. */
   tallest: number;
+  /** Distinct buildings inside it that start above ground: tiers, spires, arcades. */
+  raised: number;
 }
 
 /** Per ground-based building: what sits inside it, among the loaded features. */
-export function collectOutlineEvidence(features: GeoJSONFeature[]): globalThis.Map<string | number, OutlineEvidence> {
+export function collectOutlineEvidence(
+  features: GeoJSONFeature[],
+  skip: ReadonlySet<string | number> = new Set(),
+): globalThis.Map<string | number, OutlineEvidence> {
   const items = features.map(toItem).filter((item): item is Item => !!item);
   const grid = new globalThis.Map<string, Item[]>();
   for (const item of items) {
@@ -135,42 +143,48 @@ export function collectOutlineEvidence(features: GeoJSONFeature[]): globalThis.M
   // once per outline, so duplicates neither inflate coverage nor let one edge sliver decide.
   const fullArea = new globalThis.Map<string | number, number>();
   for (const item of items) fullArea.set(item.id, Math.max(fullArea.get(item.id) ?? 0, item.area));
+  const raisedIds = new Set(items.filter(item => item.min > 0).map(item => item.id));
 
-  const groundParts = new globalThis.Map<string | number, Set<string | number>>();
+  const partsInside = new globalThis.Map<string | number, Set<string | number>>();
   const evidence = new globalThis.Map<string | number, OutlineEvidence>();
   for (const outline of items) {
-    if (outline.min !== 0) continue;
+    if (outline.min !== 0 || skip.has(outline.id)) continue;
     const [minX, minY, maxX, maxY] = outline.bbox;
-    const entry = evidence.get(outline.id) ?? { height: outline.height, area: fullArea.get(outline.id)!, covered: 0, tallest: 0 };
-    const ground = groundParts.get(outline.id) ?? new Set();
+    const entry = evidence.get(outline.id) ?? { height: outline.height, area: fullArea.get(outline.id)!, covered: 0, tallest: 0, raised: 0 };
+    const parts = partsInside.get(outline.id) ?? new Set();
     for (let gx = Math.floor(minX / CELL); gx <= Math.floor(maxX / CELL); gx++) {
       for (let gy = Math.floor(minY / CELL); gy <= Math.floor(maxY / CELL); gy++) {
         for (const other of grid.get(`${gx}:${gy}`) ?? []) {
           const [x, y] = other.point;
           if (other.id === outline.id || x < minX || x > maxX || y < minY || y > maxY) continue;
-          // A real part fits inside its outline; a bigger "part" means we only see a sliver.
-          if (fullArea.get(other.id)! > entry.area * 1.05) continue;
+          // A real part fits inside its outline (a full-footprint part may clip slightly
+          // larger); a much bigger "part" means only a sliver of the outline is loaded.
+          if (fullArea.get(other.id)! > entry.area * 1.2) continue;
           if (!contains(outline, other.point)) continue;
           entry.tallest = Math.max(entry.tallest, other.height);
-          if (other.min === 0) ground.add(other.id);
+          parts.add(other.id);
         }
       }
     }
     evidence.set(outline.id, entry);
-    groundParts.set(outline.id, ground);
+    partsInside.set(outline.id, parts);
   }
   for (const [id, entry] of evidence) {
-    for (const part of groundParts.get(id)!) entry.covered += fullArea.get(part)!;
+    for (const part of partsInside.get(id)!) entry.covered += fullArea.get(part)!;
+    entry.raised = [...partsInside.get(id)!].filter(part => raisedIds.has(part)).length;
   }
   return evidence;
 }
 
-/** Returns ids of unflagged outlines among the currently loaded building features. */
-export function findUnflaggedOutlines(features: GeoJSONFeature[]): Set<string | number> {
+/** Returns ids of unflagged outlines among the loaded features; ids in `skip` are not re-checked. */
+export function findUnflaggedOutlines(
+  features: GeoJSONFeature[],
+  skip: ReadonlySet<string | number> = new Set(),
+): Set<string | number> {
   const outlines = new Set<string | number>();
-  for (const [id, { height, area, covered, tallest }] of collectOutlineEvidence(features)) {
+  for (const [id, { height, area, covered, tallest, raised }] of collectOutlineEvidence(features, skip)) {
     const reachesTop = Math.abs(tallest - height) <= TOLERANCE_M;
-    if (reachesTop && covered >= MIN_GROUND_COVER * area) outlines.add(id);
+    if (raised > 0 && reachesTop && covered >= MIN_PART_COVER * area) outlines.add(id);
   }
   return outlines;
 }
@@ -183,11 +197,11 @@ export function hideUnflaggedOutlines(map: Map): void {
     if (event.sourceId === BUILDING_SOURCE && 'tile' in event && event.tile) dirty = true;
   });
   map.on('idle', () => {
-    if (!dirty || !map.getSource(BUILDING_SOURCE)) return;
+    // Buildings are not drawn below zoom 13, so there is nothing to fix there yet.
+    if (!dirty || map.getZoom() < BUILDING_MINZOOM || !map.getSource(BUILDING_SOURCE)) return;
     dirty = false;
     const features = map.querySourceFeatures(BUILDING_SOURCE, { sourceLayer: 'building' });
-    for (const id of findUnflaggedOutlines(features)) {
-      if (hidden.has(id)) continue;
+    for (const id of findUnflaggedOutlines(features, hidden)) {
       hidden.add(id);
       map.setFeatureState({ source: BUILDING_SOURCE, sourceLayer: 'building', id }, { [OUTLINE_STATE]: true });
     }

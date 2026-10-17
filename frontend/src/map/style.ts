@@ -33,11 +33,27 @@ export const palette = {
 
 export type Palette = typeof palette;
 
+/**
+ * How strongly each building shows its real OpenStreetMap colour (`colour` in the tiles:
+ * `building:colour`, or a colour OpenMapTiles derives from `building:material`).
+ * 0 = palette only, 1 = true colour. Buildings without colour data keep the palette.
+ * The tiles carry no facade imagery, so colour is the only appearance data available.
+ */
+export const OSM_COLOUR_STRENGTH = 0.65;
+
 /** Fallback for buildings whose tiles carry no height (metres). */
 const FALLBACK_HEIGHT = 12;
 /** Thickness of the lighter "roof cap" slab that gives buildings a rim highlight (metres). */
 const ROOF_CAP = 0.6;
+/**
+ * Rim details (roof caps, footprint lines) cost a full extra pass over every building, so
+ * they start at street level where few buildings are on screen (measured: −18% and −10%
+ * frame time at zoom 15 without them).
+ */
+const DETAIL_MINZOOM = 16;
 
+/** First zoom with 3D buildings; also used by buildingOutlines.ts. */
+export const BUILDING_MINZOOM = 13;
 /** Vector source id; also used by buildingOutlines.ts. */
 export const BUILDING_SOURCE = 'openmaptiles';
 /** Feature-state flag set by buildingOutlines.ts on outlines that would hide their parts. */
@@ -58,6 +74,20 @@ function roadWidth(stops: [number, number][]): ExpressionSpecification {
 /** Builds the custom dark style from a palette (OpenMapTiles schema). */
 export function buildStyle(p: Palette = palette): StyleSpecification {
   const source = BUILDING_SOURCE;
+  // Taller buildings are slightly lighter in the palette, which helps the skyline read.
+  // Stops are explicit colours: inside `to-color` below, bare strings would not interpolate.
+  const paletteColour: ExpressionSpecification = [
+    'interpolate', ['linear'], height,
+    0, ['to-color', p.buildingLow],
+    120, ['to-color', p.buildingHigh],
+  ];
+  // Real OSM colour where present (to-color falls back to the palette for missing or invalid
+  // values), blended towards the palette so the night look holds.
+  const buildingColour: ExpressionSpecification = [
+    'interpolate-lab', ['linear'], OSM_COLOUR_STRENGTH,
+    0, paletteColour,
+    1, ['to-color', ['get', 'colour'], paletteColour],
+  ];
   return {
     version: 8,
     name: 'Warsaw dark',
@@ -171,7 +201,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         type: 'line',
         source,
         'source-layer': 'building',
-        minzoom: 14,
+        minzoom: DETAIL_MINZOOM,
         paint: { 'line-color': p.buildingRim, 'line-opacity': 0.25, 'line-width': 0.6 },
       },
       {
@@ -179,14 +209,15 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         type: 'fill-extrusion',
         source,
         'source-layer': 'building',
-        minzoom: 13,
+        minzoom: BUILDING_MINZOOM,
         filter: notHidden,
         paint: {
-          // Taller buildings are slightly lighter, which helps the skyline read.
-          'fill-extrusion-color': ['interpolate', ['linear'], height, 0, p.buildingLow, 120, p.buildingHigh],
+          'fill-extrusion-color': buildingColour,
           'fill-extrusion-height': unlessOutline(height),
           'fill-extrusion-base': unlessOutline(minHeight),
-          'fill-extrusion-opacity': 0.92,
+          // Keep at 1: below 1 MapLibre draws every building twice (depth pass + colour pass),
+          // measured at +26% frame time.
+          'fill-extrusion-opacity': 1,
           'fill-extrusion-vertical-gradient': true,
         },
       },
@@ -196,13 +227,14 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         type: 'fill-extrusion',
         source,
         'source-layer': 'building',
-        minzoom: 14,
+        minzoom: DETAIL_MINZOOM,
         filter: notHidden,
         paint: {
-          'fill-extrusion-color': p.buildingRoof,
+          // The building's own colour, lifted towards the roof highlight.
+          'fill-extrusion-color': ['interpolate-lab', ['linear'], 0.45, 0, buildingColour, 1, p.buildingRoof],
           'fill-extrusion-base': unlessOutline(height),
           'fill-extrusion-height': unlessOutline(['+', height, ROOF_CAP]),
-          'fill-extrusion-opacity': 0.92,
+          'fill-extrusion-opacity': 1,
         },
       },
       {

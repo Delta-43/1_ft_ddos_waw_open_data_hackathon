@@ -38,8 +38,22 @@ src/
 
 - **Colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
 - **Layers:** `buildStyle()` in the same file is an ordinary MapLibre style object using the [OpenMapTiles schema](https://openmaptiles.org/schema/): `building`, `water`, `park`, `transportation`, and so on. Add, remove or reorder layers there.
-- **Buildings:** height is `render_height` from the tiles, falling back to `FALLBACK_HEIGHT` (12 m). A thin lighter slab on top of each building (`building-roof`) gives the rim highlight.
-- **Detailed buildings:** in OpenStreetMap, landmarks such as the Palace of Culture are mapped as several `building:part` shapes (podium, tower tiers, spire) plus one outline carrying the total height. OpenMapTiles is meant to flag that outline with `hide_3d`, but it misses many, including the Palace, Varso, Warsaw Spire and Złota 44. Left alone, the outline renders as a solid box over the parts. `src/map/buildingOutlines.ts` detects these outlines in the loaded tiles and collapses them, using feature-state, to zero height. An outline is hidden only if its ground-level parts cover at least 80% of its footprint and the parts reach its height, so a missed detection shows a box rather than leaving a hole.
+- **Buildings:** height is `render_height` from the tiles, falling back to `FALLBACK_HEIGHT` (12 m). From zoom 16 up, a thin lighter roof slab (`building-roof`) and faint footprint lines add the rim highlight.
+- **Building colours:** where OpenStreetMap has one (about 60% of central Warsaw), each building takes its real colour from the tiles' `colour` field. That's `building:colour`, or a colour OpenMapTiles derives from `building:material`, such as brick, glass or sandstone. `OSM_COLOUR_STRENGTH` in `src/map/style.ts` blends it with the night palette: 0 = palette only, 1 = true colour, 0.65 by default. Buildings without colour data keep the palette. The free tiles carry no facade imagery or roof shapes, so colour is the only appearance data; nothing is invented.
+- **Detailed buildings:** in OpenStreetMap, landmarks such as the Palace of Culture are mapped as several `building:part` shapes (podium, tower tiers, spire) plus one outline carrying the total height. OpenMapTiles is meant to flag that outline with `hide_3d`, but it misses many, including the Palace, Varso, Warsaw Spire and Złota 44. Left alone, the outline renders as a solid box over the parts and z-fights with them. `src/map/buildingOutlines.ts` detects these outlines in the loaded tiles and collapses them, using feature-state, to zero height. An outline is hidden when:
+  - smaller parts inside it reach its height;
+  - at least one part starts above the ground (the `building:part` signature);
+  - the parts' footprints add up to at least 30% of its own.
+- **Known limitation:** a few OSM relations bundle many separate blocks into one feature with a single height. They can't be hidden piecemeal, so one block may still z-fight with its parts.
+
+### Performance rules
+
+Measured in headless Chrome during a 4-second camera orbit at zoom 15; the full set takes mean frame time from about 130 ms to about 65–75 ms.
+
+- Keep `fill-extrusion-opacity` at 1. Below 1, MapLibre draws every building twice (a depth pass and a colour pass): +26% frame time.
+- Extra per-building layers, such as the roof slab and footprint lines, cost a full pass each (+18% and +10%), so they start at `DETAIL_MINZOOM` (16).
+- `createMap` caps the device pixel ratio at 2. On 3× phone screens this avoids shading 2.25× the pixels.
+- The outline scan only runs once the map is idle after new tiles arrive, skips buildings already handled, and takes about 55 ms per scan here.
 - **Light, sky and fog:** the `light` and `sky` blocks of the style. Keep the light colour near white; a saturated light colour tints shadowed walls with its complement.
 - **Camera and limits:** start view, Warsaw bounds, zoom range and the 75° pitch cap are in `src/map/config.ts`.
 - **Overlay UI:** the banner, controls and popups are styled in `src/style.css`.
