@@ -27,13 +27,12 @@ def health():
         "status": "ok",
         "mode": "fixture",
         "contract_version": CONTRACT_VERSION,
-        # Refs #85 step 4: only true once the matching feature has actually shipped on
-        # this branch, so the frontend can gate structured itinerary submission or
-        # catalogue search on this rather than guessing from whether a request field
-        # merely exists. ordered_stops: POST /api/routes honours destination_place_id/
-        # via_place_ids (#85 steps 1-3, this stack). place_search: GET /api/places?q=
-        # (#84/#87) - not yet in this branch, so false here until that PR is in too.
-        "capabilities": {"ordered_stops": True, "place_search": False},
+        # Refs #85 step 4: only true once the matching feature has actually shipped,
+        # so the frontend can gate structured itinerary submission or catalogue search
+        # on this rather than guessing from whether a request field merely exists.
+        # ordered_stops: POST /api/routes honours destination_place_id/via_place_ids
+        # (#85). place_search: GET /api/places?q= (#84, merged in #87).
+        "capabilities": {"ordered_stops": True, "place_search": True},
     }
 
 

@@ -65,7 +65,7 @@ def test_route_response_matches_contract():
 def test_health_reports_capabilities():
     data = client.get("/api/health").json()
     assert data["capabilities"]["ordered_stops"] is True
-    assert data["capabilities"]["place_search"] is False
+    assert data["capabilities"]["place_search"] is True
 
 
 @pytest.mark.parametrize(
