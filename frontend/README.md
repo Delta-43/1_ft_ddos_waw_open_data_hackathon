@@ -66,6 +66,7 @@ These keep panning, zooming and scrolling smooth. They were measured in headless
 | Keep `fill-extrusion-opacity` at 1 | Below 1, MapLibre draws every building twice (a depth pass and a colour pass): +26% frame time. |
 | Extra per-building layers (roof slab, footprint lines) start at `DETAIL_MINZOOM` (16) | Each is a full extra pass over every building: +18% and +10% frame time at zoom 15 |
 | Device pixel ratio capped at 2 (`createMap`) | Saves shading 2.25× the pixels on 3× phone screens |
+| No label fade (`fadeDuration: 0` in `createMap`) | Fading labels keeps redrawing the whole 3D scene after the camera stops: 6.8 → 1.3 frames per stop. Labels appear instantly |
 | Outline scan runs on idle, in 6 ms slices, and stops when the camera moves | Main-thread long tasks during scroll-pause-scroll went from 6 to 0–1. The first scan on load runs in one go, before anyone interacts, so landmarks never open as solid boxes |
 | No CSS `backdrop-filter` over the map | Blurring behind the banner or popups is recomputed on every map frame and causes jank on laptops and phones |
 

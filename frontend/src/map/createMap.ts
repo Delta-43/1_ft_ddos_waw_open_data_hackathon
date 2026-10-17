@@ -25,6 +25,9 @@ export function createMap(container: HTMLElement): Map {
     attributionControl: false,
     // 3× phone screens would shade 2.25× the pixels of 2× for little visible gain.
     pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    // No label fade: fading keeps redrawing the whole 3D scene after every move
+    // (measured 6.8 → 1.3 frames per stop); labels and pins appear instantly instead.
+    fadeDuration: 0,
   });
 
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
