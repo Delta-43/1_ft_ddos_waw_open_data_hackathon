@@ -1,10 +1,8 @@
 # Handover
 
-- Current issue: Unassigned
-- Branch / PR: Not started
-- Last verified result: Starter available; see README.md
-- Blocker: None recorded
-- Next action: Read personal PROMPT.md and claim the first issue with the pair
-- Updated at (include timezone): Pending
-
-Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
+- Current issue: [#9 DATA-01: Fetch and normalise fresh OSM places/parks for one demo area](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/9). Depends on #7 (API-01) and #8 (DATA-02), both still open — contracts/route.schema.json already exists and is stable so I built against that; this PR's fetch can stand in as evidence for DATA-02's source check but the formal 30-minute Sonia+Delta gate hasn't run.
+- Branch / PR: `sonia/data-01-osm-catalogue` → [PR #33](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/33), closes #9, review requested from `@Delta-43`.
+- Last verified result: Fresh Overpass fetch succeeded on 2026-10-17 at 13:11:18 +0200 for the Łazienki/Ujazdów demo bbox (`52.2060,21.0220,52.2250,21.0480`): 625 raw elements, 26 named places kept (museums, galleries, parks, named gardens) after dropping 599 unnamed `leisure=garden` fragments. Catalogued in `docs/DATA.md`. Sample committed at `data/fixtures/osm-places-sample.json`; full raw response cached (gitignored) at `data/local/osm_places_raw.json`. `ruff check backend` and `pytest backend/tests` both pass (5 tests, including 3 new offline tests for `backend/app/data/osm_places.py`'s `normalise()`).
+- Blocker: None. Note for reviewer: this branch also carries two unrelated "uv" commits (dependency/lockfile setup touching STACK.md, pyproject.toml, uv.lock, .python-version) that came from a separate local session, not from DATA-01 work — kept in the PR at the repo owner's instruction instead of splitting out.
+- Next action: Wait for Delta's review on PR #33. After merge, BE-02 (bounded places endpoint, depends on DATA-01) can build on `backend/app/data/osm_places.py`.
+- Updated at (include timezone): 2026-10-17 13:35 Europe/Warsaw
