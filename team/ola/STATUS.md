@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: Follow-up to #3 (FE-02, merged in #36); no new issue number yet, ask Alban
-- Branch / PR: ola/3-preferences-bar / PR open for review by Alban
+- Current issue: #45 (keep map attribution and zoom visible with the expanded assistant panel, with Alban). FE-02 (#3) and its follow-up are done (PRs #36 and #41 merged)
+- Branch / PR: none open
 - Last verified result: pnpm check and pnpm build pass (Node 22, pnpm 11.25.0); not yet clicked through in a browser by a reviewer
-- Blocker: Preference summary and chat reply are MOCKS (components/preferences/); switches do not change results until Delta + Alban agree how preferences are sent to the backend
-- Next action: address Alban's review; ask for the next task
-- Updated at (include timezone): 2026-10-17 15:00 Europe/Warsaw
+- Blocker: None. Preference summary and chat reply are MOCKS (components/preferences/). The agreed request shape is now `RouteRequest.preferences` in contract 1.0 (`frontend/src/api/contract.ts`, #32), so the switches can be sent to `/api/routes`
+- Next action: fix #45; then map the preference switches onto `preferences` (interests, travel_mode, max_duration_s, priorities); remove the overridden `width` and unused `.prompt-details` rules in `preferences.css` (review of #41)
+- Updated at (include timezone): 2026-10-17 16:20 +02:00 (follow-ups added by Delta)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.

@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: #7 (API-01, route contract with Alban)
-- Branch / PR: BOOT-01 (#5) closed. Docs update PR open.
-- Last verified result: CI green on main; issues #3 and #5–#29 created with owners and labels
-- Blocker: None; the project board needs the GitHub CLI `project` scope or the website
-- Next action: Agree the route contract with Alban, then run the source gate with Sonia (#8)
-- Updated at (include timezone): 2026-10-17 12:55 +02:00
+- Current issue: #8 (DATA-02) reopened for Delta's half; then #12 (BE-01 candidate routes, branch `delta/12-candidate-routes`)
+- Branch / PR: API-01 contract 1.0 merged (#32, auto-merge on Ola's approval). PRs #33, #34, #35, #36, #37 and #38 merged
+- Last verified result: main at `5c96512` passes `ruff check backend` and `pytest backend/tests` (28 passed)
+- Blocker: None
+- Next action: classify the routing provider and confirm organiser data rules on #8 (links to #23 DATA-06); ask Alban for a post-merge review of contract 1.0; start BE-01
+- Updated at (include timezone): 2026-10-17 16:08 +02:00
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.

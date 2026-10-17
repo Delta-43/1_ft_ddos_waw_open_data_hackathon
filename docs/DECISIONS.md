@@ -14,6 +14,9 @@
 | 2026-10-17 (UTC+02:00) | Basemap: MapLibre GL JS 6.11.2 with OpenFreeMap vector tiles (OpenMapTiles schema), custom dark style; no key or account | Alban | Free, keyless, real building heights; attribution (OpenFreeMap, OpenMapTiles, OpenStreetMap/ODbL) always visible. Online tiles: keep a recording fallback |
 | 2026-10-17 (UTC+02:00) | Google Photorealistic 3D Tiles tried and removed; OSM building colours removed. Buildings stay untextured (dark palette), with OSM building parts and rendering optimisations kept | Alban | Owner decision; Google key needed billing, returned sporadic tile 404s, and Google restricts 3D Tiles for EEA projects. No Google calls remain |
 | 2026-10-17 (UTC+02:00) | Bright game-map style: GTA V-like ground (cyan water, green parks, white roads, district outlines) with AC Unity-like light 3D buildings; untextured | Alban | Owner request for a brighter, cleaner map; colours only, no measured frame-time change (orbit benchmark 64 ms) |
+| 2026-10-17 13:55 (UTC+02:00) | PR review and merging delegated to Delta's cloud agent: reviews posted as Delta, squash merge, merged branches auto-deleted. Ran until 16:08, then handed back to Delta's laptop | Delta | Keep reviews moving while Delta's computer was down |
+| 2026-10-17 16:04 (UTC+02:00) | API-01 contract 1.0 (#32) merged by auto-merge on Ola's approval, without Alban's review. Alban reviews after the fact; changes go in a new contract PR | Delta | Unblock DATA-08, BE-01 and FE-01 route layers |
+| 2026-10-17 (UTC+02:00) | Partial fixes link issues with `Refs #N`, not `Closes #N`. #8 was auto-closed by #38 and reopened for the routing-provider half | Delta | Keep issue status truthful |
 
 Record contract changes, provider choice, scope cuts, and any grace-period authorisation here.
 
