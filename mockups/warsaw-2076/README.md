@@ -29,7 +29,7 @@ The source and height assumptions are visible under “Map sources & 3D assumpti
 
 ## Refresh the map cache
 
-Run these from any working directory. The first step contacts Overpass; the remaining steps work offline.
+Run these from the repository root. The first step contacts Overpass; the remaining steps work offline.
 
 ```bash
 python3 mockups/warsaw-2076/tools/fetch-map.py
@@ -44,3 +44,9 @@ Paths above assume the repository root. `prepare-map.py` creates an intermediate
 Verified with Playwright: default route, on-demand corridor loading, all route changes, rapid switching, place cards, Escape, simulated error, successful planning, and no horizontal overflow at 390px. Desktop and phone screenshots were visually inspected. No browser script errors were observed.
 
 This folder is an isolated mockup. Shared application files, contracts, and production services are unchanged.
+
+## Tailscale preview
+
+Owner-hosted preview: http://silver-storm.wirehair-altair.ts.net:5179/
+
+The isolated `warsaw2076-mockup.service` runs under the owner's user account, bound to the Tailscale interface. It serves a release copy outside the checkout. It requires silver-storm and the owner's user session to remain running. No firewall, tailnet policy, or public forwarding was changed.
