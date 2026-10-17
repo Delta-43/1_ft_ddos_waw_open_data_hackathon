@@ -78,7 +78,7 @@ export function PreferencesForm({ status, onSubmit }: Props) {
       />
       <p id="outing-hint" className="hint">{query.length}/{MAX_LENGTH} characters</p>
       {emptyError && <p role="alert" className="error">Please describe your outing first.</p>}
-      <button type="submit">Show my preferences</button>
+      <button type="submit">Let's explore</button>
     </form>
   );
 }
