@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from app import db
 from app.contract import CONTRACT_VERSION, RouteRequest
+from app.data import catalogue
 from app.services import ai, opening_hours, osm_context, routing, scoring
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -208,6 +209,64 @@ def _visit_s(stop: dict) -> int:
     return MUSEUM_VISIT_S if stop["category"] == "museum" else PARK_VISIT_S
 
 
+def _build_route(key: str, name: str, start, stops: list[dict], prefs: Interpreted) -> tuple[dict, str]:
+    """One route's geometry, metrics and stop timing, plus its geometry origin
+    ("live"/"cached"/"straight_line", for the caller's `sources` and `mode`).
+    Shared by the museum-outing candidates and #85's explicit-itinerary route;
+    `_utility` is popped by the caller once ranking is decided."""
+    coords, distance, duration, legs, origin = _geometry(prefs.travel_mode, start, stops)
+    geo_source = "straight-line" if origin == "straight_line" else "osrm"
+    scores = scoring.score_line(coords)
+    offset, stop_rows = 0.0, []
+    for i, (stop, leg) in enumerate(zip(stops, legs), start=1):
+        offset += leg
+        stop_rows.append({"order": i, "place_id": stop["id"], "arrival_offset_s": round(offset),
+                          "visit_duration_s": _visit_s(stop)})
+        offset += _visit_s(stop)
+    route = {
+        "id": key, "name": name, "rank": 0, "recommended": False, "travel_mode": prefs.travel_mode,
+        "explanation": "",
+        "geometry": {"type": "LineString", "coordinates": coords},
+        "geometry_kind": "straight_line" if origin == "straight_line" else "street",
+        "geometry_source_id": geo_source,
+        "metrics": {
+            "distance_m": {"value": round(distance), "source_id": geo_source},
+            "duration_s": {"value": round(duration), "source_id": geo_source},
+            "green_score": {"value": scores["green_score"], "source_id": "green-proxy"},
+            "quiet_score": {"value": scores["quiet_score"], "source_id": "quiet-proxy"},
+        },
+        "stops": stop_rows,
+        "places": stops,
+        "_utility": _utility({"metrics": {
+            "quiet_score": {"value": scores["quiet_score"]},
+            "green_score": {"value": scores["green_score"]},
+            "duration_s": {"value": duration}}}, prefs, offset),
+    }
+    return route, origin
+
+
+def _resolve_itinerary_stops(destination_place_id: str, via_place_ids: list[str] | None) -> list[dict]:
+    """Ordered Place dicts for #85's explicit itinerary: via stops in the given order,
+    then the destination. Ids are already known-good - _validate_itinerary runs first."""
+    ids = [*(via_place_ids or []), destination_place_id]
+    found = db.places_by_ids(set(ids))
+    return [found[i] for i in ids]
+
+
+def _explain_itinerary(route: dict, prefs: Interpreted) -> str:
+    """Unlike _explain, names every stop regardless of category - an explicit
+    itinerary (#85) can include landmarks and generic places, not just museums/parks."""
+    m = route["metrics"]
+    names = [p["name"] for p in route["places"]]
+    via, destination = names[:-1], names[-1]
+    minutes = round(m["duration_s"]["value"] / 60)
+    verb = "walking" if prefs.travel_mode == "walk" else "cycling"
+    text = f"Visits {', '.join(via)} on the way to {destination}" if via else f"Goes directly to {destination}"
+    text += f"; {m['distance_m']['value'] / 1000:.1f} km, about {minutes} min {verb}."
+    text += f" Green proxy {m['green_score']['value']:.2f}, quiet proxy {m['quiet_score']['value']:.2f}."
+    return text
+
+
 def _explain(name: str, route: dict, prefs: Interpreted, baseline: dict | None) -> str:
     m = route["metrics"]
     museums_ = [p["name"] for p in route["places"] if p["category"] == "museum"]
@@ -260,7 +319,7 @@ def _utility(route: dict, prefs: Interpreted, total_s: float) -> float:
     return score
 
 
-def _sources(origins: set[str]) -> list[dict]:
+def _sources(origins: set[str], is_itinerary: bool = False) -> list[dict]:
     places, ctx = _snapshot(), osm_context.load()
     sources = [
         {"id": "osm-places", "name": "OpenStreetMap museums, galleries and parks", "mode": "real",
@@ -274,6 +333,11 @@ def _sources(origins: set[str]) -> list[dict]:
          "attribution": ctx["attribution"], "url": "https://www.openstreetmap.org/copyright",
          "retrieved_at": ctx["fetched_at"], "data_date": None, "method": scoring.QUIET_METHOD},
     ]
+    if is_itinerary:
+        # #85: destination/via stops are resolved against the city catalogue (app/db.py),
+        # which carries its own source id - distinct from the osm-places snapshot above
+        # that the museum-outing candidates read directly from the fixture.
+        sources.append(catalogue.osm_places_source())
     if origins & {"live", "cached"}:
         sources.append({
             "id": "osrm", "name": "OSRM street routing", "mode": "real",
@@ -299,44 +363,28 @@ def plan(request: RouteRequest) -> dict:
     departure = clock()
     start_pt = request.preferences.start if request.preferences and request.preferences.start else None
     start = (start_pt.longitude, start_pt.latitude) if start_pt else DEFAULT_START
+    is_itinerary = request.destination_place_id is not None
     routes, origins = [], set()
-    for key, name, stops in candidate_stops(start, prefs, departure + timedelta(seconds=FIRST_STOP_LEAD_S)):
-        coords, distance, duration, legs, origin = _geometry(prefs.travel_mode, start, stops)
+    if is_itinerary:
+        # #85 step 2: the user named exact stops, so plan one route that visits them
+        # in the given order and ends at the destination - never a museum template.
+        stops = _resolve_itinerary_stops(request.destination_place_id, request.via_place_ids)
+        route, origin = _build_route("itinerary", "Your requested itinerary", start, stops, prefs)
         origins.add(origin)
-        geo_source = "straight-line" if origin == "straight_line" else "osrm"
-        scores = scoring.score_line(coords)
-        offset, stop_rows = 0.0, []
-        for i, (stop, leg) in enumerate(zip(stops, legs), start=1):
-            offset += leg
-            stop_rows.append({"order": i, "place_id": stop["id"], "arrival_offset_s": round(offset),
-                              "visit_duration_s": _visit_s(stop)})
-            offset += _visit_s(stop)
-        route = {
-            "id": key, "name": name, "rank": 0, "recommended": False, "travel_mode": prefs.travel_mode,
-            "explanation": "",
-            "geometry": {"type": "LineString", "coordinates": coords},
-            "geometry_kind": "straight_line" if origin == "straight_line" else "street",
-            "geometry_source_id": geo_source,
-            "metrics": {
-                "distance_m": {"value": round(distance), "source_id": geo_source},
-                "duration_s": {"value": round(duration), "source_id": geo_source},
-                "green_score": {"value": scores["green_score"], "source_id": "green-proxy"},
-                "quiet_score": {"value": scores["quiet_score"], "source_id": "quiet-proxy"},
-            },
-            "stops": stop_rows,
-            "places": stops,
-            "_utility": _utility({"metrics": {
-                "quiet_score": {"value": scores["quiet_score"]},
-                "green_score": {"value": scores["green_score"]},
-                "duration_s": {"value": duration}}}, prefs, offset),
-        }
         routes.append(route)
+    else:
+        for key, name, stops in candidate_stops(start, prefs, departure + timedelta(seconds=FIRST_STOP_LEAD_S)):
+            route, origin = _build_route(key, name, start, stops, prefs)
+            origins.add(origin)
+            routes.append(route)
     routes.sort(key=lambda r: r.pop("_utility"), reverse=True)
     baseline = next((r for r in routes if r["id"] == "direct"), None)
     for rank, route in enumerate(routes, start=1):
         route["rank"] = rank
         route["recommended"] = rank == 1
-        route["explanation"] = _explain(route["name"], route, prefs, baseline)
+        route["explanation"] = (
+            _explain_itinerary(route, prefs) if is_itinerary else _explain(route["name"], route, prefs, baseline)
+        )
     worded = ai.model_explanations(request.query, routes)
     for route in routes:
         route["explanation"] = worded.get(route["id"], route["explanation"])
@@ -351,6 +399,10 @@ def plan(request: RouteRequest) -> dict:
                   + (" (some from a cached response)" if mode == "cached" else "")
                   + ". Green and quiet scores are proxies from OSM parks and major roads, "
                     "not measured greenery or noise.")
+    if is_itinerary:
+        notice += (" Visits the requested destination and stops, in the order given; "
+                   "a time budget (max_duration_s) is not yet enforced against this itinerary, "
+                   "so it may run longer than requested.")
     if worded:
         notice += " Explanations were worded by an AI model from these facts only."
     return {
@@ -365,5 +417,5 @@ def plan(request: RouteRequest) -> dict:
             "interpreted_by": prefs.interpreted_by,
         },
         "routes": routes,
-        "sources": _sources(origins),
+        "sources": _sources(origins, is_itinerary),
     }
