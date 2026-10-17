@@ -146,11 +146,21 @@ def _where(bbox: tuple[float, float, float, float] | None, extra: list[tuple[str
     return (" WHERE " + " AND ".join(clauses)) if clauses else "", args
 
 
-def query_places(category: str | None, bbox, limit: int) -> tuple[list[dict], list[dict]]:
+def query_places(
+    category: str | None, bbox, limit: int, q: str | None = None
+) -> tuple[list[dict], list[dict]]:
     where, args = _where(bbox, [("category = ?", category)] if category else [])
     with connect() as conn:
-        rows = conn.execute(f"SELECT * FROM places{where} ORDER BY name LIMIT ?", [*args, limit]).fetchall()
-        return [dict(r) for r in rows], _sources(conn, {r["source_id"] for r in rows} or {OSM_PLACES_SOURCE_ID})
+        rows = [dict(r) for r in conn.execute(f"SELECT * FROM places{where} ORDER BY name", args)]
+        if q:
+            # SQLite's LOWER() only folds ASCII, which would miss Polish diacritics; fold in Python instead.
+            needle = q.casefold()
+            rows = [
+                r for r in rows
+                if needle in r["name"].casefold() or needle in (r["address"] or "").casefold()
+            ]
+        rows = rows[:limit]
+        return rows, _sources(conn, {r["source_id"] for r in rows} or {OSM_PLACES_SOURCE_ID})
 
 
 def query_layer(layer: str, bbox, limit: int) -> tuple[list[dict], list[dict]]:

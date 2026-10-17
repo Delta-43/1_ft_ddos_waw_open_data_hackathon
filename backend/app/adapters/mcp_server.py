@@ -96,11 +96,16 @@ def build_server(allowed_hosts: list[str] | None = None) -> FastMCP:
     def search_places(
         category: Literal["museum", "landmark", "park", "generic"] | None = None,
         bbox: str | None = None,
+        q: str | None = None,
         limit: int = 20,
     ) -> dict:
-        """List catalogue places. bbox is min_lon,min_lat,max_lon,max_lat; limit 1..100."""
+        """List catalogue places. bbox is min_lon,min_lat,max_lon,max_lat; q is a case-insensitive
+        name/address match (1-100 characters, trimmed); limit 1..100."""
         box = _bbox(bbox)
-        places, sources = db.query_places(category, box, max(1, min(limit, 100)))
+        query = q.strip() if q else None
+        if query is not None and not (1 <= len(query) <= 100):
+            raise ValueError("q must be 1-100 characters after trimming")
+        places, sources = db.query_places(category, box, max(1, min(limit, 100)), query)
         return {"places": places, "sources": sources}
 
     @mcp.tool()

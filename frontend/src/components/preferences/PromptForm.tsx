@@ -49,7 +49,7 @@ export function PromptForm({ value, onChange, onSubmit, compact, busy = false }:
       />
       <p id="outing-hint" className="hint">{value.length}/{MAX_LENGTH} characters</p>
       {emptyError && <p role="alert" className="error">Please describe your outing first.</p>}
-      <button type="submit" className="moon-button" disabled={busy}>{busy ? 'Finding routes…' : 'Find routes'}</button>
+      <button type="submit" className="gradient-ring-button" disabled={busy}>{busy ? 'Finding routes…' : 'Find routes'}</button>
     </form>
   );
 }
