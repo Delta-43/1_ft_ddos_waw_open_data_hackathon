@@ -50,3 +50,21 @@ This folder is an isolated mockup. Shared application files, contracts, and prod
 Owner-hosted preview: http://silver-storm.wirehair-altair.ts.net:5179/
 
 The isolated `warsaw2076-mockup.service` runs under the owner's user account, bound to the Tailscale interface. It serves a release copy outside the checkout. It requires silver-storm and the owner's user session to remain running. No firewall, tailnet policy, or public forwarding was changed.
+
+## Start and share using your VPN IP
+
+From the repository root:
+
+```bash
+bash mockups/warsaw-2076/start-demo.sh
+```
+
+The script detects this computer's connected Tailscale IPv4 address, binds only to that address, and prints the link to share. Python 3 and a connected Tailscale client are required; no installation or administrator privileges are needed. Keep the terminal open; Ctrl+C stops a server started by the script. If an identical demo is already running on the port, the script prints its link and exits without changing that server.
+
+Choose a different port if needed:
+
+```bash
+bash mockups/warsaw-2076/start-demo.sh 5180
+```
+
+Your friend opens the printed `http://YOUR_TAILSCALE_IP:PORT/` link while connected to the same VPN, with permission to access that port. The script does not change firewall rules or Tailscale access policies.
