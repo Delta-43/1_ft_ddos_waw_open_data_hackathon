@@ -21,3 +21,18 @@ Preference interpretation falls back to keyword rules (`interpreted_by: rules`) 
 `ai.py` is optional at every step. The model returns preference values (range-checked; explicit request preferences still win)
 and rewords explanations from planner facts. A worded explanation with any number not in those facts is discarded,
 and the template stays. No key, a timeout or a bad reply all fall back to rules, with `interpreted_by: rules`.
+
+## MCP (MCP-01)
+
+`app/adapters/mcp_server.py` is a Streamable HTTP MCP server (official `mcp` SDK, stateless JSON). Its tools call
+`planner.plan` and `app.db`, the same services as REST: `plan_outing`, `search_places`, `list_layers`, `get_layer`.
+
+```bash
+# MCP_TOKEN in .env (required; the server refuses to start without it)
+PYTHONPATH=backend python -m app.adapters.mcp_server --host "$(tailscale ip -4)" --port 8001
+MCP_URL=http://<tailscale-ip>:8001/mcp python scripts/mcp_client_demo.py "a quiet museum outing"
+```
+
+Endpoint `http://<tailscale-ip>:8001/mcp`, header `Authorization: Bearer <MCP_TOKEN>`. Bind to the Tailscale address only;
+never expose it publicly. Add other Host names (for example the MagicDNS name) with `MCP_ALLOWED_HOSTS`.
+Requests are stateless and nothing about the caller is stored.
