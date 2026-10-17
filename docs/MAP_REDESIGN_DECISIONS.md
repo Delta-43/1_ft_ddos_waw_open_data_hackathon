@@ -17,11 +17,11 @@ Status words: **Decided** = Delta decided it. **Proposed** = my suggestion, Delt
 ## 2. Reference images
 
 - Dark: `docs/design-review/map-reference-dark.png` (supplied by Delta, 512×320): dark grey ground, dark grey extruded buildings, thin orange glowing street lines, flat water.
-- Light: **none supplied yet** (Open, D2).
+- Light: **not yet supplied.** Delta said they would attach it; it had not arrived in the agent's session at 23:40 (Open, D2).
 
 ## 3. Decisions
 
-**D0. What to do with the current frontend (#89, Moon, overlay).** Open, Delta decides. My suggestion: do not merge #89 as written. Keep #74 (decided in scope, only #76 is outstanding). If Aryna's objection to the Moon restyle is specific, list the defects so they can be fixed in place; reverting churns three files that others own two hours before the redesign starts. If Delta chooses the revert, drop the #74 part.
+**D0. What to do with the current frontend (#89, Moon, overlay).** Decided by Delta: **Aryna decides** whether #89 goes ahead. Constraints she must respect, so the choice stays consistent with other decisions: (1) the overlay (#74) is in scope for the live demo (DECISIONS 19:05 and 19:40), so a revert that drops it needs Sonia's and Delta's agreement first; (2) if she keeps or reverts the Moon restyle, say which defects drove it, because Delta's feedback on the rejected rebuild was that components did not feel like Moon; (3) record the outcome as a row in `docs/DECISIONS.md`. My non-binding suggestion: keep #74 and fix Moon problems in place. Delta will not override the choice unless it breaks a label, attribution or privacy rule.
 
 **D1. Dark map look.** Decided: match the reference. Ground and water are flat dark greys, buildings are dark grey blocks with soft top light, streets are thin orange lines with a glow. No basemap labels fight the glow: keep only district names, at low contrast.
 
