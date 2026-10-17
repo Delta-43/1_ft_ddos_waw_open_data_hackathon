@@ -21,9 +21,10 @@ export const palette = {
   rail: '#a9b4bf',
   district: '#2f5d3a',
   neighbourhood: '#6f8f78',
-  buildingLow: '#9fb6cf',
-  buildingHigh: '#c3d4e6',
-  buildingRoof: '#eef4fb',
+  buildingLow: '#8ea6c0',
+  buildingHigh: '#adc1d6',
+  // Light, not white: a near-white roof slab glares against the bright ground.
+  buildingRoof: '#d6e1ec',
   buildingRim: '#5f8fc0',
   // Near-white: MapLibre adds (1 - light colour) as ambient, so a saturated light would
   // tint shadowed walls with its complement. The blue comes from the building colours.
@@ -81,8 +82,10 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
     sources: {
       [source]: { type: 'vector', url: TILES.tileJson },
     },
-    // Directional light for extrusions: lit faces brighten, shadowed faces stay dark.
-    light: { anchor: 'viewport', color: p.light, intensity: 0.45, position: [1.5, 210, 35] },
+    // Lit faces get up to 1.0 × colour, faces turned away (1 − intensity). A lower sun (55° from
+    // vertical instead of 35°) keeps roofs from catching full light and shows more light/shade
+    // contrast on walls; intensity 0.5 darkens the shaded sides.
+    light: { anchor: 'viewport', color: p.light, intensity: 0.5, position: [1.5, 210, 55] },
     // Sky and fog become visible when the camera is pitched towards the horizon.
     sky: {
       'sky-color': p.sky,

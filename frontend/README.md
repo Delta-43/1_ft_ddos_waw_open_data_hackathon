@@ -39,18 +39,18 @@ src/
 
 ## Map style
 
-- **Look:** a bright game map that merges two references. The ground follows the GTA V map: cyan water, soft green parks, light urban ground, white roads with grey casings, dark district outlines and dark labels on white halos. The 3D buildings follow the Assassin's Creed Unity map: pale steel-blue walls and near-white roofs. Pins and the banner keep the dark hexagon / panel style from that map.
+- **Look:** a bright game map that merges two references. The ground follows the GTA V map: cyan water, soft green parks, light urban ground, white roads with grey casings, dark district outlines and dark labels on white halos. The 3D buildings follow the Assassin's Creed Unity map: pale steel-blue walls and light roofs. Pins and the banner keep the dark hexagon / panel style from that map.
 - **Colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
 - **District outlines:** Warsaw's 18 districts (OSM `admin_level` 9) are drawn as solid dark green lines, and neighbourhoods (`admin_level` 10) as dashed lines from zoom 14.
 - **Layers:** `buildStyle()` in the same file is an ordinary MapLibre style object using the [OpenMapTiles schema](https://openmaptiles.org/schema/) (`building`, `water`, `park`, `transportation` and so on). Add, remove or reorder layers there.
-- **Light, sky and fog:** the `light` and `sky` blocks of the style. Keep the light colour near white. MapLibre adds (1 − light colour) as ambient light, so a saturated light tints shadowed walls with its complementary colour.
+- **Light, sky and fog:** the `light` and `sky` blocks of the style. The light sits 55° from vertical with intensity 0.5, so roofs don't catch full light and walls show clear light and shade; lit faces reach 1.0 × their colour, faces turned away 0.5 ×. Keep the light colour near white. MapLibre adds (1 − light colour) as ambient light, so a saturated light tints shadowed walls with its complementary colour.
 - **Camera and limits:** start view, Warsaw bounds, zoom range and the 75° pitch cap are in `src/map/config.ts`.
 - **Overlay UI:** the banner, controls and popups are styled in `src/style.css`.
 
 ## Buildings
 
 - **Height:** `render_height` from the tiles, falling back to `FALLBACK_HEIGHT` (12 m).
-- **Look:** untextured, flat colours only: pale steel-blue walls, slightly lighter as height increases (`buildingLow` → `buildingHigh`). The free tiles have no facade imagery. From zoom 16 up, a near-white roof slab (`building-roof`) and blue footprint lines add the rooftop and rim highlight.
+- **Look:** untextured, flat colours only: pale steel-blue walls, slightly lighter as height increases (`buildingLow` → `buildingHigh`). The free tiles have no facade imagery. From zoom 16 up, a light roof slab (`building-roof`) and blue footprint lines add the rooftop and rim highlight. Keep roofs off-white (`#d6e1ec`): a near-white slab glares against the bright ground.
 - **Detailed shapes:** in OpenStreetMap, landmarks such as the Palace of Culture are mapped as several `building:part` shapes (podium, tower tiers, spire) plus one outline carrying the total height. OpenMapTiles should flag that outline with `hide_3d`, but it misses many, including the Palace, Varso, Warsaw Spire and Złota 44. Left alone, the outline renders as a solid box over the parts and z-fights with them. `src/map/buildingOutlines.ts` finds these outlines in the loaded tiles and collapses them to zero height using feature-state. An outline is hidden when:
   - smaller parts inside it reach its height;
   - at least one part starts above the ground (the `building:part` signature);
