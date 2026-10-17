@@ -4,7 +4,8 @@ Sonia owns this catalogue; Delta approves service integrations.
 
 | Dataset/service | Source URL | Licence/terms | Fetched at | Coverage/freshness | Mode | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Starter route | Repository fixture | Team-authored synthetic example | Not applicable | Straight-line illustration only | mock | Sonia |
+| Demo routes (`route-response.json`) | Repository fixture | Team-authored synthetic example | Not applicable | Two straight-line routes; invented green/quiet scores | mock | Sonia |
+| Demo places (`places-response.json`) | Repository fixture | Team-authored; real names, approximate coordinates | Not applicable | Five central Warsaw places; no opening hours | mock | Sonia |
 | OSM places (Łazienki/Ujazdów demo area) | https://overpass-api.de/api/interpreter | ODbL; © OpenStreetMap contributors | 2026-10-17T13:11:18+0200 | One ~2km x 2km demo bounding box (`52.2060,21.0220,52.2250,21.0480`); 625 raw elements, 26 named places (museums, galleries, parks, named gardens) after dropping unnamed polygon fragments | real | Sonia |
 | Warsaw open data: air quality | https://dane.um.warszawa.pl/api/action/get_bopipk_monitoring_jakosci_powietrza | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 141 monitoring stations city-wide, live readings | real | Sonia |
 | Warsaw open data: AED locations | https://dane.um.warszawa.pl/api/action/get_scb_lokalizacja_defibrylatorow | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 710 defibrillators city-wide | real | Sonia |
