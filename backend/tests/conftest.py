@@ -8,3 +8,10 @@ def offline_routing(monkeypatch, tmp_path):
     monkeypatch.setattr(routing, "_fetch_live", lambda url: None)
     monkeypatch.setattr(routing, "LOCAL_CACHE", tmp_path / "osrm-cache")
     monkeypatch.setattr(routing, "DEMO_CACHE", tmp_path / "demo-cache")
+
+
+@pytest.fixture(autouse=True)
+def no_model(monkeypatch):
+    """No test calls a real model, even if a developer's .env has a key."""
+    for var in ("LLM_PROVIDER", "OPENROUTER_API_KEY", "LLM_MODEL"):
+        monkeypatch.delenv(var, raising=False)

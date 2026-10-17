@@ -14,4 +14,10 @@ Delta owns shared business logic here. REST and MCP should both call these servi
 - `demo_cache.py`: refresh the committed OSRM cache after changing candidate selection.
 
 Places come from `data/fixtures/osm-places-sample.json` (DATA-01). Museums marked closed or under renovation are skipped.
-Preference interpretation is keyword rules (`interpreted_by: rules`) until AI-01.
+Preference interpretation falls back to keyword rules (`interpreted_by: rules`) when no model is configured.
+
+## AI (AI-01)
+
+`ai.py` is optional at every step. The model returns preference values (range-checked; explicit request preferences still win)
+and rewords explanations from planner facts. A worded explanation with any number not in those facts is discarded,
+and the template stays. No key, a timeout or a bad reply all fall back to rules, with `interpreted_by: rules`.
