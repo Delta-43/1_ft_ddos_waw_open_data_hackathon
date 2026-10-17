@@ -5,7 +5,7 @@ import { loadPins } from '../data';
 import { addPins } from '../markers/pins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
-import { INTRO_START, growBuildingsWithZoom, locateVisitor, markVisitor, playIntro } from './intro';
+import { INTRO_START, growBuildingsWithZoom, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
 import { fitRoute, showRoutes } from './routes';
 
 interface MapViewProps {
@@ -39,13 +39,23 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     loadPins(undefined, abort.signal)
       .then(pins => !abort.signal.aborted && addPins(map, pins))
       .catch(error => console.warn('Loading pins failed', error));
-    map.once('load', async () => {
+    map.once('load', () => {
       growBuildingsWithZoom(map);
-      const point = await location;
-      if (abort.signal.aborted) return;
+      // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
+      let landed = false;
+      let located = false;
       callbacks.current.onIntroStart?.();
-      if (point) markVisitor(map, point);
-      playIntro(map, point ?? INITIAL_VIEW.center, () => callbacks.current.onIntroDone?.(point !== null));
+      playIntro(map, INITIAL_VIEW.center, () => {
+        landed = true;
+        callbacks.current.onIntroDone?.(located);
+      });
+      void location.then(point => {
+        if (!point || abort.signal.aborted) return;
+        located = true;
+        markVisitor(map, point);
+        retargetIntro(map, point, landed);
+        if (landed) callbacks.current.onIntroDone?.(true);
+      });
     });
     // Cleanup also makes React StrictMode's double mount safe.
     return () => {

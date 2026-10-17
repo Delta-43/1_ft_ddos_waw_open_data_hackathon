@@ -1,5 +1,10 @@
 /* Direction A: routes on the left, stops on the right; one bottom sheet on mobile. */
 .results__heading {
+  /* Sits on the bright map: a dark pill keeps it readable. */
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  background: var(--panel);
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;

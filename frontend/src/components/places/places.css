@@ -1,6 +1,11 @@
 /* Quiet until active: muted by default, white and bold only when selected. Uses the shared
    theme variables with fallbacks. No backdrop-filter: it re-blurs on every map frame. */
 .place-card-list__heading {
+  /* Sits on the bright map: a dark pill keeps it readable. */
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  background: var(--panel, rgba(22, 23, 23, 0.94));
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
