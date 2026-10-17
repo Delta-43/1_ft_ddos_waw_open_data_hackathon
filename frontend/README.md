@@ -83,6 +83,7 @@ The map shows pins from the backend, all over Warsaw:
 
 - `src/data/places.ts` and `src/data/cityLayers.ts` request the whole Warsaw bounding box at each endpoint's maximum limit (100 places, 500 per layer), through the relative `/api` path that Vite proxies to the backend. More data in the backend's store (e.g. the full Warsaw cache in `data/local`) appears without frontend changes.
 - Every popup shows the data mode as a badge ("Real data, fetched at event time", "Cached open data · sample subset"; "sample subset" when the source's `method` says so), plus the source name and retrieval time. The bottom bar's credit line names each pin source (see Attribution).
+- Air-quality popups say how current the reading is, using the backend's `properties.freshness` verdict (30-minute rule, `backend/app/services/freshness.py`): "Cached reading, last updated 13:00" or "Live reading, updated HH:MM". The map never calls a reading live on its own; without a verdict it only shows "Last updated …".
 - If the backend is unreachable, the map still works without pins; each failed provider is logged.
 - Today the backend holds the committed samples: 26 OSM places around Łazienki/Ujazdów and 8 features per city layer.
 
