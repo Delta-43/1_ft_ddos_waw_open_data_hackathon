@@ -140,6 +140,37 @@ def test_itinerary_stop_order_changes_the_route(monkeypatch):
     assert forward["metrics"]["distance_m"]["value"] != backward["metrics"]["distance_m"]["value"]
 
 
+CELE_BEZPIEKI = "osm:node/12862698273"  # museum, "Mo-Fr 09:00-17:00" - closed on fixed_clock's Sunday
+
+
+def test_itinerary_reports_a_closed_stop_in_the_explanation():
+    data = planner.plan(RouteRequest(query="x", destination_place_id=CELE_BEZPIEKI))
+    assert "closed on arrival" in data["routes"][0]["explanation"]
+    assert "Cele Bezpieki" in data["routes"][0]["explanation"]
+
+
+def test_itinerary_reports_unknown_hours_for_a_non_museum_stop():
+    data = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM, via_place_ids=[SKWER]))
+    assert "not known for" in data["routes"][0]["explanation"]
+    assert "Skwer" in data["routes"][0]["explanation"]
+
+
+def test_itinerary_over_budget_is_reported_not_dropped():
+    data = planner.plan(RouteRequest(
+        query="x", destination_place_id=MAUZOLEUM, preferences={"max_duration_s": 900}
+    ))
+    route = data["routes"][0]
+    assert route["places"]  # the stop is still there, not silently dropped
+    assert "over the requested" in route["explanation"]
+
+
+def test_itinerary_within_budget_has_no_over_budget_note():
+    data = planner.plan(RouteRequest(
+        query="x", destination_place_id=MAUZOLEUM, preferences={"max_duration_s": 28800}
+    ))
+    assert "over the requested" not in data["routes"][0]["explanation"]
+
+
 def test_itinerary_routing_outage_falls_back_to_labelled_straight_lines():
     data = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM, via_place_ids=[SKWER]))
     check_consistent(data)
