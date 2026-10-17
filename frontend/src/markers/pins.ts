@@ -1,10 +1,15 @@
 import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
 import { TILES } from '../map/config';
+import { setPinCredits } from './credits';
 import { iconId, registerPinIcons } from './icons';
 import type { Pin, PinCategory } from './types';
 
 const SOURCE_ID = 'pins';
 const LAYER_ID = 'pins';
+/** Route source drawn by map/routes.ts; while it has routes, city pins step back. */
+const ROUTE_SOURCE = 'candidate-routes';
+/** Pin opacity while a route is shown: still findable, but the numbered stops lead. */
+const DIMMED_OPACITY = 0.3;
 
 const CATEGORY_LABEL: Record<PinCategory, string> = {
   landmark: 'Landmark',
@@ -41,17 +46,36 @@ function toGeoJSON(pins: Iterable<Pin>) {
   };
 }
 
-/** Escapes text for MapLibre's attribution (rendered as HTML) and links bare URLs. */
-function attributionHtml(credits: Iterable<string>): string {
-  const escape = (value: string) =>
-    value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-  return Array.from(credits, credit =>
-    escape(credit).replace(/https?:\/\/[^\s,)]+/g, url => `<a href="${url}" target="_blank" rel="noopener">${url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>`),
-  ).join(' · ');
+/** Licence credits of each map's pin sources, published to the page credit line. */
+const credits = new WeakMap<Map, Set<string>>();
+
+/** Maps whose pins are currently dimmed because a route is shown. */
+const dimmed = new WeakSet<Map>();
+
+/** Paint for the pin layer; dimmed pins also drop their labels, which compete with stop names. */
+function pinOpacity(map: Map) {
+  const on = dimmed.has(map);
+  return { 'icon-opacity': on ? DIMMED_OPACITY : 1, 'text-opacity': on ? 0 : 1 };
 }
 
-/** Source credits currently shown for each map's pins. */
-const credits = new WeakMap<Map, Set<string>>();
+/**
+ * Dims the pins while the route source has routes, and restores them when it is emptied.
+ * Watches the source instead of being called by the route code, so the two stay independent.
+ */
+function followRoutes(map: Map) {
+  map.on('sourcedata', async event => {
+    if (event.sourceId !== ROUTE_SOURCE || !event.isSourceLoaded) return;
+    const data = await map.getSource<GeoJSONSource>(ROUTE_SOURCE)?.getData();
+    const active = !!data && 'features' in data && data.features.length > 0;
+    if (active === dimmed.has(map)) return;
+    if (active) dimmed.add(map);
+    else dimmed.delete(map);
+    if (!map.getLayer(LAYER_ID)) return;
+    for (const [property, value] of Object.entries(pinOpacity(map))) {
+      map.setPaintProperty(LAYER_ID, property as 'icon-opacity' | 'text-opacity', value);
+    }
+  });
+}
 
 /** Runs `fn` now if the style is ready, otherwise once the map has settled. */
 function whenStyleReady(map: Map, fn: () => void) {
@@ -59,19 +83,11 @@ function whenStyleReady(map: Map, fn: () => void) {
   else map.once('idle', fn);
 }
 
-/**
- * Creates the source and symbol layer. MapLibre only reads a source's attribution when the
- * source is added, so new source credits rebuild both (cheap: one GeoJSON source).
- */
-function ensureLayer(map: Map, attribution: string) {
-  const existing = map.getSource(SOURCE_ID);
-  if (existing && existing.attribution === attribution) return;
-  if (existing) {
-    map.removeLayer(LAYER_ID);
-    map.removeSource(SOURCE_ID);
-  }
+/** Creates the source, symbol layer and click/hover handlers once per map. */
+function ensureLayer(map: Map) {
+  if (map.getSource(SOURCE_ID)) return;
   registerPinIcons(map);
-  map.addSource(SOURCE_ID, { type: 'geojson', data: toGeoJSON([]), attribution });
+  map.addSource(SOURCE_ID, { type: 'geojson', data: toGeoJSON([]) });
   map.addLayer(
     {
       id: LAYER_ID,
@@ -94,17 +110,20 @@ function ensureLayer(map: Map, attribution: string) {
         'text-color': '#1d2b3a',
         'text-halo-color': '#ffffff',
         'text-halo-width': 1.4,
+        // Applied at creation too, in case routes are already shown when the pins arrive.
+        ...pinOpacity(map),
       },
     },
     // Below any route layers (ids `route-*`), so route lines and numbered stops stay on top
-    // even when this layer is re-added after them.
+    // even when pins arrive after the routes are drawn.
     map.getLayersOrder().find(id => id.startsWith('route-')),
   );
 
-  if (!existing) registerHandlers(map);
+  registerHandlers(map);
+  followRoutes(map);
 }
 
-/** Click and hover handlers, once per map (they are bound to the layer id, not the layer). */
+/** Click and hover handlers, once per map. */
 function registerHandlers(map: Map) {
   map.on('click', LAYER_ID, (event: MapLayerMouseEvent) => {
     // A route stop drawn on top of this pin owns the click (it opens the place-card pop-up).
@@ -167,8 +186,9 @@ export function addPins(map: Map, pins: Pin[]): void {
     store.set(pin.id, pin);
     if (pin.attribution) mapCredits.add(pin.attribution);
   }
+  setPinCredits(mapCredits);
   whenStyleReady(map, () => {
-    ensureLayer(map, attributionHtml(mapCredits));
+    ensureLayer(map);
     map.getSource<GeoJSONSource>(SOURCE_ID)?.setData(toGeoJSON(store.values()));
   });
 }
@@ -177,5 +197,6 @@ export function addPins(map: Map, pins: Pin[]): void {
 export function clearPins(map: Map): void {
   storeFor(map).clear();
   credits.get(map)?.clear();
+  setPinCredits([]);
   map.getSource<GeoJSONSource>(SOURCE_ID)?.setData(toGeoJSON([]));
 }

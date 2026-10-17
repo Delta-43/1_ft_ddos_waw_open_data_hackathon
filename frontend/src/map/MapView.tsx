@@ -5,7 +5,8 @@ import { loadPins } from '../data';
 import { addPins } from '../markers/pins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
-import { INTRO_START, growBuildingsWithZoom, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
+import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
+import { focusRoute, initRouteFocus } from './routeFocus';
 import { fitRoute, onStopClick, showRoutes } from './routes';
 
 interface MapViewProps {
@@ -46,7 +47,8 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
       .then(pins => !abort.signal.aborted && addPins(map, pins))
       .catch(error => console.warn('Loading pins failed', error));
     map.once('load', () => {
-      growBuildingsWithZoom(map);
+      // Buildings rise with zoom during the intro, and later sink away from the selected route.
+      initRouteFocus(map);
       // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
       let landed = false;
       let located = false;
@@ -74,7 +76,9 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
 
   useEffect(() => {
     const map = mapRef.current;
-    if (map) showRoutes(map, routes, selectedRouteId);
+    if (!map) return;
+    showRoutes(map, routes, selectedRouteId);
+    focusRoute(map, routes.find(route => route.id === selectedRouteId));
   }, [routes, selectedRouteId]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.

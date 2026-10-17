@@ -73,6 +73,15 @@ function ensureLayers(map: Map): void {
     paint: { 'line-color': ['case', selected, '#ffffff', '#8ab4f8'], 'line-width': ['case', selected, 4, 3] },
   });
   map.addLayer({
+    // A white dash that runs along the selected route, like a game GPS path.
+    id: 'route-flow',
+    type: 'line',
+    source: ROUTE_SOURCE,
+    filter: ['==', selected, true] as FilterSpecification,
+    layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    paint: { 'line-color': '#ffffff', 'line-width': 2.5, 'line-dasharray': DASH_STEPS[0] },
+  });
+  map.addLayer({
     id: 'route-stop',
     type: 'circle',
     source: STOP_SOURCE,
@@ -101,6 +110,44 @@ function ensureLayers(map: Map): void {
 
 const stopHandlers = new WeakMap<Map, (placeId: string) => void>();
 
+// Dash patterns that, played in order, make the dash appear to travel along the line.
+const DASH_STEPS: number[][] = [
+  [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
+  [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
+];
+const FRAME_MS = 80;
+// Animate only briefly after a selection: continuous repaints would keep the map from ever
+// reaching 'idle', which the building scans (outlines, route focus) rely on.
+const ANIMATION_MS = 6000;
+const animations = new WeakMap<Map, number>();
+const animatedKeys = new WeakMap<Map, string>();
+
+function stopAnimation(map: Map): void {
+  const running = animations.get(map);
+  if (running !== undefined) window.clearInterval(running);
+  animations.delete(map);
+  if (map.getLayer('route-glow')) map.setPaintProperty('route-glow', 'line-opacity', 0.75);
+}
+
+/** Runs the dash and a soft glow pulse for a few seconds after a route is selected. */
+function animateSelected(map: Map, active: boolean): void {
+  stopAnimation(map);
+  if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let step = 0;
+  const started = performance.now();
+  const timer = window.setInterval(() => {
+    if (!map.getLayer('route-flow') || performance.now() - started > ANIMATION_MS) {
+      stopAnimation(map);
+      return;
+    }
+    step = (step + 1) % DASH_STEPS.length;
+    map.setPaintProperty('route-flow', 'line-dasharray', DASH_STEPS[step]);
+    map.setPaintProperty('route-glow', 'line-opacity', 0.6 + 0.25 * Math.sin((step / DASH_STEPS.length) * 2 * Math.PI));
+  }, FRAME_MS);
+  animations.set(map, timer);
+  map.once('remove', () => window.clearInterval(timer));
+}
+
 /** Calls `handler` with the place id when a numbered stop is clicked. Keyboard users use "Show on map" in the stops panel. */
 export function onStopClick(map: Map, handler: (placeId: string) => void): void {
   stopHandlers.set(map, handler);
@@ -121,6 +168,11 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
     ensureLayers(map);
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
     (map.getSource(STOP_SOURCE) as GeoJSONSource).setData(stopFeatures(routes.find(route => route.id === selectedId)));
+    const key = routes.some(route => route.id === selectedId) ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
+    if (animatedKeys.get(map) !== key) {
+      animatedKeys.set(map, key);
+      animateSelected(map, key !== '');
+    }
   };
   // Once our layers exist, update at once. isStyleLoaded() is false while any source is still
   // loading (even our own GeoJSON just after setData), and 'load' never fires again, so waiting
@@ -129,12 +181,17 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
   else map.once('idle', apply);
 }
 
-/** Moves the camera so the route fits between the floating panels. */
+/** Closest overview for a selected route: 3D buildings along it must be visible (route focus). */
+const MIN_FOCUS_ZOOM = 14.4;
+
+/** Moves the camera so the route fits between the floating panels, but never so far out that the 3D corridor disappears. */
 export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void {
   const coordinates = route.geometry.coordinates;
   if (coordinates.length === 0) return;
   const lngs = coordinates.map(([lng]) => lng);
   const lats = coordinates.map(([, lat]) => lat);
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
-  map.fitBounds(bounds, { padding, pitch: 50, bearing: -20, maxZoom: 16, duration: 600 });
+  const camera = map.cameraForBounds(bounds, { padding, bearing: -20, maxZoom: 16 });
+  if (!camera) return;
+  map.easeTo({ ...camera, zoom: Math.max(camera.zoom ?? MIN_FOCUS_ZOOM, MIN_FOCUS_ZOOM), pitch: 55, bearing: -20, duration: 600 });
 }

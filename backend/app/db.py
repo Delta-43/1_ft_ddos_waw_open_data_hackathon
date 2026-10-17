@@ -9,10 +9,12 @@ Rebuild:  python -m app.db
 import json
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from app.data.catalogue import CATEGORY_MAP, OSM_PLACES_SOURCE_ID, _rfc3339, osm_places_source
+from app.services import freshness
 
 ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT / "data/local/city.db"
@@ -79,7 +81,7 @@ def build(path: Path = DB_PATH) -> Path:
             _insert_source(conn, {
                 "id": source_id,
                 "name": f"Warsaw open data: {label}",
-                "mode": "cached",
+                "mode": "real",  # fetched from dane.um.warszawa.pl; envelope mode is "cached"
                 "attribution": od["attribution"],
                 "url": f"https://dane.um.warszawa.pl/api/action/{dataset['endpoint']}",
                 "retrieved_at": _rfc3339(od["fetched_at"]),
@@ -113,13 +115,23 @@ def _insert_source(conn: sqlite3.Connection, s: dict[str, Any]) -> None:
     )
 
 
+def _open() -> sqlite3.Connection:
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 def connect() -> sqlite3.Connection:
-    """Read connection; builds the database first if it is missing or older than its fixtures."""
+    """Read connection; rebuilds the database if it is missing, stale or not a readable SQLite file."""
     inputs = [OSM_SAMPLE, OPEN_DATA_SAMPLE] + ([OPEN_DATA_CACHE] if OPEN_DATA_CACHE.exists() else [])
     if not DB_PATH.exists() or DB_PATH.stat().st_mtime < max(p.stat().st_mtime for p in inputs):
         build()
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    try:
+        conn = _open()
+        conn.execute("SELECT 1 FROM sources LIMIT 1")
+    except sqlite3.DatabaseError:  # corrupt or wrong schema: city data is rebuildable from fixtures
+        build()
+        conn = _open()
     return conn
 
 
@@ -145,16 +157,22 @@ def query_layer(layer: str, bbox, limit: int) -> tuple[list[dict], list[dict]]:
     where, args = _where(bbox, [("layer = ?", layer)])
     with connect() as conn:
         rows = conn.execute(f"SELECT * FROM features{where} ORDER BY id LIMIT ?", [*args, limit]).fetchall()
-        feats = [
-            {
+        now = datetime.now(freshness.WARSAW)
+        feats = []
+        for r in rows:
+            props = json.loads(r["properties"])
+            if layer == "air_quality":
+                # Stations can stop reporting while the feed still answers: judge each reading.
+                times = [m.get("time") for m in props.get("measurements", [])]
+                latest = max((t for t in times if freshness.parse_time(t)), default=None,
+                             key=freshness.parse_time)
+                props["freshness"] = freshness.assess(latest, now)
+            feats.append({
                 "type": "Feature",
                 "id": r["id"],
                 "geometry": {"type": "Point", "coordinates": [r["longitude"], r["latitude"]]},
-                "properties": {"name": r["name"], "layer": layer, "source_id": r["source_id"],
-                               **json.loads(r["properties"])},
-            }
-            for r in rows
-        ]
+                "properties": {"name": r["name"], "layer": layer, "source_id": r["source_id"], **props},
+            })
         return feats, _sources(conn, {f"warsaw-open-data-{layer}"})
 
 
