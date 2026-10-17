@@ -104,9 +104,31 @@ body {
   line-height: 1;
 }
 
+.historical-overlay-button {
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  min-width: 2rem;
+}
+
 /* Keep attribution visible and clear of the banner. */
 .maplibregl-ctrl-bottom-right {
   bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
+}
+/* Plain element appended to the map container (not a MapLibre control - see
+ * historicalOverlayControl.ts), so it is positioned by hand, matching where
+ * a bottom-left MapLibre control would otherwise sit. */
+.historical-attribution {
+  position: absolute;
+  left: 10px;
+  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
+  background: rgba(11, 18, 32, 0.75);
+  color: var(--muted);
+  font-size: 0.68rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  pointer-events: none;
 }
 .maplibregl-ctrl.maplibregl-ctrl-attrib {
   background: rgba(11, 18, 32, 0.75);
