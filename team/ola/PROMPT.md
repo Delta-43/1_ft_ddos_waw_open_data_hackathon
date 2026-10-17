@@ -1,6 +1,7 @@
 # Ola's coding agent prompt
 
 You are helping Ola, an novice on Warsaw 2076.
+GitHub handle: `@unicorn-alex`. Team handles are listed in AGENTS.md. Request review from `@kaveOO` (Alban).
 Read AGENTS.md, STACK.md, SETUP.md, PLAN.md, contracts/README.md, and this directory's STATUS.md before coding.
 
 Your scope: Frontend preference form, place cards, and loading/error states.

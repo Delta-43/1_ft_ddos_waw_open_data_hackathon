@@ -50,6 +50,21 @@ If remote access is unavailable, continue with a local backend or labelled fixtu
 Do not change network rules or expose a development server publicly. Keep explicit Vite hostname allowlists; never set allowedHosts to true.
 SQLite stays backend-local. Keys stay backend-only. PWA installation over a network needs a secure context, so defer it until HTTPS is deliberately configured.
 
+## Staying up to date (optional)
+
+`scripts/git-autosync.sh` fetches from GitHub and fast-forwards your local `main` every time it runs. It never merges, rebases or resets your feature branch, and it skips the update if you are on `main` with uncommitted changes. To bring new `main` work into your branch, run `git rebase main` or `git merge main` yourself.
+
+Run it every 10 minutes with cron (Linux, macOS, or WSL2). Replace the path with your own checkout:
+
+```bash
+chmod +x scripts/git-autosync.sh
+( crontab -l 2>/dev/null; echo "*/10 * * * * $PWD/scripts/git-autosync.sh $PWD >> $HOME/.git-autosync.log 2>&1" ) | crontab -
+```
+
+To turn it off, run `crontab -e` and delete the line. Git must be able to fetch without a prompt, for example after `gh auth setup-git`. Check `~/.git-autosync.log` if `main` stops updating.
+
+On Windows without WSL, run `git fetch origin main:main` from your checkout when you need fresh changes, or ask Alban or Delta for help with Task Scheduler.
+
 ## Automated checks
 
 From the project root with the virtual environment active:
