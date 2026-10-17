@@ -4,13 +4,13 @@ Delta owns bootstrap. Do this before feature work. No remote repository, invitat
 
 ## Bootstrap
 
-1. Confirm the repository owner, visibility, and all four GitHub usernames. Do not infer handles from names.
+1. Confirm the repository owner, visibility, and all five GitHub usernames. Do not infer handles from names.
 2. Authenticate GitHub CLI with `gh auth login`, or use the GitHub website.
 3. From the project root, initialise once: `git init -b main`.
 4. Review `.gitignore`, then run `git add .` and `git diff --cached --stat`. Check no secrets are staged.
 5. Commit: `git commit -m "Bootstrap team workspace and CI"`.
 6. Create the agreed repository using `gh repo create OWNER/REPO --private --source=. --remote=origin --push` (or select the agreed visibility in the website).
-7. Invite the other three verified accounts with Write access through repository Settings → Collaborators. The repository owner performs this step.
+7. Invite the other four verified accounts with Write access through repository Settings → Collaborators. The repository owner performs this step.
 8. Open Actions and confirm both jobs pass on the initial push. Fix bootstrap failures before splitting work.
 9. Enable branch protection/rulesets for main, where supported by the repository's plan and visibility.
 
@@ -22,7 +22,7 @@ Use squash merging and delete merged branches. Do not require a merge queue for 
 If a merge queue is enabled later, add `merge_group` to CI triggers first.
 If the account plan cannot enforce protection, document that limitation and enforce the same review/check procedure manually; do not claim protection is enabled.
 
-Replace placeholders in `.github/CODEOWNERS.example` with real handles, copy it to `.github/CODEOWNERS`, and review in a PR.
+`.github/CODEOWNERS` uses the verified handles listed in AGENTS.md.
 CODEOWNERS lists eligible reviewers; listing Delta and Alban does not require both to approve. Request both explicitly for shared contract changes.
 
 ## Issues and board

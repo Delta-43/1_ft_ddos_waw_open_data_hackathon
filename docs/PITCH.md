@@ -8,6 +8,7 @@ Feature work stops at submission minus five hours. See PLAN.md for the absolute 
 - Alban: presentation design, visual consistency, slides, and demo transitions.
 - Sonia: data provenance, limitations, supporting evidence, and backup fixtures.
 - Ola: screenshots, recording, device checks, and rehearsal timing.
+- Aryna: place-card and data-label screenshots, second-device check, and rehearsal support.
 
 ## Suggested narrative
 

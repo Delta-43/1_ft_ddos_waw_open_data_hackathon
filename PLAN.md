@@ -5,7 +5,7 @@
 | Pair | Expert | Novice | Primary ownership |
 | --- | --- | --- | --- |
 | Backend | Delta | Sonia | API, data, routing, AI, MCP |
-| Frontend | Alban | Ola | Map, route comparison, forms, place cards |
+| Frontend | Alban | Ola, Aryna | Map, route comparison, forms (Ola), place cards and source labels (Aryna) |
 
 Delta is integration lead and leads pitch conception and delivery. Alban leads presentation design.
 Each person owns a bounded feature and uses a coding agent. Novices produce their own PRs with expert guidance.
@@ -19,7 +19,7 @@ Confirm submission mechanics and time with organisers at kickoff; update this fi
 - **06:00 Sunday:** stop all feature work, five hours before submission. Start pitch and presentation preparation.
 - **06:00–06:30 only if needed:** Delta may authorise fixes to existing demo blockers. Other members continue pitch work.
 - **06:30:** absolute coding stop. Drop incomplete features and use the last working demo or recording.
-- **06:30–08:00:** Delta shapes narrative and delivery; Alban designs slides; Sonia checks evidence and data labels; Ola captures demo assets.
+- **06:30–08:00:** Delta shapes narrative and delivery; Alban designs slides; Sonia checks evidence and data labels; Ola and Aryna capture demo assets.
 - **08:00–09:00:** rehearse the entire pitch and demo; prepare an offline recording and screenshots.
 - **09:00–10:00:** tighten slides, timing, transitions, and answers to likely questions.
 - **10:00–11:00:** submission checks and buffer. Verify organiser requirements; submit early when ready.
@@ -31,7 +31,7 @@ The grace period does not move the submission deadline or justify a new feature.
 
 1. First 45 minutes: confirm scope/deadline, create repository, make CI green, enable protection, agree contract and demo scenario.
 2. First two hours: integrated preference request → mocked API response → visible frontend result. Verify teammate device access.
-3. Next: Sonia prepares real data and provenance; Ola builds cards/forms; experts integrate map and candidate-route services.
+3. Next: Sonia prepares real data and provenance; Ola builds forms; Aryna builds place cards; experts integrate map and candidate-route services.
 4. Once core works: grounded AI interpretation/explanation and MCP tools using the same services.
 5. Before 06:00: merge the last green feature PRs, smoke-test main, and mark the demo commit. Prepare fixture fallback.
 
@@ -115,7 +115,7 @@ Earlier cached files demonstrate that sources have worked; they do not establish
 1. Sonia and Delta spend at most 30 minutes checking fresh OSM, one official dataset, and the selected routing provider.
 2. Record endpoint, response status, source date, fetched time, attribution and usable record count for each successful fetch.
 3. Classify each capability as verified real input, derived proxy, simulation, or deferred. Catalogue presence alone is not a successful check.
-4. Give Alban and Ola a stable contract and labelled demo fixture immediately; they need not wait for live integrations.
+4. Give Alban, Ola and Aryna a stable contract and labelled demo fixture immediately; they need not wait for live integrations.
 5. Cache only data fetched during the event. Keep the core demo working if a provider later fails.
 6. Replace simulations only when a verified source fits the existing contract and time budget. The five-hour freeze still applies.
 

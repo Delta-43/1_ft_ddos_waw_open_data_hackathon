@@ -8,7 +8,7 @@ Build code and fetch data from scratch on Saturday. Existing starter files are r
 
 | Layer | Choice | Responsibility / status |
 | --- | --- | --- |
-| UI | React, TypeScript, Vite | Alban + Ola; starter reference exists |
+| UI | React, TypeScript, Vite | Alban + Ola + Aryna; starter reference exists |
 | Map | MapLibre GL JS | Alban adds during the event; not installed in starter |
 | Styling | Plain CSS initially; Tailwind only if Alban chooses it | Avoid adding tooling before the core flow |
 | API | Python 3.12, FastAPI, Pydantic, Uvicorn | Delta + Sonia |

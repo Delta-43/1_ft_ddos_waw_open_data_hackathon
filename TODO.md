@@ -10,7 +10,7 @@ Create one GitHub issue per row using `docs/GITHUB.md`. After creation, add issu
 | DATA-01 | Sonia | Fetch and normalise fresh OSM places/parks for one demo area on Saturday | API-01, DATA-02 | Event-time sample preserves IDs, names, coordinates, dates and attribution; failures trigger labelled simulation |
 | FE-01 | Alban | Map and candidate route layers | API-01 | Two routes drawn; selected route changes visibly |
 | FE-02 | Ola | Preferences form | API-01 | Valid request submitted; empty/loading/error states visible |
-| FE-03 | Ola | Place cards | FE-02 | Cards show place details and data mode |
+| FE-03 | Aryna | Place cards | FE-02 | Cards show place details and data mode |
 | BE-01 | Delta | Candidate routes and explicit scoring | API-01 | Valid street geometry from routing service or labelled fixture fallback |
 | BE-02 | Sonia | Places endpoint and filters | DATA-01 | Bounded endpoint returns normalised data; relevant check passes |
 | INT-01 | Delta + Alban | Shared integration demo | FE-01, FE-02, BE-01 | Teammate device can complete core flow |
@@ -37,7 +37,7 @@ The source inventory in PLAN.md records historical evidence, not guaranteed live
 | SIM-01 | Sonia + Delta | Create environmental and disruption demo fixtures | API-01 | Noise, route air scores, traffic, incidents and roadworks visibly simulated; no fake measured dB or implied live readings |
 | SIM-02 | Sonia + Ola | Create mock event/profile/charging examples | API-01 | Fictional or clearly demo-labelled records; no implication of real availability, bookings or personal account access |
 | DATA-07 | Delta + Alban | Define greenery proxy from fresh park geometry | DATA-03 | Method documented; UI says proxy; no unsupported claim of measured shade/canopy |
-| DATA-08 | Alban + Ola | Display source modes and dates | API-01 | Cards and route explanations distinguish real, historical, proxy and simulated inputs |
+| DATA-08 | Alban + Aryna | Display source modes and dates | API-01 | Cards and route explanations distinguish real, historical, proxy and simulated inputs |
 | DATA-09 | Delta | Timebox optional event/roadwork/GTFS checks | INT-01 | At most 30 minutes; integrate only verified useful responses, otherwise retain simulation or defer |
 | DATA-10 | Sonia + Ola | Test provider failures and demo fallback | INT-01, DATA-08 | Contract remains stable during outages; simulation labels persist; screenshot/recording fallback ready |
 
@@ -55,6 +55,6 @@ If those checks fail, tell the team immediately and revise the scenario rather t
 ### Pair handover
 
 - Delta + Sonia: source gate, fresh fetches, small normalisers, documented proxies, and labelled simulations.
-- Alban + Ola: build against the shared fixture immediately; display per-input provenance so mixed real/simulated routes remain clear.
+- Alban + Ola + Aryna: build against the shared fixture immediately; display per-input provenance so mixed real/simulated routes remain clear.
 - All: no old-project code, snapshots, credentials, or database imports; no data tasks beyond the 06:00 freeze or 06:30 absolute stop.
 
