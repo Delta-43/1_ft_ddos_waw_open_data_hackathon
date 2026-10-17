@@ -27,9 +27,11 @@ interface PlaceCardProps {
   /** Present when the card is a stop on a route. */
   stop?: Stop;
   selected?: boolean;
+  /** Opens this place's pop-up on the map. */
+  onShowOnMap?: () => void;
 }
 
-export function PlaceCard({ place, source, stop, selected = false }: PlaceCardProps) {
+export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }: PlaceCardProps) {
   return (
     <article className={`place-card${selected ? ' place-card--selected' : ''}`}>
       <header className="place-card__header">
@@ -65,6 +67,11 @@ export function PlaceCard({ place, source, stop, selected = false }: PlaceCardPr
           </>
         )}
       </dl>
+      {onShowOnMap && (
+        <button type="button" className="place-card__show" onClick={onShowOnMap} aria-pressed={selected}>
+          Show on map
+        </button>
+      )}
     </article>
   );
 }

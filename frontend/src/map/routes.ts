@@ -36,7 +36,7 @@ function stopFeatures(route: Route | undefined): Collection {
       if (!place) return [];
       return [{
         type: 'Feature' as const,
-        properties: { order: String(stop.order), name: place.name },
+        properties: { order: String(stop.order), name: place.name, placeId: place.id },
         geometry: { type: 'Point' as const, coordinates: [place.longitude, place.latitude] },
       }];
     }),
@@ -83,6 +83,7 @@ function ensureLayers(map: Map): void {
       'circle-stroke-width': 2,
     },
   });
+  listenToStops(map);
   map.addLayer({
     id: 'route-stop-number',
     type: 'symbol',
@@ -98,6 +99,22 @@ function ensureLayers(map: Map): void {
   });
 }
 
+const stopHandlers = new WeakMap<Map, (placeId: string) => void>();
+
+/** Calls `handler` with the place id when a numbered stop is clicked. Keyboard users use "Show on map" in the stops panel. */
+export function onStopClick(map: Map, handler: (placeId: string) => void): void {
+  stopHandlers.set(map, handler);
+}
+
+function listenToStops(map: Map): void {
+  map.on('click', 'route-stop', event => {
+    const placeId = event.features?.[0]?.properties?.placeId;
+    if (typeof placeId === 'string') stopHandlers.get(map)?.(placeId);
+  });
+  map.on('mouseenter', 'route-stop', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'route-stop', () => { map.getCanvas().style.cursor = ''; });
+}
+
 /** Draws the candidates and highlights `selectedId`. Safe to call before the style loads. */
 export function showRoutes(map: Map, routes: Route[], selectedId: string | undefined): void {
   const apply = () => {
@@ -105,8 +122,11 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
     (map.getSource(STOP_SOURCE) as GeoJSONSource).setData(stopFeatures(routes.find(route => route.id === selectedId)));
   };
-  if (map.isStyleLoaded()) apply();
-  else map.once('load', apply);
+  // Once our layers exist, update at once. isStyleLoaded() is false while any source is still
+  // loading (even our own GeoJSON just after setData), and 'load' never fires again, so waiting
+  // for it here would drop the update; 'idle' always comes.
+  if (map.getSource(ROUTE_SOURCE) || map.isStyleLoaded()) apply();
+  else map.once('idle', apply);
 }
 
 /** Moves the camera so the route fits between the floating panels. */

@@ -17,6 +17,7 @@
 | 2026-10-17 13:55 (UTC+02:00) | PR review and merging delegated to Delta's cloud agent: reviews posted as Delta, squash merge, merged branches auto-deleted. Ran until 16:08, then handed back to Delta's laptop | Delta | Keep reviews moving while Delta's computer was down |
 | 2026-10-17 16:04 (UTC+02:00) | API-01 contract 1.0 (#32) merged by auto-merge on Ola's approval, without Alban's review. Alban reviews after the fact; changes go in a new contract PR | Delta | Unblock DATA-08, BE-01 and FE-01 route layers |
 | 2026-10-17 (UTC+02:00) | Partial fixes link issues with `Refs #N`, not `Closes #N`. #8 was auto-closed by #38 and reopened for the routing-provider half | Delta | Keep issue status truthful |
+| 2026-10-17 19:00 (UTC+02:00) | Frontend direction for the demo (Aryna, PR #62): the real app keeps the dark Language-Explorer look over Alban's bright map; Delta's isometric mockup (`mockups/warsaw-2076/`) is the pitch backup, not the live demo; place cards also open as pop-ups above numbered stops (as in the mockup); the then-and-now era layer and social walking (#68) are slides only | Aryna | Real routes and data labels are in the real app; the mockup is mock data; PLAN.md requires a contract and sign-off for stretch items before the freeze |
 
 Record contract changes, provider choice, scope cuts, and any grace-period authorisation here.
 
