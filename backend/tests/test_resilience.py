@@ -89,18 +89,6 @@ def test_db_build_falls_back_to_committed_sample_when_full_cache_is_absent(monke
     assert "committed sample, not the full set" in method
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Known gap, not fixed here: app.db.connect() only checks city.db's mtime "
-        "against its input fixtures, never that the file is actually a readable "
-        "SQLite database. A corrupted-but-newer city.db raises sqlite3.DatabaseError "
-        "('file is not a database'), which main.py does not catch, producing an "
-        "unhandled 500 instead of a graceful rebuild. db.py is Delta's file "
-        "(backend/app/, not backend/tests/), so this is flagged, not fixed, here - "
-        "see #56 for the fix."
-    ),
-    strict=True,
-)
 def test_corrupted_db_does_not_crash_the_places_endpoint(_isolated_db):
     _isolated_db.write_text("not actually a sqlite database")
 

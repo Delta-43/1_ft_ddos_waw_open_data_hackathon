@@ -21,3 +21,40 @@ Preference interpretation falls back to keyword rules (`interpreted_by: rules`) 
 `ai.py` is optional at every step. The model returns preference values (range-checked; explicit request preferences still win)
 and rewords explanations from planner facts. A worded explanation with any number not in those facts is discarded,
 and the template stays. No key, a timeout or a bad reply all fall back to rules, with `interpreted_by: rules`.
+
+## Stale live data (freshness.py)
+
+Warsaw open data and GTFS-derived feeds can go quiet for a vehicle or station (repairs, holdbacks, technical stops) while the
+feed still answers 200. `freshness.py` judges each record by its own timestamp: older than 30 minutes (`MAX_AGE_S`), missing,
+unreadable or dated in the future means not live. `split_live` separates live from stale records; `has_gap` flags a series that
+skips more than 30 minutes. Naive feed times are read as Europe/Warsaw.
+
+Any future live transit integration (vehicle positions, departures) must pass records through `split_live` before use:
+show stale vehicles as "last seen HH:MM" or drop them, never as live; never extrapolate a position across a gap; fall back to
+the schedule, labelled as schedule. Air-quality features already carry `properties.freshness` (`updated_at`, `age_s`, `fresh`,
+`reason`); cached readings are therefore reported as stale, which is accurate.
+## MCP (MCP-01)
+
+`app/adapters/mcp_server.py` is a Streamable HTTP MCP server (official `mcp` SDK, stateless JSON). Its tools call
+`planner.plan` and `app.db`, the same services as REST: `plan_outing`, `search_places`, `list_layers`, `get_layer`.
+
+```bash
+# MCP_TOKEN in .env (required; the server refuses to start without it)
+PYTHONPATH=backend python -m app.adapters.mcp_server --host "$(tailscale ip -4)" --port 8001
+MCP_URL=http://<tailscale-ip>:8001/mcp python scripts/mcp_client_demo.py "a quiet museum outing"
+```
+
+Endpoint `http://<tailscale-ip>:8001/mcp`, header `Authorization: Bearer <MCP_TOKEN>`. Bind to the Tailscale address only;
+never expose it publicly. Add other Host names (for example the MagicDNS name) with `MCP_ALLOWED_HOSTS`.
+Requests are stateless and nothing about the caller is stored.
+
+## Opening hours (opening_hours.py)
+
+`opening_hours.status(text, when)` evaluates raw OSM text to `open`, `closed` or `unknown`. It supports weekday lists and ranges,
+`HH:MM-HH:MM` ranges, `off`/`closed`, `24/7` and `;` rules (later rules override earlier ones). Anything else (public holidays,
+months, sunrise, a bare day list) is `unknown`: we do not guess.
+
+The planner uses it in two places, with Warsaw time from `planner.clock()` (tests freeze it): museums that are `closed` 30 minutes
+after departure are left out of the candidate pool (unknown hours stay; if none would remain, all stay), and each route's
+explanation gets a sentence for museums `closed` at their estimated arrival or with unknown hours. Known limit: only the first
+arrival is used to filter the pool, so a later stop can still be flagged closed. No contract field was added.

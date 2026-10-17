@@ -11,7 +11,7 @@ Sonia owns this catalogue; Delta approves service integrations.
 | Warsaw open data: AED locations | https://dane.um.warszawa.pl/api/action/get_scb_lokalizacja_defibrylatorow | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 710 defibrillators city-wide | real | Sonia |
 | Warsaw open data: public toilets | https://dane.um.warszawa.pl/api/action/get_m_toalety | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 695 facilities city-wide, source has no stable id (synthesised from array index) | real | Sonia |
 | Warsaw open data: events calendar | https://dane.um.warszawa.pl/api/action/get_bmm_kalendarz_wydarzen | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 652 raw events, 352 kept with a resolvable map point (300 dropped: no coordinates, not guessed) | real | Sonia |
-| Warsaw open data: open sports fields | https://dane.um.warszawa.pl/api/action/get_be_otwarte_boiska + OSM Nominatim geocoding | CC-BY (city data) + ODbL (OSM geocoded coordinates) | Code ready; live geocoding blocked so far, see note below | 1227 raw records, 308 unique addresses to geocode | blocked | Sonia |
+| Warsaw open data: open sports fields | https://dane.um.warszawa.pl/api/action/get_be_otwarte_boiska + OSM Nominatim geocoding | CC-BY (city data) + ODbL (OSM geocoded coordinates) | City data fetched 2026-10-17T14:21:49+0200; geocoding not completed, see note below | 1227 raw records fetched; 308 unique addresses, 0 successfully geocoded so far | blocked | Sonia |
 | Historical map overlays (1935/1939/1945) | https://wms.um.warszawa.pl/serwis | Urząd m.st. Warszawy, Biuro Architektury i Planowania Przestrzennego | 2026-10-17T18:45:58+0200 | 3 bounded raster images over central Warsaw (1935 aerial photo, 1939 city plan, 1945 aerial photo of the destroyed city), each verified to render a real image | real | Sonia |
 
 For each import, retain source identifiers, normalise coordinates, and record missing fields.
@@ -43,7 +43,7 @@ Full catalogue, with the actual action endpoint and whether it was fetched for t
 | AED Locations | Health | `get_scb_lokalizacja_defibrylatorow` | daily | **Fetched** — safety amenity for place cards |
 | Database of toilets available to residents | Environment | `get_m_toalety` | weekly | **Fetched** — practical amenity for a walking outing |
 | Events Calendar | Events | `get_bmm_kalendarz_wydarzen` | 2 hours | **Fetched** — cultural events, relevant to a museum outing; records without a map point are dropped, not guessed |
-| Open sports fields | Sport | `get_be_otwarte_boiska` | weekly | **Geocoding built, live run blocked** — resource has no coordinates, only a street address (1227 records, 308 unique addresses). `backend/app/data/geocode.py` geocodes via OSM Nominatim (1 req/s, cached, single-threaded, per Nominatim's usage policy). See the geocoding note below |
+| Open sports fields | Sport | `get_be_otwarte_boiska` | weekly | **Fetched (1227 records, 2026-10-17T14:21:49+0200); geocoding blocked** — resource has no coordinates, only a street address (308 unique addresses). `backend/app/data/geocode.py` geocodes via OSM Nominatim (1 req/s, cached, single-threaded, per Nominatim's usage policy). See the geocoding note below |
 | Na żądanie (tourist routes) | Active residents | `get_sbt_trasy_turystyczne` | on request | Catalogued only — sounds relevant (tourist routes) but not inspected this pass; candidate for a follow-up issue |
 | Weather | Environment | `get_zom_pogoda` | 10 minutes | Catalogued only — context data, lower priority than air quality for the demo |
 | Public Transport Stop Locations | Public transport | `get_ztm_przystanki_komunikacji_miejskiej` | daily | Catalogued only — **Delta's routing/transit territory** (BE-01), not fetched here |
@@ -63,7 +63,7 @@ Full catalogue, with the actual action endpoint and whether it was fetched for t
 | Public consultations districts | Active residents | `get_cks_konsultacje_spoleczne_dzielnice` | 2 hours | Catalogued only — out of scope |
 | Participatory budget | Active residents | `get_cks_budzet_obywatelski` | weekly | Catalogued only — out of scope |
 
-Normalisation code: `backend/app/data/warsaw_open_data.py`. Committed sample (8 records per dataset): `data/fixtures/warsaw-open-data-sample.json`. Full raw response is cached at `data/local/warsaw_open_data_raw.json` (gitignored, event-time only, not committed — it also never contains the API key itself, only the data it unlocked).
+Normalisation code: `backend/app/data/warsaw_open_data.py`. Committed sample (8 records per dataset, fetched 2026-10-17T13:57:14+0200): `data/fixtures/warsaw-open-data-sample.json`. As of DATA-03 this also includes a `sports_fields` entry with 8 raw (un-geocoded, no coordinates) records from the 2026-10-17T16:58:49+0200 fetch, as independently-verifiable evidence for the 1227-record count — distinct from `sample_places` used by the other four datasets since these records have no `longitude`/`latitude` yet. Full raw response for all five is cached at `data/local/warsaw_open_data_raw.json` (gitignored, event-time only, not committed — it also never contains the API key itself, only the data it unlocked).
 
 Known limitations, recorded rather than hidden:
 - Toilets have no native id in the source; `waw:toilet/<index>` is a synthetic id tied to fetch order, not a stable upstream identifier — do not treat it as durable across refetches.
@@ -76,7 +76,7 @@ The sports-fields resource has street addresses (`Adres obiektu`, `Dzielnica`) b
 
 This follows Nominatim's usage policy (https://operations.osmfoundation.org/policies/nominatim/): single-threaded, max 1 request/second, a real identifying User-Agent, and mandatory result caching. It is excluded from `fetch_and_normalise_all()` by default (slow, ~5+ minutes for a full run) — call it explicitly or pass `--sports-fields` to the script.
 
-**Live status as of 2026-10-17T14:21+0200: blocked, not fetched.** Every request from this development sandbox's network got HTTP 429 from Nominatim, including a single isolated request tried 20+ seconds after the first — this is the shared/sandboxed egress IP already being over Nominatim's public rate limit from aggregate traffic, not something our 1 req/s client-side pacing controls. The first implementation of the geocoder had a real bug here: it treated a 429 as "address not found" and cached that as a permanent miss, which produced a dishonest 56/1227 "success" rate that silently mislabeled real addresses as nonexistent. That is fixed — `geocode()` now retries 429/5xx with backoff and raises `GeocodingUnavailable` (not a cached "not found") if Nominatim never gives a definitive answer; `normalise_sports_fields()` catches that, stops cleanly, and keeps whatever was already geocoded. Verified by the offline tests in `backend/tests/test_geocode.py` and `backend/tests/test_warsaw_open_data.py` (mocked HTTP, no real network). A real committed sample still needs a run from a network Nominatim doesn't throttle — not completed in this PR.
+**Live status as of 2026-10-17T14:21+0200: the 1227-record city dataset itself fetched successfully (that part needs no geocoding); geocoding addresses into coordinates is blocked.** Every request from this development sandbox's network got HTTP 429 from Nominatim, including a single isolated request tried 20+ seconds after the first — this is the shared/sandboxed egress IP already being over Nominatim's public rate limit from aggregate traffic, not something our 1 req/s client-side pacing controls. The first implementation of the geocoder had a real bug here: it treated a 429 as "address not found" and cached that as a permanent miss, which produced a dishonest 56/1227 "success" rate that silently mislabeled real addresses as nonexistent. That is fixed — `geocode()` now retries 429/5xx with backoff and raises `GeocodingUnavailable` (not a cached "not found") if Nominatim never gives a definitive answer; `normalise_sports_fields()` catches that, stops cleanly, and keeps whatever was already geocoded. Verified by the offline tests in `backend/tests/test_geocode.py` and `backend/tests/test_warsaw_open_data.py` (mocked HTTP, no real network). A real committed sample still needs a run from a network Nominatim doesn't throttle — not completed in this PR.
 
 ## Kickoff source gate (DATA-02): remaining STACK.md sources
 
@@ -102,6 +102,17 @@ Organiser data rules: not separately reconfirmed this pass — see PLAN.md's exi
 This satisfies "visibly simulated, no fake measured dB or implied live readings" more precisely than a single generic source: a reader of `sources[]` now sees exactly which real dataset each simulated score *could* eventually draw from, without implying it already does.
 
 **Traffic, incidents and roadworks are not in `contracts/api.schema.json` at all** — there is no `Route` or `PlacesResponse` field for them. Rather than inventing new JSON fields the contract owners (Delta + Alban) haven't agreed to, or fabricating a disruptions fixture with nowhere in the schema to put it, this is flagged as an open question: do we want a contract field for route disruptions before BE-01 lands, or is a mention inside `Route.explanation` text enough for the demo? Current routes are also `geometry_kind: "straight_line"` (illustrative only, not navigable), so a roadwork-on-this-exact-path disruption wouldn't mean much until BE-01 adds real street geometry — simulating it now would be simulating a problem that doesn't exist yet for the current fixture. Deferred, not silently dropped.
+
+## Cache and documentation audit (DATA-03)
+
+Checked 2026-10-17 ~16:57–17:10 Europe/Warsaw: every real dataset row above against its actual committed/cached file, verifying source URL, fetch date, licence/attribution and record count are all present and match.
+
+- OSM places (`osm-places-sample.json`): confirmed `fetched_at`, `source_url`, `licence`, `raw_record_count` (1124) and `named_place_count` (75) in the file exactly match this document's row.
+- Warsaw open data (`warsaw-open-data-sample.json`): confirmed `fetched_at`, `source_url`, `attribution`, and per-dataset `raw_record_count`/`normalised_count` for air quality (141/141), AED (710/710), toilets (695/695) and events (652/352) all match.
+- Fixed one precision gap: the open-sports-fields row previously said "Code ready; live geocoding blocked so far" for *fetched at*, conflating two different things — the raw 1227-record city-data fetch actually succeeded (it needs no geocoding), only the address→coordinate enrichment is blocked. Now states the real fetch timestamp (2026-10-17T14:21:49+0200) separately from the geocoding status.
+- Added a committed `sports_fields` entry (8 raw, un-geocoded records, fetched 2026-10-17T16:58:49+0200) to `warsaw-open-data-sample.json` so the "1227 records" claim is independently checkable from the repo, not just this document's prose — previously only the four geocode-free datasets had committed evidence.
+- No old-project assets were found or copied anywhere in `data/` — every committed sample traces to a fetch timestamp recorded in this document from this event, consistent with SETUP.md/PLAN.md's "recreate on Saturday" rule.
+- `data/local/` (gitignored, event-time caches): currently holds `osm_places_raw.json` and `city.db` (both regenerable). `warsaw_open_data_raw.json` and `geocode_cache.json` are also gitignored and regenerate on demand via `python -m app.data.warsaw_open_data` / `--sports-fields`; their absence at any given moment doesn't affect the committed record, since the committed fixtures are the durable evidence.
 
 ## Provider-failure and fallback testing (DATA-10, backend slice)
 
@@ -159,3 +170,70 @@ Work on this paused here, handed to the frontend pair rather than debugged furth
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
+
+## Greenery and quiet proxy method (DATA-07)
+
+The route `green_score` and `quiet_score` are proxies calculated by `backend/app/services/scoring.py` from OpenStreetMap geometry. They are not measurements. Each response carries them as sources `green-proxy` and `quiet-proxy` with `mode: proxy` and a `method` string (`GREEN_METHOD`, `QUIET_METHOD`), so the UI can show the label and the method for every score.
+
+**Green score (0–1, higher is greener)**
+1. Sample the route line every 25 m.
+2. A sample counts as green if it lies inside, or within 20 m of the edge of, an OSM `leisure=park` or named `leisure=garden` polygon.
+3. The score is the share of green samples.
+
+**Quiet score (0–1, higher is quieter)**
+1. Sample the route every 25 m.
+2. For each sample, take its distance to the nearest OSM motorway, trunk, primary or secondary road, divided by that class's reach (motorway 300 m, trunk 250 m, primary 200 m, secondary 120 m), capped at 1.
+3. The score is the mean over the samples.
+
+**Input:** `data/fixtures/osm-context.json`, an Overpass snapshot taken 2026-10-17 15:53 +02:00 for bbox `52.200,21.000,52.240,21.050`: 65 park polygons and 548 major road segments (ODbL, © OpenStreetMap contributors). It is committed so scoring works offline.
+
+**What it does not show:** tree canopy, shade, pavement surface, vegetation quality, traffic volume, speed or measured noise (dB). A park polygon counts as green even if its path is paved or sunless. A quiet street can still be loud.
+
+**Known limits**
+- Outside the snapshot's bbox no parks or roads are loaded, so a route there scores 0 green and 1 quiet. That reflects missing input, not a finding (checked: a Mazovian test line far west of the area returns 0.0 / 1.0). Demo routes stay inside the bbox.
+- Only major roads are used. Tram lines, railways, airports and building density are ignored.
+- The 20 m buffer and the road reach distances are our choices, not calibrated against any survey.
+
+**UI rule (for #26 with Alban):** any display of these scores must show the "Proxy" label from `SourceLabel` and may say "greenery estimate" or "traffic-exposure estimate". It must not say measured, shade, canopy or noise level. A better greenery source exists but is not integrated: the Warsaw WMS layers `ZIELEN_DRZEWA`, `ZIELEN_TRAWNIKI` and others (see DATA-02 above), which are map tiles only. Modelled WMS noise (2022) could later replace the quiet proxy, labelled as modelled.
+
+**Sanity check (live run, 2026-10-17):** for the same museum outing, the route inside parks scored green 0.53 / quiet 0.64, the route through parks 0.12 / 0.56 and the direct route 0.00 / 0.46. The ordering matches the intent; the absolute values mean nothing on their own.
+## Stale live-feed rule
+
+A feed that answers is not a feed that is current. Vehicle locations, departures and station readings can stop updating during repairs, holdbacks or technical stops. Rule for every live-style input (implemented in `backend/app/services/freshness.py`):
+
+- Judge each record by its own timestamp. More than 30 minutes old, missing, unreadable or in the future means **not live**.
+- Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
+- Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
+- Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
+## Routing provider verification (DATA-06)
+
+Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
+
+| Pair (from → to) | Profile | Points | Distance | Duration | Straight line |
+| --- | --- | --- | --- | --- | --- |
+| Centrum Sztuki Współczesnej (21.0307378, 52.2196963) → Muzeum Łowiectwa i Jeździectwa (21.0390467, 52.2135312) | foot | 200 | 1220 m | 976 s | 886 m (route 1.38×) |
+| same | bike | 130 | 1906 m | 517 s | 886 m (route 2.15×) |
+| Mauzoleum Walki i Męczeństwa (21.0236508, 52.2176184) → Cele Bezpieki (21.0239587, 52.2206202) | foot | 48 | 482 m | 388 s | 332 m (route 1.45×) |
+| same | bike | 46 | 488 m | 197 s | 332 m (route 1.47×) |
+
+Many vertices and a distance well above the straight line show the geometry follows streets and paths. The first bike route is much longer than the walking route, so the bike profile avoids paths the foot profile uses (not investigated further).
+
+Limits and behaviour, as recorded:
+- **Coverage:** not limited to Warsaw. A Łazienki → Paris foot request also returned `Ok`. The demo area needs no coverage workaround.
+- **Terms and quota:** a public community service with no key, no published quota in our requests (no rate-limit headers were returned) and no uptime guarantee. Keep use light and identify the client (`User-Agent: warsaw2076-hackathon-delta/1.0`). Re-read the service's usage policy before relying on it beyond the demo.
+- **Timeout:** 8 s per request; one request per candidate route.
+- **Fallback chain:** `ROUTING_SOURCE=live` tries live, then the cache; `ROUTING_SOURCE=cache` (use for the pitch) tries the cache first. Live responses are cached in `data/local/osrm-cache` (not committed). `data/fixtures/osrm-cache` holds 20 committed responses for the demo prompts.
+- **Total failure:** the planner returns straight lines with `geometry_kind: straight_line`, response `mode: mock` and a notice saying so. These are never presented as street routes (test: `test_routing_outage_falls_back_to_labelled_straight_lines`).
+- **Not verified:** behaviour under repeated load, and the service's availability at pitch time. Switch to `ROUTING_SOURCE=cache` before the demo.
+
+## Optional source checks: events, roadworks, GTFS (DATA-09)
+
+Timeboxed to 30 minutes, run 2026-10-17 from 18:14 +02:00 by Delta. Rule applied: integrate only verified, useful responses; otherwise keep the labelled simulation or defer.
+
+| Source | Result | Decision |
+| --- | --- | --- |
+| Events calendar (`get_bmm_kalendarz_wydarzen`) | Already fetched by DATA-04 and served as the `events` layer. The 8 committed sample events all start between 2026-12-04 and 2027-01-29, so none falls on the demo weekend. The full 352 placed events were not re-inspected in this check | **Keep as a map layer**, labelled cached. Do not claim "events today" in the pitch |
+| Road construction disruptions (`get_bin_utrudnienia_drogowe`) | Listed in the portal catalogue (`utrudnienia-w-ruchu-drogowym`, refresh 1 minute, last metadata change 2026-06-01). **Response not fetched**: the dataset needs `DANE_WWA_API_KEY` and no key is set on the shared server host | **Defer.** Roadwork disruptions stay a labelled simulation (SIM-01). Re-check only if Sonia runs the fetch with her key before the freeze |
+| GTFS (`https://mkuran.pl/gtfs/warsaw.zip`) | Reachable, HTTP 200, 99.8 MB, `Last-Modified` 2026-10-16 23:03 UTC. Read the zip directory with range requests without downloading the file. `feed_info`: feed version 2026-10-17 00:15:22, publisher Mikołaj Kuranowski. 7,246 stops, 329 routes; `stop_times.txt` is 511.8 MB unzipped | **Defer.** Real and fresh, but full multimodal routing is out of scope (AGENTS.md) and `stop_times` is too large to parse for the demo. A stops-only layer (0.6 MB `stops.txt`) is possible later; it adds nothing to a quiet museum walk |
+
+Not verified: GTFS licence/terms (check `attributions.txt` and the publisher page before any reuse), the content of the roadworks response, and event dates beyond the committed sample. The dependency on INT-01 (#14) was not met when this ran; nothing was integrated, so it does not matter.
