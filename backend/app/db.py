@@ -9,10 +9,12 @@ Rebuild:  python -m app.db
 import json
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from app.data.catalogue import CATEGORY_MAP, OSM_PLACES_SOURCE_ID, _rfc3339, osm_places_source
+from app.services import freshness
 
 ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT / "data/local/city.db"
@@ -145,16 +147,22 @@ def query_layer(layer: str, bbox, limit: int) -> tuple[list[dict], list[dict]]:
     where, args = _where(bbox, [("layer = ?", layer)])
     with connect() as conn:
         rows = conn.execute(f"SELECT * FROM features{where} ORDER BY id LIMIT ?", [*args, limit]).fetchall()
-        feats = [
-            {
+        now = datetime.now(freshness.WARSAW)
+        feats = []
+        for r in rows:
+            props = json.loads(r["properties"])
+            if layer == "air_quality":
+                # Stations can stop reporting while the feed still answers: judge each reading.
+                times = [m.get("time") for m in props.get("measurements", [])]
+                latest = max((t for t in times if freshness.parse_time(t)), default=None,
+                             key=freshness.parse_time)
+                props["freshness"] = freshness.assess(latest, now)
+            feats.append({
                 "type": "Feature",
                 "id": r["id"],
                 "geometry": {"type": "Point", "coordinates": [r["longitude"], r["latitude"]]},
-                "properties": {"name": r["name"], "layer": layer, "source_id": r["source_id"],
-                               **json.loads(r["properties"])},
-            }
-            for r in rows
-        ]
+                "properties": {"name": r["name"], "layer": layer, "source_id": r["source_id"], **props},
+            })
         return feats, _sources(conn, {f"warsaw-open-data-{layer}"})
 
 

@@ -115,3 +115,12 @@ DATA-10's full acceptance ("stop each provider in turn and run the demo") needs 
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
+
+## Stale live-feed rule
+
+A feed that answers is not a feed that is current. Vehicle locations, departures and station readings can stop updating during repairs, holdbacks or technical stops. Rule for every live-style input (implemented in `backend/app/services/freshness.py`):
+
+- Judge each record by its own timestamp. More than 30 minutes old, missing, unreadable or in the future means **not live**.
+- Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
+- Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
+- Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
