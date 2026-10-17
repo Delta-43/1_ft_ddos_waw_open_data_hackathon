@@ -45,7 +45,10 @@ export function PreferencesForm({ status, onSubmit }: Props) {
     return (
       <section className="preferences-form" aria-label="Your preferences">
         <h2>Your preferences</h2>
-        <blockquote className="prompt-echo">{trimmed}</blockquote>
+        <details className="prompt-details">
+          <summary>Show my prompt</summary>
+          <blockquote className="prompt-echo">{trimmed}</blockquote>
+        </details>
         <ul className="summary">
           {interpretation.preferences.map(({ emoji, name }) => {
             const on = !off.has(name);

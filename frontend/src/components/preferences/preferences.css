@@ -135,3 +135,6 @@
 .preferences-form button.switch[aria-checked="true"] { background: var(--rim); border-color: var(--rim); }
 .preferences-form button.switch[aria-checked="true"]::after { transform: translateX(1.1rem); background: var(--bg); }
 .preferences-form button.switch:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.preferences-form .prompt-details summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+.preferences-form .prompt-details summary:hover, .preferences-form .prompt-details summary:focus-visible { color: var(--text); }
+.preferences-form .prompt-details .prompt-echo { margin-top: 0.4rem; }
