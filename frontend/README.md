@@ -86,7 +86,7 @@ The map shows pins from the backend, all over Warsaw:
 - If the backend is unreachable, the map still works without pins; each failed provider is logged.
 - Today the backend holds the committed samples: 26 OSM places around Łazienki/Ujazdów and 8 features per city layer.
 
-`addPins(map, pins)` puts all pins in one GeoJSON source drawn by a single GPU symbol layer, with no DOM markers, so thousands of pins stay smooth. Calling it again with an existing `id` replaces that pin; `clearPins(map)` removes them all. Pins shrink when zoomed out. For very dense datasets, enable `cluster: true` on the source in `src/markers/pins.ts`.
+`addPins(map, pins)` puts all pins in one GeoJSON source drawn by a single GPU symbol layer, with no DOM markers, so thousands of pins stay smooth. Calling it again with an existing `id` replaces that pin; `clearPins(map)` removes them all. Pins shrink when zoomed out, sit below the route layers, and fade to 30% opacity without labels while a route is shown (they watch the `candidate-routes` source, so the route code needs no pin calls). For very dense datasets, enable `cluster: true` on the source in `src/markers/pins.ts`.
 
 To add a data source:
 

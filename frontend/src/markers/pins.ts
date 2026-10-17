@@ -5,6 +5,10 @@ import type { Pin, PinCategory } from './types';
 
 const SOURCE_ID = 'pins';
 const LAYER_ID = 'pins';
+/** Route source drawn by map/routes.ts; while it has routes, city pins step back. */
+const ROUTE_SOURCE = 'candidate-routes';
+/** Pin opacity while a route is shown: still findable, but the numbered stops lead. */
+const DIMMED_OPACITY = 0.3;
 
 const CATEGORY_LABEL: Record<PinCategory, string> = {
   landmark: 'Landmark',
@@ -53,6 +57,34 @@ function attributionHtml(credits: Iterable<string>): string {
 /** Source credits currently shown for each map's pins. */
 const credits = new WeakMap<Map, Set<string>>();
 
+/** Maps whose pins are currently dimmed because a route is shown. */
+const dimmed = new WeakSet<Map>();
+
+/** Paint for the pin layer; dimmed pins also drop their labels, which compete with stop names. */
+function pinOpacity(map: Map) {
+  const on = dimmed.has(map);
+  return { 'icon-opacity': on ? DIMMED_OPACITY : 1, 'text-opacity': on ? 0 : 1 };
+}
+
+/**
+ * Dims the pins while the route source has routes, and restores them when it is emptied.
+ * Watches the source instead of being called by the route code, so the two stay independent.
+ */
+function followRoutes(map: Map) {
+  map.on('sourcedata', async event => {
+    if (event.sourceId !== ROUTE_SOURCE || !event.isSourceLoaded) return;
+    const data = await map.getSource<GeoJSONSource>(ROUTE_SOURCE)?.getData();
+    const active = !!data && 'features' in data && data.features.length > 0;
+    if (active === dimmed.has(map)) return;
+    if (active) dimmed.add(map);
+    else dimmed.delete(map);
+    if (!map.getLayer(LAYER_ID)) return;
+    for (const [property, value] of Object.entries(pinOpacity(map))) {
+      map.setPaintProperty(LAYER_ID, property as 'icon-opacity' | 'text-opacity', value);
+    }
+  });
+}
+
 /** Runs `fn` now if the style is ready, otherwise once the map has settled. */
 function whenStyleReady(map: Map, fn: () => void) {
   if (map.isStyleLoaded()) fn();
@@ -94,6 +126,8 @@ function ensureLayer(map: Map, attribution: string) {
         'text-color': '#1d2b3a',
         'text-halo-color': '#ffffff',
         'text-halo-width': 1.4,
+        // Re-applied when the layer is rebuilt, so dimming survives new source credits.
+        ...pinOpacity(map),
       },
     },
     // Below any route layers (ids `route-*`), so route lines and numbered stops stay on top
@@ -101,7 +135,10 @@ function ensureLayer(map: Map, attribution: string) {
     map.getLayersOrder().find(id => id.startsWith('route-')),
   );
 
-  if (!existing) registerHandlers(map);
+  if (!existing) {
+    registerHandlers(map);
+    followRoutes(map);
+  }
 }
 
 /** Click and hover handlers, once per map (they are bound to the layer id, not the layer). */
