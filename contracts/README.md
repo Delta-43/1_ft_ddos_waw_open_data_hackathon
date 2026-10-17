@@ -18,7 +18,7 @@ Delta and Alban jointly approve changes here before either pair implements them.
 | --- | --- | --- |
 | `GET /api/health` | None | `{ "status": "ok", "mode": "fixture", "contract_version": "1.0" }` |
 | `POST /api/routes` | `RouteRequest` | `RouteResponse` |
-| `GET /api/places` | Query: `category` (`museum`, `landmark`, `park`, `generic`), `bbox=min_lon,min_lat,max_lon,max_lat`, `limit` 1–100 (default 50) | `PlacesResponse` |
+| `GET /api/places` | Query: `category` (`museum`, `landmark`, `park`, `generic`), `bbox=min_lon,min_lat,max_lon,max_lat`, `q` (case-insensitive name/address match, trimmed, 1–100 characters), `limit` 1–100 (default 50) | `PlacesResponse` |
 
 Invalid requests return HTTP 422 with FastAPI's standard `detail` body. The frontend must also handle other non-2xx responses and an unreachable backend.
 
@@ -69,6 +69,7 @@ Additive changes (new optional fields) need agreement but no version bump. Remov
 ## City-data store and layers (additive, not part of contract 1.0 schema)
 
 - `GET /api/places` now reads the SQLite store `data/local/city.db` (built automatically from fixtures on first request; `python -m app.db` rebuilds). Response shape is unchanged.
+- `GET /api/places?q=...` (#84): optional case-insensitive name/address search, trimmed to 1–100 characters; blank or over-length values are rejected with 422. Matches catalogue places only, not a geocoder. No third-party dependency; folds Unicode case (so Polish diacritics match) in Python rather than SQLite's ASCII-only `LOWER()`. Query text is not persisted or logged. Response shape (`PlacesResponse`) is unchanged, so not yet reflected in `api.schema.json` — needs Delta + Alban sign-off per #84 before being added there and to `frontend/src/api/contract.ts`. The MCP `search_places` tool takes the same `q` parameter.
 - `GET /api/layers` lists open-data layers: `air_quality`, `aed`, `toilets`, `events`, with feature counts.
 - `GET /api/layers/{layer}?bbox=min_lon,min_lat,max_lon,max_lat&limit=200` returns a GeoJSON `FeatureCollection` (lon, lat) that MapLibre can use as a source directly. Source `mode` is a contract SourceMode (`real`); the envelope `mode` stays `cached`. Each feature has `properties.name`, `layer`, `source_id` plus layer-specific fields; `sources[]` carries attribution, mode (`cached`) and retrieval time for the source label.
 - Until the full Warsaw cache exists in `data/local`, layers hold only the committed samples (8 features each); `sources[].method` says so.

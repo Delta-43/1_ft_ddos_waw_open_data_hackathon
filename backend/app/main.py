@@ -50,16 +50,29 @@ def parse_bbox(bbox: str | None) -> tuple[float, float, float, float] | None:
 BBox = Annotated[
     str | None, Query(description="min_lon,min_lat,max_lon,max_lat", max_length=100)
 ]
+Search = Annotated[
+    str | None, Query(description="Case-insensitive name/address match, trimmed, 1-100 characters")
+]
+
+
+def parse_search(q: str | None) -> str | None:
+    if q is None:
+        return None
+    query = q.strip()
+    if not (1 <= len(query) <= 100):
+        raise HTTPException(422, "q must be 1-100 characters after trimming")
+    return query
 
 
 @app.get("/api/places")
 def places(
     category: PlaceCategory | None = None,
     bbox: BBox = None,
+    q: Search = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
     data = load_places_response()  # envelope: mode, notice, generated_at
-    data["places"], data["sources"] = db.query_places(category, parse_bbox(bbox), limit)
+    data["places"], data["sources"] = db.query_places(category, parse_bbox(bbox), limit, parse_search(q))
     return data
 
 

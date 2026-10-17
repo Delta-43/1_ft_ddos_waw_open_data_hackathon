@@ -1,22 +1,22 @@
-/* Place cards in Moon Design System v1: white card, black stop number, 4% detail fill.
-   Tokens come from src/style.css. No backdrop-filter: it re-blurs on every map frame. */
+/* Quiet until active: muted by default, white and bold only when selected. Uses the shared
+   theme variables with fallbacks. No backdrop-filter: it re-blurs on every map frame. */
 .place-card-list__heading {
-  /* Sits on the bright map: a white chip keeps it readable. */
+  /* Sits on the bright map: a dark pill keeps it readable. */
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--moon-radius-full);
-  background: var(--moon-gohan);
-  box-shadow: var(--moon-shadow-sm);
-  margin: 0 0 8px;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  color: var(--moon-bulma);
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  background: var(--panel, rgba(22, 23, 23, 0.94));
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted, #9aa0a6);
 }
 
 .place-card-list__items {
   display: grid;
-  gap: 12px;
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -24,131 +24,120 @@
 
 .place-card-list__empty {
   margin: 0;
-  font-size: 14px;
-  color: var(--moon-trunks);
+  font-size: 0.85rem;
+  color: var(--muted, #9aa0a6);
 }
 
 .place-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  background: var(--moon-gohan);
-  border-radius: var(--moon-radius-md);
-  box-shadow: var(--moon-shadow-sm);
-  color: var(--moon-bulma);
-  transition: box-shadow 0.2s ease-in-out;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem;
+  background: var(--panel, rgba(22, 23, 23, 0.94));
+  border: 1px solid var(--rim-faint, #3c4043);
+  border-radius: 12px;
+  color: var(--text, #e8eaed);
+  transition: border-color 0.3s ease-in-out;
 }
 
-.place-card--selected { box-shadow: var(--moon-shadow-lg), inset 0 0 0 2px var(--moon-bulma); }
-.place-card--selected .place-card__name { font-weight: 700; }
+.place-card--selected { border-color: var(--rim, #8ab4f8); }
+.place-card--selected .place-card__name { color: #fff; font-weight: 700; }
 
 .place-card__header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 0.6rem;
 }
 
-/* Same shape as the date picker's selected day: a black 32 px circle. */
 .place-card__order {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 1.6rem;
+  height: 1.6rem;
   border-radius: 50%;
-  background: var(--moon-bulma);
-  color: var(--moon-goten);
+  border: 1px solid #ffffff;
   display: grid;
   place-items: center;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .place-card__heading {
   display: flex;
   flex-direction: column;
+  gap: 0.1rem;
   min-width: 0;
 }
 
 .place-card__name {
   margin: 0;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 1rem;
   font-weight: 600;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 .place-card__category {
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--moon-trunks);
+  font-size: 0.75rem;
+  color: var(--muted, #9aa0a6);
 }
 
 .place-card__summary {
   margin: 0;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
 .place-card__details {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 4px 12px;
+  gap: 0.2rem 0.75rem;
   margin: 0;
-  padding: 8px 12px;
-  border-radius: var(--moon-radius-sm);
-  background: var(--moon-fill);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 0.8rem;
 }
 
-.place-card__details dt { color: var(--moon-trunks); }
-.place-card__details dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.place-card__details a { color: var(--moon-bulma); text-decoration: underline; text-underline-offset: 2px; }
-.place-card__details a:hover { text-decoration-thickness: 2px; }
+.place-card__details dt { color: var(--muted, #9aa0a6); }
+.place-card__details dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.place-card__details a { color: var(--rim, #8ab4f8); }
+.place-card__details a:hover { color: #ffffff; }
 
-/* Secondary Moon button; black when this card's pop-up is open. */
 .place-card__show {
   align-self: flex-start;
-  min-height: 32px;
-  padding: 4px 12px;
-  border-radius: var(--moon-radius-full);
-  border: 0;
-  background: var(--moon-fill);
-  color: var(--moon-bulma);
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--rim-faint, #3c4043);
+  background: none;
+  color: var(--text, #e8eaed);
   font: inherit;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
 }
-.place-card__show:hover { background: var(--moon-fill-hover); }
-.place-card__show[aria-pressed='true'] { background: var(--moon-bulma); color: var(--moon-goten); }
-.place-card__show:focus-visible { outline: none; box-shadow: var(--moon-focus); }
+.place-card__show:hover,
+.place-card__show[aria-pressed='true'] { color: #fff; border-color: var(--rim, #8ab4f8); }
+.place-card__show:focus-visible { outline: 2px solid var(--rim, #8ab4f8); outline-offset: 2px; }
 
 /* Pop-up above a numbered stop: the place card itself, on MapLibre's popup. */
 .place-popup .maplibregl-popup-content {
   padding: 0;
   background: none;
   box-shadow: none;
-  border-radius: var(--moon-radius-md);
-  font-family: var(--moon-font);
+  border-radius: 12px;
 }
-.place-popup .place-card { box-shadow: var(--moon-shadow-lg); min-width: 15rem; }
-.place-popup .place-card--selected { box-shadow: var(--moon-shadow-lg); }
-.place-popup .maplibregl-popup-tip { border-top-color: var(--moon-gohan) !important; border-bottom-color: var(--moon-gohan) !important; }
+.place-popup .place-card { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); min-width: 15rem; }
+.place-popup .maplibregl-popup-tip { border-top-color: var(--rim, #8ab4f8) !important; }
 .place-popup .maplibregl-popup-close-button {
-  top: 12px;
-  right: 12px;
+  top: 0.35rem;
+  right: 0.45rem;
   z-index: 1;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  color: var(--moon-bulma);
-  background: var(--moon-fill);
-  font-size: 16px;
-  line-height: 1;
+  color: var(--muted, #9aa0a6);
+  font-size: 1.1rem;
 }
-.place-popup .maplibregl-popup-close-button:hover { background: var(--moon-fill-hover); }
+.place-popup .maplibregl-popup-close-button:hover { color: #fff; background: none; }
+
+/* Numbered stop on a stem with a soft halo, after Delta's mockup. */
+.stop-marker { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.stop-marker__badge { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--route, #3d6b50); color: #fff; font: 700 0.95rem system-ui, sans-serif; border: 2px solid #fff; box-shadow: 0 0 0 7px color-mix(in srgb, var(--route, #3d6b50) 22%, transparent); }
+.stop-marker__stem { width: 2px; height: 1.6rem; background: var(--route, #3d6b50); }
+.stop-marker:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 3px; border-radius: 50%; }

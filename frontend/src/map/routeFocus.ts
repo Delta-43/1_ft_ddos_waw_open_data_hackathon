@@ -1,26 +1,35 @@
 import type { ExpressionSpecification, Map } from 'maplibre-gl';
 import type { Route } from '../api/contract';
+import type { RouteColour } from './routeColours';
 import { BUILDING_MINZOOM, BUILDING_SOURCE } from './style';
 
 /**
- * Route focus (Delta's mockup idea): while a route is selected, only buildings within
- * CORRIDOR_M of it stay 3D; the rest sink to flat footprints so the route holds attention.
- * Buildings are marked with feature-state in short slices when the map is idle, like
- * buildingOutlines.ts, so panning never stalls.
+ * Route focus, after Delta's mockup (mockups/warsaw-2076): while a route is selected, only the
+ * buildings in a corridor around it stay 3D, tinted in the route's colour; every other building
+ * sinks to a pale flat footprint and a veil mutes the rest of the map.
+ * Buildings are marked with feature-state in short slices when the map settles, so panning
+ * never stalls. (A `distance` layer filter is not used: MapLibre ignores it when drawing.)
  */
-const CORRIDOR_M = 220;
+const CORRIDOR_M = 210; // the mockup's corridor width
 const NEAR_STATE = 'nearRoute';
 const SLICE_MS = 6;
-const LAYER_PROPERTIES = [
+const HEIGHT_PROPERTIES = [
   ['building-3d', 'fill-extrusion-height'],
   ['building-3d', 'fill-extrusion-base'],
   ['building-roof', 'fill-extrusion-height'],
   ['building-roof', 'fill-extrusion-base'],
 ] as const;
+const COLOUR_LAYERS = ['building-3d', 'building-roof'] as const;
+const FADED = '#e6e9e3'; // far buildings: close to the veil, so they fade into the ground
+const VEIL_SOURCE = 'focus-veil'; // not 'route-…': historicalOverlay.ts inserts below the first 'route-' layer
+const VEIL_LAYER = 'focus-veil';
+const VEIL_OPACITY = 0.62;
 
+type Paint = ExpressionSpecification | string | number;
 type Segment = [number, number, number, number];
 interface FocusState {
-  originals: globalThis.Map<string, ExpressionSpecification | number>;
+  originals: globalThis.Map<string, Paint>;
+  key: string;
   segments: Segment[] | null;
   near: Set<string | number>;
   checked: Set<string | number>;
@@ -59,17 +68,28 @@ function anchorOf(geometry: { coordinates?: unknown }): number[] | null {
   return Array.isArray(value) && typeof value[0] === 'number' ? (value as number[]) : null;
 }
 
-/** Height expressions: grow with zoom (the intro), and with focus only near buildings keep height. */
-function applyHeights(map: Map, state: FocusState, focus: boolean): void {
-  const near: ExpressionSpecification = ['boolean', ['feature-state', NEAR_STATE], false];
-  for (const [layer, property] of LAYER_PROPERTIES) {
+const isNear: ExpressionSpecification = ['boolean', ['feature-state', NEAR_STATE], false];
+
+/** Heights grow with zoom (the intro); with a route, only buildings near it keep their height. */
+function applyPaint(map: Map, state: FocusState, colour: RouteColour | undefined): void {
+  for (const [layer, property] of HEIGHT_PROPERTIES) {
     const original = state.originals.get(`${layer}|${property}`);
     if (original === undefined || !map.getLayer(layer)) continue;
-    // Intro: rise between zoom 13.5 and 14.8. Focus: buildings along the route are full height from 14.
-    const value = focus ? (['case', near, original, 0] as ExpressionSpecification) : original;
-    const [from, to] = focus ? [13.2, 14] : [13.5, 14.8];
+    const value = colour ? (['case', isNear, original, 0] as ExpressionSpecification) : original;
+    const [from, to] = colour ? [13.2, 14] : [13.5, 14.8];
     map.setPaintProperty(layer, property, ['interpolate', ['linear'], ['zoom'], from, 0, to, value]);
   }
+  for (const layer of COLOUR_LAYERS) {
+    const original = state.originals.get(`${layer}|fill-extrusion-color`);
+    if (original === undefined || !map.getLayer(layer)) continue;
+    const tint = layer === 'building-roof' ? colour?.roof : colour?.tint;
+    map.setPaintProperty(layer, 'fill-extrusion-color', (tint ? ['case', isNear, tint, FADED] : original) as ExpressionSpecification);
+  }
+  const outline = state.originals.get('building-outline|line-opacity');
+  if (outline !== undefined && map.getLayer('building-outline')) {
+    map.setPaintProperty('building-outline', 'line-opacity', (colour ? ['case', isNear, outline, 0] : outline) as ExpressionSpecification);
+  }
+  if (map.getLayer(VEIL_LAYER)) map.setPaintProperty(VEIL_LAYER, 'fill-opacity', colour ? VEIL_OPACITY : 0);
 }
 
 function setNear(map: Map, id: string | number, value: boolean): void {
@@ -104,18 +124,33 @@ function scan(map: Map, state: FocusState): void {
   slice();
 }
 
-/** Call once after the style loads (it takes over the building heights from the intro). */
+/** Call once after the style loads: it takes over the building heights and colours, and adds the veil. */
 export function initRouteFocus(map: Map): void {
-  const originals = new globalThis.Map<string, ExpressionSpecification | number>();
-  for (const [layer, property] of LAYER_PROPERTIES) {
-    if (!map.getLayer(layer)) continue;
-    const value = map.getPaintProperty(layer, property) as ExpressionSpecification | number | undefined;
+  const originals = new globalThis.Map<string, Paint>();
+  const remember = (layer: string, property: Parameters<Map['getPaintProperty']>[1]) => {
+    if (!map.getLayer(layer)) return;
+    const value = map.getPaintProperty(layer, property) as Paint | undefined;
     if (value !== undefined) originals.set(`${layer}|${property}`, value);
-  }
-  const state: FocusState = { originals, segments: null, near: new Set(), checked: new Set(), dirty: false, scanning: false };
+  };
+  for (const [layer, property] of HEIGHT_PROPERTIES) remember(layer, property);
+  for (const layer of COLOUR_LAYERS) remember(layer, 'fill-extrusion-color');
+  remember('building-outline', 'line-opacity');
+
+  // A pale veil over the ground, roads and labels, drawn under the buildings and the route.
+  map.addSource(VEIL_SOURCE, {
+    type: 'geojson',
+    data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[19, 51], [23, 51], [23, 53.5], [19, 53.5], [19, 51]]] } },
+  });
+  const firstBuilding = ['building-outline', 'building-3d'].find(layer => map.getLayer(layer));
+  map.addLayer(
+    { id: VEIL_LAYER, type: 'fill', source: VEIL_SOURCE, paint: { 'fill-color': '#f2f4ef', 'fill-opacity': 0, 'fill-opacity-transition': { duration: 600 } } },
+    firstBuilding,
+  );
+
+  const state: FocusState = { originals, key: '', segments: null, near: new Set(), checked: new Set(), dirty: false, scanning: false };
   states.set(map, state);
   if (import.meta.env.DEV) Object.assign(window, { routeFocusState: state });
-  applyHeights(map, state, false);
+  applyPaint(map, state, undefined);
   // Scan when the map settles: at 'idle', and also shortly after moves and tile loads, so a
   // brief route animation (which delays 'idle') never leaves new buildings unchecked.
   let soon: ReturnType<typeof setTimeout> | undefined;
@@ -139,17 +174,18 @@ export function initRouteFocus(map: Map): void {
   map.on('idle', () => scan(map, state));
 }
 
-/** Focus the map on `route` (or show every building again when it is undefined). */
-export function focusRoute(map: Map, route: Route | undefined): void {
+/** Focus the map on `route`, tinted in its colour (or show the whole city again when undefined). */
+export function focusRoute(map: Map, route: Route | undefined, colour?: RouteColour): void {
   const state = states.get(map);
   if (!state) return;
+  const key = route ? `${route.id}:${route.geometry.coordinates.length}:${colour?.line}` : '';
+  if (state.key === key) return; // unchanged: keep the buildings already marked
+  state.key = key;
   for (const id of state.near) setNear(map, id, false);
   state.near.clear();
   state.checked.clear();
   state.segments = route ? segmentsOf(route) : null;
   state.dirty = true;
-  state.scanning = false;
-  clearTimeout(state.timer);
-  applyHeights(map, state, route !== undefined);
+  applyPaint(map, state, route ? colour : undefined);
   scan(map, state);
 }
