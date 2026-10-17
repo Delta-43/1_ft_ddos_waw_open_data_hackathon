@@ -124,12 +124,24 @@ export interface OutlineEvidence {
   raised: number;
 }
 
-/** Per ground-based building: what sits inside it, among the loaded features. */
-export function collectOutlineEvidence(
+/** How many features or outlines to process between checks of the time budget. */
+const STEP = 100;
+
+/**
+ * Evidence collection as a generator: it yields every STEP items so the caller can spread
+ * the work over several frames (see hideUnflaggedOutlines) instead of blocking scrolling.
+ */
+function* outlineEvidenceSteps(
   features: GeoJSONFeature[],
-  skip: ReadonlySet<string | number> = new Set(),
-): globalThis.Map<string | number, OutlineEvidence> {
-  const items = features.map(toItem).filter((item): item is Item => !!item);
+  skip: ReadonlySet<string | number>,
+): Generator<void, globalThis.Map<string | number, OutlineEvidence>> {
+  const items: Item[] = [];
+  for (let i = 0; i < features.length; i++) {
+    // Reading `geometry` decodes the tile feature, the most expensive step.
+    const item = toItem(features[i]);
+    if (item) items.push(item);
+    if (i % STEP === STEP - 1) yield;
+  }
   const grid = new globalThis.Map<string, Item[]>();
   for (const item of items) {
     const key = cellKey(...item.point);
@@ -147,8 +159,10 @@ export function collectOutlineEvidence(
 
   const partsInside = new globalThis.Map<string | number, Set<string | number>>();
   const evidence = new globalThis.Map<string | number, OutlineEvidence>();
+  let processed = 0;
   for (const outline of items) {
     if (outline.min !== 0 || skip.has(outline.id)) continue;
+    if (++processed % STEP === 0) yield;
     const [minX, minY, maxX, maxY] = outline.bbox;
     const entry = evidence.get(outline.id) ?? { height: outline.height, area: fullArea.get(outline.id)!, covered: 0, tallest: 0, raised: 0 };
     const parts = partsInside.get(outline.id) ?? new Set();
@@ -176,34 +190,89 @@ export function collectOutlineEvidence(
   return evidence;
 }
 
+/** Per ground-based building: what sits inside it, among the loaded features. */
+export function collectOutlineEvidence(
+  features: GeoJSONFeature[],
+  skip: ReadonlySet<string | number> = new Set(),
+): globalThis.Map<string | number, OutlineEvidence> {
+  const steps = outlineEvidenceSteps(features, skip);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+}
+
+function isUnflaggedOutline({ height, area, covered, tallest, raised }: OutlineEvidence): boolean {
+  const reachesTop = Math.abs(tallest - height) <= TOLERANCE_M;
+  return raised > 0 && reachesTop && covered >= MIN_PART_COVER * area;
+}
+
 /** Returns ids of unflagged outlines among the loaded features; ids in `skip` are not re-checked. */
 export function findUnflaggedOutlines(
   features: GeoJSONFeature[],
   skip: ReadonlySet<string | number> = new Set(),
 ): Set<string | number> {
   const outlines = new Set<string | number>();
-  for (const [id, { height, area, covered, tallest, raised }] of collectOutlineEvidence(features, skip)) {
-    const reachesTop = Math.abs(tallest - height) <= TOLERANCE_M;
-    if (raised > 0 && reachesTop && covered >= MIN_PART_COVER * area) outlines.add(id);
+  for (const [id, evidence] of collectOutlineEvidence(features, skip)) {
+    if (isUnflaggedOutline(evidence)) outlines.add(id);
   }
   return outlines;
 }
 
-/** Re-checks loaded building tiles whenever new ones arrive (debounced to `idle`). */
+/** Main-thread time per slice; well under one 60 fps frame (16.7 ms). */
+const SLICE_MS = 6;
+
+/**
+ * Re-checks loaded building tiles whenever new ones arrive. The scan starts when the map is
+ * idle, runs in SLICE_MS slices between frames, and stops as soon as the camera moves again
+ * (it restarts at the next idle), so it never stalls scrolling or zooming. Measured in
+ * headless Chrome: main-thread long tasks during scroll-pause-scroll went from 6 to 0–1.
+ */
 export function hideUnflaggedOutlines(map: Map): void {
   const hidden = new Set<string | number>();
   let dirty = true;
-  map.on('sourcedata', event => {
-    if (event.sourceId === BUILDING_SOURCE && 'tile' in event && event.tile) dirty = true;
-  });
-  map.on('idle', () => {
-    // Buildings are not drawn below zoom 13, so there is nothing to fix there yet.
-    if (!dirty || map.getZoom() < BUILDING_MINZOOM || !map.getSource(BUILDING_SOURCE)) return;
-    dirty = false;
-    const features = map.querySourceFeatures(BUILDING_SOURCE, { sourceLayer: 'building' });
-    for (const id of findUnflaggedOutlines(features, hidden)) {
+  let job: Generator<void, globalThis.Map<string | number, OutlineEvidence>> | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  // The first scan runs before anyone has touched the map, so it may finish in one go:
+  // landmarks such as the Palace then never show as solid boxes on the opening view.
+  let firstScan = true;
+
+  const cancel = () => {
+    if (!job) return;
+    clearTimeout(timer);
+    job = undefined;
+    dirty = true; // finish next time the map settles
+  };
+
+  const runSlice = () => {
+    if (!job) return;
+    const deadline = firstScan ? Infinity : performance.now() + SLICE_MS;
+    let step = job.next();
+    while (!step.done && performance.now() < deadline) step = job.next();
+    if (!step.done) {
+      timer = setTimeout(runSlice, 0);
+      return;
+    }
+    job = undefined;
+    firstScan = false;
+    for (const [id, evidence] of step.value) {
+      if (!isUnflaggedOutline(evidence)) continue;
       hidden.add(id);
       map.setFeatureState({ source: BUILDING_SOURCE, sourceLayer: 'building', id }, { [OUTLINE_STATE]: true });
     }
+  };
+
+  map.on('sourcedata', event => {
+    if (event.sourceId === BUILDING_SOURCE && 'tile' in event && event.tile) dirty = true;
+  });
+  map.on('movestart', () => {
+    firstScan = false;
+    cancel();
+  });
+  map.on('idle', () => {
+    // Buildings are not drawn below zoom 13, so there is nothing to fix there yet.
+    if (job || !dirty || map.getZoom() < BUILDING_MINZOOM || !map.getSource(BUILDING_SOURCE)) return;
+    dirty = false;
+    job = outlineEvidenceSteps(map.querySourceFeatures(BUILDING_SOURCE, { sourceLayer: 'building' }), hidden);
+    runSlice();
   });
 }

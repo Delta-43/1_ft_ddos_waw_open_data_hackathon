@@ -12,6 +12,7 @@
 | 2026-10-17 | Merged PR #4 (FE-01 map groundwork) with Delta's override; MapLibre dependency and OpenFreeMap tiles approved | Delta | Unblock frontend work; CI green |
 | 2026-10-17 | Optional 10-minute git autosync script (`scripts/git-autosync.sh`); fast-forwards `main` only | Delta | Keep checkouts current without touching feature branches |
 | 2026-10-17 (UTC+02:00) | Basemap: MapLibre GL JS 6.11.2 with OpenFreeMap vector tiles (OpenMapTiles schema), custom dark style; no key or account | Alban | Free, keyless, real building heights; attribution (OpenFreeMap, OpenMapTiles, OpenStreetMap/ODbL) always visible. Online tiles: keep a recording fallback |
+| 2026-10-17 (UTC+02:00) | Google Photorealistic 3D Tiles tried and removed; OSM building colours removed. Buildings stay untextured (dark palette), with OSM building parts and rendering optimisations kept | Alban | Owner decision; Google key needed billing, returned sporadic tile 404s, and Google restricts 3D Tiles for EEA projects. No Google calls remain |
 
 Record contract changes, provider choice, scope cuts, and any grace-period authorisation here.
 
