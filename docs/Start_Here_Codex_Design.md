@@ -2,6 +2,8 @@
 
 You are taking over the **design polish of the live Warsaw 2076 frontend** for Delta (`@Delta-43`). Issue: **#80**. Branch name: `delta/80-<short-task>`. Written 2026-10-17 evening by Delta's other agent after running the app and reading the code. Facts below were checked on `main` at that time; re-check anything that matters.
 
+> **Update 2026-10-17 23:35:** the Moon direction below is superseded. The overlay UI is back to Aryna's dark design (#89; DECISIONS.md 23:35 row). Do not restyle toward Moon; polish the dark design instead.
+
 ## 1. The job in one paragraph
 
 Finish the **Moon Design System v1** look across the live app, so it reads as one confident product on desktop (1440×900) and phone (390×844), without breaking any data label, source credit, map attribution or API behaviour. Alban's #82 moved the overlay UI from the dark Language-Explorer theme to Moon (white surfaces, black as the one accent, pill buttons); Delta chose Moon on 2026-10-17 (DECISIONS.md, 20:00 row). Your job is to finish and tighten that pass, not to start another one. The demo story: a user describes a quiet, green museum outing in Warsaw, compares candidate routes, and inspects place cards. Real routes and honest labels matter more than visual flair. **Feature freeze is 06:00 Sunday 18 October (Europe/Warsaw); absolute coding stop 06:30.** Submission is 11:00. Land small PRs early; do not leave a half-finished redesign on a branch.

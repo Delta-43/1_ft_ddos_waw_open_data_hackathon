@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: none open for me except team-wide #6. Delta closed #86 (Moon route experience) unmerged at 22:58, so its Sources-in-nav fix is not on main
-- Branch / PR: `aryna/nav-sources-floating-credits`: one Sources button (nav only, icon-only on phones), the Sources drawer opens under the nav, and the footer bar is gone: only the floating credit line over the map ("OpenFreeMap © OpenMapTiles Data from OpenStreetMap · Urząd m.st. Warszawy (CC BY) · We don’t store your requests or location.") with a white text halo
-- Last verified result: `npm run build` passes (tsc + vite). Headless Chrome on desktop 1440×900 and mobile 390×844: one visible Sources button, the footer has a transparent background and no border, the drawer opens and closes, no horizontal scroll, no console errors
-- Blocker: none. Touches App.tsx and layout.css (Alban's area), so Alban reviews
-- Next action: get this merged; Delta-style route focus waits for Delta's word on #86; pitch prep from 06:00 (screenshots, second-device check, rehearsal)
-- Open items: Alban to review my #6 result; Moon design questions are on hold until Aryna raises them
-- Updated at (include timezone): 2026-10-17 23:30 +0200 (Europe/Warsaw)
+- Current issue: D0 of #91 (delegated to me): the overlay UI goes back to my dark design
+- Branch / PR: #89 (`aryna/revert-moon-restyle`): reverts only #82 (Moon), keeps #74, #88 and #92; the Sources drawer is opaque at every size; DECISIONS.md 23:45 row; Start_Here note
+- Last verified result: `npm run build` passes. Headless Chrome on desktop 1440×900 and mobile 390×844: dark UI, one Sources button, the drawer opens and is opaque, floating credits readable, no horizontal scroll, no console errors
+- Blocker: none. Needs Ola's or Delta's review (Alban is on a break)
+- Next action: #45 (attribution hidden by the assistant panel); the Sources entry for estimated building heights once D4's data source exists
+- Open items: the route-focus corridor (D4) belongs to Delta and his agent; my abandoned local commit e0b7417 was not pushed
+- Updated at (include timezone): 2026-10-17 23:35 +0200 (Europe/Warsaw)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
