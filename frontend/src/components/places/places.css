@@ -100,3 +100,38 @@
 .place-card__details dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .place-card__details a { color: var(--rim, #8ab4f8); }
 .place-card__details a:hover { color: #ffffff; }
+
+.place-card__show {
+  align-self: flex-start;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--rim-faint, #3c4043);
+  background: none;
+  color: var(--text, #e8eaed);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+.place-card__show:hover,
+.place-card__show[aria-pressed='true'] { color: #fff; border-color: var(--rim, #8ab4f8); }
+.place-card__show:focus-visible { outline: 2px solid var(--rim, #8ab4f8); outline-offset: 2px; }
+
+/* Pop-up above a numbered stop: the place card itself, on MapLibre's popup. */
+.place-popup .maplibregl-popup-content {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 12px;
+}
+.place-popup .place-card { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); min-width: 15rem; }
+.place-popup .maplibregl-popup-tip { border-top-color: var(--rim, #8ab4f8) !important; }
+.place-popup .maplibregl-popup-close-button {
+  top: 0.35rem;
+  right: 0.45rem;
+  z-index: 1;
+  color: var(--muted, #9aa0a6);
+  font-size: 1.1rem;
+}
+.place-popup .maplibregl-popup-close-button:hover { color: #fff; background: none; }

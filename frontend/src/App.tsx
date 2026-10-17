@@ -1,6 +1,7 @@
-import type { PaddingOptions } from 'maplibre-gl';
+import type { Map, PaddingOptions } from 'maplibre-gl';
 import { useEffect, useState } from 'react';
 import { HintPill } from './components/layout/HintPill';
+import { PlacePopup } from './components/places/PlacePopup';
 import { PreferenceChips } from './components/layout/PreferenceChips';
 import { TopBar } from './components/layout/TopBar';
 import { AssistantWidget } from './components/preferences/AssistantWidget';
@@ -40,6 +41,8 @@ export function App() {
   const [located, setLocated] = useState<boolean | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [map, setMap] = useState<Map | null>(null);
+  const [popupPlaceId, setPopupPlaceId] = useState<string>();
   const mobile = useIsMobile();
 
   // Safety net: if tiles never load (no network), lift the curtain and show the UI anyway.
@@ -56,8 +59,11 @@ export function App() {
     if (!result) return;
     setSelectedId((result.routes.find(route => route.recommended) ?? result.routes[0])?.id);
     if (mobile) setAssistantOpen(false);
+    setPopupPlaceId(undefined);
     // Only a new response should do this, not a resize, so `mobile` is read but not a dependency.
   }, [result]);
+
+  const selectedRoute = result?.routes.find(route => route.id === selectedId);
 
   const chromeClass = ['app-chrome', introDone && 'app-chrome--in', assistantOpen && 'app-chrome--assistant-open'].filter(Boolean).join(' ');
 
@@ -69,7 +75,19 @@ export function App() {
         padding={mobile ? MOBILE_PADDING : DESKTOP_PADDING}
         onIntroStart={() => setCurtain('lifting')}
         onIntroDone={wasLocated => { setIntroDone(true); setLocated(wasLocated); }}
+        onMapReady={setMap}
+        onStopClick={setPopupPlaceId}
       />
+      {map && selectedRoute && popupPlaceId && (
+        <PlacePopup
+          key={popupPlaceId}
+          map={map}
+          route={selectedRoute}
+          placeId={popupPlaceId}
+          sources={result?.sources ?? []}
+          onClose={() => setPopupPlaceId(undefined)}
+        />
+      )}
       {curtain !== 'up' && (
         <div className={`intro-curtain intro-curtain--${curtain}`} aria-hidden="true" onTransitionEnd={() => setCurtain('up')} />
       )}
@@ -80,7 +98,15 @@ export function App() {
         >
           {result && <PreferenceChips understood={result.preferences} busy={status.state === 'loading'} onChange={outing.refine} />}
         </TopBar>
-        {result && <ResultsPanels result={result} selectedId={selectedId} onSelect={setSelectedId} />}
+        {result && (
+          <ResultsPanels
+            result={result}
+            selectedId={selectedId}
+            onSelect={id => { setSelectedId(id); setPopupPlaceId(undefined); }}
+            selectedPlaceId={popupPlaceId}
+            onShowPlace={setPopupPlaceId}
+          />
+        )}
         <div className="hint-stack">
           {!result && !assistantOpen && <HintPill>Describe your outing to see routes</HintPill>}
           {!result && located === false && <HintPill>Showing central Warsaw · location off</HintPill>}
