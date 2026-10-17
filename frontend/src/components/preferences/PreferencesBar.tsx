@@ -13,10 +13,12 @@ type Props = {
   status: RequestStatus;
   onToggle: (name: string) => void;
   onFindRoutes: () => void;
+  /** Go back to the prompt (closes this bar, opens the chat). */
+  onEditPrompt: () => void;
 };
 
 /** The separate preferences bar: what the assistant understood, with an on/off switch for each. */
-export function PreferencesBar({ interpretation, off, status, onToggle, onFindRoutes }: Props) {
+export function PreferencesBar({ interpretation, off, status, onToggle, onFindRoutes, onEditPrompt }: Props) {
   const loading = status.state === 'loading';
   return (
     <section className="preferences-form" aria-label="Your preferences">
@@ -42,6 +44,7 @@ export function PreferencesBar({ interpretation, off, status, onToggle, onFindRo
       </ul>
       <p className="hint">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
       <div className="actions">
+        <button type="button" disabled={loading} onClick={onEditPrompt}>Edit prompt</button>
         <button type="button" disabled={loading} onClick={onFindRoutes}>{loading ? 'Loading…' : 'Find routes'}</button>
       </div>
       <div aria-live="polite">

@@ -56,9 +56,9 @@
 .assistant__guy:hover, .assistant__guy:focus-visible { border-color: var(--rim); }
 
 .assistant__panels[hidden] { display: none; }
-/* Preferences bar sits above the chat panel, same width. */
-.assistant__panels { display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; width: min(22rem, 100%); }
-.assistant__panels > .assistant__panel:not(:last-child) { max-height: calc(100dvh - 21rem); }
+/* Chat and preferences panels share one slot; only one is shown at a time. */
+.assistant__panels { width: min(22rem, 100%); }
+.assistant__panel[hidden] { display: none; }
 .assistant__panel {
   position: relative;
   max-height: calc(100dvh - 8rem);

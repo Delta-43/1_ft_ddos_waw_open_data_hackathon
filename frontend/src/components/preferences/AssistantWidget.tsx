@@ -20,6 +20,8 @@ export function AssistantWidget() {
   const [status, setStatus] = useState<RequestStatus>({ state: 'idle' });
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [query, setQuery] = useState('');
+  // Only one panel is visible at a time: the chat (prompt) or the preferences.
+  const [stage, setStage] = useState<'chat' | 'preferences'>('chat');
   const [interpretation, setInterpretation] = useState<Interpretation | null>(null);
   // Names of preferences the user has switched OFF (everything starts on).
   const [off, setOff] = useState<Set<string>>(new Set());
@@ -37,6 +39,7 @@ export function AssistantWidget() {
     setOff(new Set());
     setResult(null);
     setStatus({ state: 'idle' });
+    setStage('preferences');
   }
 
   function toggle(name: string) {
@@ -64,8 +67,16 @@ export function AssistantWidget() {
       {/* Always mounted, only hidden, so the prompt and preferences survive closing the assistant. */}
       <div className="assistant__panels" hidden={!open}>
         {interpretation && (
-          <section className="assistant__panel" aria-label="Preferences">
-            <PreferencesBar interpretation={interpretation} off={off} status={status} onToggle={toggle} onFindRoutes={search} />
+          <section className="assistant__panel" aria-label="Preferences" hidden={stage !== 'preferences'}>
+            <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => setOpen(false)}>×</button>
+            <PreferencesBar
+              interpretation={interpretation}
+              off={off}
+              status={status}
+              onToggle={toggle}
+              onFindRoutes={search}
+              onEditPrompt={() => setStage('chat')}
+            />
             {result && route && (
               <div className="assistant__results">
                 <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
@@ -74,7 +85,7 @@ export function AssistantWidget() {
             )}
           </section>
         )}
-        <section className="assistant__panel" aria-label="Chat">
+        <section className="assistant__panel" aria-label="Chat" hidden={stage !== 'chat'}>
           <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => setOpen(false)}>×</button>
           <PromptForm value={query} onChange={setQuery} onSubmit={interpret} />
         </section>
