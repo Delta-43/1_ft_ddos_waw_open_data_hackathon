@@ -1,99 +1,108 @@
-/* Fallback colours keep labels readable before the shared theme variables exist. */
+/* Provenance labels in Moon Design System v1. Tokens come from src/style.css. */
+
+/* Data mode: a Moon tag. Mock is the one that must stand out, so it alone uses a support colour. */
 .data-mode-badge {
   display: inline-block;
-  padding: 0.1rem 0.45rem;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  padding: 0 8px;
+  border-radius: var(--moon-radius-full);
+  font-size: 10px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-.data-mode-badge--mock { color: #e6c27a; }
-.data-mode-badge--cached { color: #9cc3e8; }
-.data-mode-badge--live { color: #8fd19e; }
+.data-mode-badge--mock { background: color-mix(in srgb, var(--moon-krillin) 24%, transparent); color: var(--moon-krillin-ink); }
+.data-mode-badge--cached { background: var(--moon-fill); color: var(--moon-bulma); box-shadow: inset 0 0 0 1px var(--moon-faint); }
+.data-mode-badge--live { background: var(--moon-bulma); color: var(--moon-goten); }
 
-/* Source modes differ in text AND lightness/fill, never in hue alone. */
+/* Source modes differ in text AND fill/outline, never in hue alone. */
 .source-label {
   align-self: flex-start;
   display: inline-block;
   max-width: 100%;
-  padding: 0.1rem 0.5rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
+  padding: 0 8px;
+  border-radius: var(--moon-radius-full);
+  font-size: 10px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
-.source-label__name { text-transform: none; letter-spacing: 0; }
+.source-label__name { text-transform: none; letter-spacing: 0; font-weight: 400; }
 
-.source-label--real { color: var(--ink, #202124); background: #e8eaed; border: 1px solid #e8eaed; }
-.source-label--historical { color: #e8eaed; border: 1px solid #e8eaed; }
-.source-label--proxy { color: #e8eaed; border: 1px dashed var(--rim, #8ab4f8); }
+.source-label--real { color: var(--moon-goten); background: var(--moon-bulma); }
+.source-label--historical { color: var(--moon-bulma); box-shadow: inset 0 0 0 1px var(--moon-bulma); }
+.source-label--proxy { color: var(--moon-bulma); border: 1px dashed var(--moon-bulma); line-height: 18px; }
 .source-label--simulated,
-.source-label--unknown { color: var(--muted, #9aa0a6); border: 1px solid var(--rim-faint, #3c4043); }
+.source-label--unknown { color: var(--moon-trunks); background: var(--moon-fill); }
 
 .sources-strip {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--rim-faint, #3c4043);
-  font-size: 0.75rem;
-  color: var(--muted, #9aa0a6);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--moon-beerus);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--moon-trunks);
 }
 
 .sources-strip__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem 0.8rem;
+  gap: 4px 12px;
 }
 
 .sources-strip__meta { margin: 0; }
 
 .sources-strip__toggle {
-  min-height: 2rem;
-  padding: 0 0.7rem;
-  border-radius: 1rem;
-  border: 1px solid var(--rim-faint, #3c4043);
-  background: none;
-  color: var(--text, #e8eaed);
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: var(--moon-radius-full);
+  border: 0;
+  background: var(--moon-fill);
+  color: var(--moon-bulma);
   font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-.sources-strip__toggle:hover,
-.sources-strip__toggle[aria-expanded='true'] { border-color: var(--rim, #8ab4f8); color: #fff; }
-.sources-strip__toggle:focus-visible { outline: 2px solid var(--rim, #8ab4f8); outline-offset: 2px; }
+.sources-strip__toggle:hover { background: var(--moon-fill-hover); }
+.sources-strip__toggle[aria-expanded='true'] { background: var(--moon-bulma); color: var(--moon-goten); }
+.sources-strip__toggle:focus-visible { outline: none; box-shadow: var(--moon-focus); }
 
 .sources-drawer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  border: 1px solid var(--rim-faint, #3c4043);
-  background: var(--panel, rgba(22, 23, 23, 0.94));
-  color: var(--text, #e8eaed);
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--moon-radius-lg);
+  background: var(--moon-gohan);
+  box-shadow: var(--moon-shadow-lg);
+  color: var(--moon-bulma);
 }
 
 .sources-drawer[hidden] { display: none; }
 
 .sources-drawer__heading {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--moon-bulma);
 }
 
 .sources-drawer__list {
   display: grid;
-  gap: 0.5rem;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -102,21 +111,22 @@
 .sources-drawer__item {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #2a2c2e;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: var(--moon-radius-sm);
+  background: var(--moon-fill);
 }
 
 .sources-drawer__title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 8px;
 }
 
-.sources-drawer__name { font-size: 0.85rem; font-weight: 600; }
-.sources-drawer__text { margin: 0; font-size: 0.8rem; line-height: 1.45; }
-.sources-drawer__meta { margin: 0; font-size: 0.75rem; color: var(--muted, #9aa0a6); font-variant-numeric: tabular-nums; }
-.sources-drawer a { color: var(--rim, #8ab4f8); }
-.sources-drawer a:hover { color: #ffffff; }
-.sources-drawer__notice { margin: 0; font-size: 0.8rem; line-height: 1.45; color: var(--text, #e8eaed); padding-bottom: 0.5rem; border-bottom: 1px solid var(--rim-faint, #3c4043); }
+.sources-drawer__name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.sources-drawer__text { margin: 0; font-size: 12px; line-height: 16px; }
+.sources-drawer__meta { margin: 0; font-size: 12px; line-height: 16px; color: var(--moon-trunks); font-variant-numeric: tabular-nums; }
+.sources-drawer a { color: var(--moon-bulma); text-decoration: underline; text-underline-offset: 2px; }
+.sources-drawer a:hover { text-decoration-thickness: 2px; }
+.sources-drawer__notice { margin: 0; padding: 8px 12px; border-radius: var(--moon-radius-sm); background: color-mix(in srgb, var(--moon-krillin) 16%, transparent); font-size: 12px; line-height: 16px; color: var(--moon-bulma); }
