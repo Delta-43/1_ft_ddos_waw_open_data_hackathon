@@ -215,13 +215,6 @@
 .app-chrome--in > .hint-stack { pointer-events: none; }
 
 /* ---------- Understood preferences in the nav bar (Language Explorer's filter tabs) ---------- */
-.top-bar__middle {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: center;
-}
-
 .preference-chips {
   display: flex;
   align-items: center;
@@ -254,7 +247,6 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 .preference-chip--static { color: #fff; font-weight: 700; border-color: #5f6368; }
 .preference-chip[aria-pressed='false'] { text-decoration: line-through; }
 .preference-chip:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
-.preference-chips__by { flex: none; font-size: 0.75rem; color: var(--muted); white-space: nowrap; margin-left: 0.25rem; }
 
 /* ---------- Bottom bar: one line, map credit first ---------- */
 .sources-bar { gap: 1.25rem; flex-wrap: nowrap; overflow: visible; }
@@ -290,12 +282,11 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 
 @media (max-width: 700px) {
   .top-bar { flex-wrap: wrap; height: auto; min-height: 3rem; padding-block: 0.4rem; }
-  .top-bar__middle { order: 3; flex-basis: 100%; justify-content: flex-start; }
-  body:has(.preference-chips) { --top-chrome-height: 9rem; }
-  .notice-banner { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Clamp to 2 lines; the bottom spacing is a border so no sliver of a third line shows in it. */
+  .notice-banner { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: 0; border-bottom: 0.35rem solid rgba(22, 23, 23, 0.85); }
   .sources-bar { gap: 0.75rem; }
-  .sources-strip--bar .sources-strip__row > span { display: none; }
-  .map-credits { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* Licence credit must stay whole: on a phone it may wrap to two lines inside the 48 px bar. */
+  .map-credits { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; }
   /* On a phone the assistant replaces the results sheet while it is open. */
   .app-chrome--assistant-open .results { display: none; }
   /* Beats results.css's raised position for when the sheet is showing. */
@@ -309,3 +300,55 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 
 /* Before the first result there is no notice line, so the chrome is just the bar. */
 body:not(:has(.notice-banner)) { --top-chrome-height: 3.25rem; }
+
+/* ---------- Preferences icon + panel in the nav bar ---------- */
+.preferences-menu { position: relative; flex: none; }
+.preferences-menu__button {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--rim-faint);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+.preferences-menu__button:hover,
+.preferences-menu__button[aria-expanded='true'] { color: #fff; border-color: #5f6368; }
+.preferences-menu__button:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
+.preferences-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.6rem);
+  z-index: 30;
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--rim-faint);
+  background: var(--panel);
+  animation: drawer-in 0.3s ease-in-out;
+}
+.preferences-menu__panel[hidden] { display: none; }
+.preferences-menu__heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.preferences-menu .preference-chips { flex-wrap: wrap; overflow: visible; padding: 0; }
+
+/* ---------- Footer summary: short enough to always fit ---------- */
+.sources-strip__summary { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .map-credits { font-size: 0.7rem; }
+  .sources-strip__summary { display: none; }
+  /* Icon-only Sources button on phones, so the full map credit fits. */
+  .sources-strip__toggle-text { display: none; }
+  .sources-bar .sources-strip__toggle { width: 2.25rem; padding: 0; }
+  .sources-bar .sources-strip { flex: none; }
+}

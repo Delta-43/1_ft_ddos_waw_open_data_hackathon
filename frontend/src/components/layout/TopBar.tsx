@@ -7,7 +7,7 @@ interface TopBarProps {
   mode?: ResponseMode;
   notice?: string;
   onOpenSources?: () => void;
-  /** Understood preferences, shown in the bar like Language Explorer's filter tabs. */
+  /** The preferences menu icon, shown next to Sources. */
   children?: ReactNode;
 }
 
@@ -18,7 +18,8 @@ export function TopBar({ mode, notice, onOpenSources, children }: TopBarProps) {
       <header className="top-bar">
         <span className="top-bar__title">Warsaw 2076</span>
         {mode && <DataModeBadge mode={mode} />}
-        <div className="top-bar__middle">{children}</div>
+        <span className="top-bar__spacer" />
+        {children}
         {onOpenSources && (
           <button type="button" className="top-bar__sources" onClick={onOpenSources}>ⓘ Sources</button>
         )}
