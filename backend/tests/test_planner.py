@@ -102,6 +102,52 @@ def test_routing_outage_falls_back_to_labelled_straight_lines():
     assert "not street directions" in data["notice"]
 
 
+MAUZOLEUM = "osm:node/343292162"  # 21.0237, 52.2176
+SKWER = "osm:way/5037775"  # 21.0233, 52.2117
+UJAZDOWSKI = "osm:way/5081164"  # 21.0257, 52.2220
+
+
+def test_itinerary_visits_destination_and_via_stops_in_order(monkeypatch):
+    monkeypatch.setattr(routing, "_fetch_live", fake_osrm)
+    request = RouteRequest(query="take me there", destination_place_id=MAUZOLEUM,
+                            via_place_ids=[SKWER, UJAZDOWSKI])
+    data = planner.plan(request)
+    check_consistent(data)
+    assert len(data["routes"]) == 1
+    route = data["routes"][0]
+    assert route["recommended"] is True
+    assert [p["id"] for p in route["places"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
+    assert [s["place_id"] for s in route["stops"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
+    assert {p["source_id"] for p in route["places"]} == {"osm-places-demo"}
+    assert any(s["id"] == "osm-places-demo" for s in data["sources"])
+    assert "requested" in data["notice"]
+
+
+def test_itinerary_destination_only_has_no_via_stops():
+    data = planner.plan(RouteRequest(query="go there", destination_place_id=MAUZOLEUM))
+    route = data["routes"][0]
+    assert [p["id"] for p in route["places"]] == [MAUZOLEUM]
+    assert "Goes directly to" in route["explanation"]
+
+
+def test_itinerary_stop_order_changes_the_route(monkeypatch):
+    monkeypatch.setattr(routing, "_fetch_live", fake_osrm)
+    forward = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM,
+                                         via_place_ids=[SKWER, UJAZDOWSKI]))["routes"][0]
+    backward = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM,
+                                          via_place_ids=[UJAZDOWSKI, SKWER]))["routes"][0]
+    assert [p["id"] for p in forward["places"]] != [p["id"] for p in backward["places"]]
+    assert forward["metrics"]["distance_m"]["value"] != backward["metrics"]["distance_m"]["value"]
+
+
+def test_itinerary_routing_outage_falls_back_to_labelled_straight_lines():
+    data = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM, via_place_ids=[SKWER]))
+    check_consistent(data)
+    assert data["mode"] == "mock"
+    assert data["routes"][0]["geometry_kind"] == "straight_line"
+    assert any(s["id"] == "straight-line" for s in data["sources"])
+
+
 def test_proxy_sources_do_not_claim_measurements():
     sources = {s["id"]: s for s in planner._sources(set())}
     for source_id in ("green-proxy", "quiet-proxy"):

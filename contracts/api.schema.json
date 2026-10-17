@@ -65,7 +65,7 @@
         "preferences": { "$ref": "#/$defs/Preferences" },
         "destination_place_id": {
           "$ref": "#/$defs/PlaceId",
-          "description": "Refs #85. Resolved against the catalogue (GET /api/places); unknown ids return 422. Not yet routed through - see GET /api/health capabilities.ordered_stops."
+          "description": "Refs #85. Resolved against the catalogue (GET /api/places); unknown ids return 422. The response visits it last, but opening hours and max_duration_s are not yet enforced against it - see GET /api/health capabilities.ordered_stops."
         },
         "via_place_ids": {
           "type": "array",
