@@ -1,0 +1,16 @@
+{
+  "endpoint": "https://overpass-api.de/api/interpreter",
+  "query": "[out:json][timeout:35];(way[building](52.226,20.984,52.255,21.043);way[highway~\"^(primary|secondary|tertiary|residential|pedestrian|living_street|footway|path|service|unclassified|trunk)$\"](52.226,20.984,52.255,21.043);way[leisure~\"^(park|garden)$\"](52.226,20.984,52.255,21.043);way[natural~\"^(water|wood|scrub)$\"](52.226,20.984,52.255,21.043);way[landuse~\"^(forest|grass)$\"](52.226,20.984,52.255,21.043);relation[natural=water](52.226,20.984,52.255,21.043););out geom;",
+  "fetched_at": "2026-10-17T14:47:08.732813+00:00",
+  "osm_timestamp": "2026-10-17T14:45:51Z",
+  "bbox": [
+    20.984,
+    52.226,
+    21.043,
+    52.255
+  ],
+  "attribution": "\u00a9 OpenStreetMap contributors",
+  "licence": "ODbL-1.0",
+  "licence_url": "https://www.openstreetmap.org/copyright",
+  "status": "cached"
+}
