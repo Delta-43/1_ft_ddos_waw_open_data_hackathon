@@ -20,7 +20,7 @@ cp .env.example .env
 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 ```
 
-`.env` is a future integration template; the starter does not load it or call external services.
+The backend loads `.env` at start-up (existing environment variables win). Without an `OPENROUTER_API_KEY` it uses keyword rules and template explanations.
 Delta must explicitly load settings when adding providers. Keep keys on the backend.
 The API documentation is at `http://127.0.0.1:8000/docs`.
 

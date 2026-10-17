@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: #8 (DATA-02) reopened for Delta's half; then #12 (BE-01 candidate routes, branch `delta/12-candidate-routes`)
-- Branch / PR: API-01 contract 1.0 merged (#32, auto-merge on Ola's approval). PRs #33, #34, #35, #36, #37 and #38 merged
-- Last verified result: main at `5c96512` passes `ruff check backend` and `pytest backend/tests` (28 passed)
-- Blocker: None
-- Next action: classify the routing provider and confirm organiser data rules on #8 (links to #23 DATA-06); ask Alban for a post-merge review of contract 1.0; start BE-01
-- Updated at (include timezone): 2026-10-17 16:08 +02:00
+- Current issue: #12 (BE-01 candidate routes); also covers #23 (DATA-06) and #26 (DATA-07)
+- Branch / PR: `delta/12-candidate-routes` → PR #40, stacked on contract PR #32 (approved by Ola, waiting for Alban)
+- Last verified result: `ruff check backend` pass; `pytest backend/tests` 36 passed (offline). Live OSRM and cache-only runs return schema-valid street routes
+- Blocker: #32 needs Alban's review before #40 can land; Overpass mirrors were returning 502/504 on 2026-10-17 15:50
+- Next action: AI-01 (#15) model interpretation and grounded explanation over `planner.plan`, then MCP-01 (#16) over the same service
+- Updated at (include timezone): 2026-10-17 15:57 +02:00
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
