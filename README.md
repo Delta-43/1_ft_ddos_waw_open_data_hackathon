@@ -19,7 +19,7 @@ Build from scratch on Saturday. Existing application scaffolding is a reference 
 | --- | --- |
 | `backend/app/` | FastAPI, routing, AI, and shared services / Delta |
 | `backend/tests/` | Backend and contract checks / backend pair |
-| `frontend/src/` | React interface / Alban and Ola |
+| `frontend/src/` | React interface / Alban, Ola and Aryna |
 | `contracts/` | Shared API schemas and examples / Delta + Alban |
 | `data/fixtures/` | Versioned demo inputs / Sonia |
 | `data/local/` | Ignored local databases and cached data |

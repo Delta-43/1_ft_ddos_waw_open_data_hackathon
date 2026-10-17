@@ -1,3 +1,3 @@
 # Module ownership
 
-Ola owns forms, place cards, and UI states, reviewed by Alban.
+Ola owns forms and UI states. Aryna owns place cards and data-source labels. Alban reviews both.
