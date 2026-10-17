@@ -42,7 +42,7 @@ export function PreferencesBar({ interpretation, off, status, onToggle, onFindRo
       </ul>
       <p className="hint">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
       <div className="actions">
-        <button type="button" disabled={loading} onClick={onFindRoutes}>{loading ? 'Loading…' : 'Find routes'}</button>
+        <button type="button" className="gradient-ring-button" disabled={loading} onClick={onFindRoutes}>{loading ? 'Loading…' : 'Find routes'}</button>
       </div>
       <div aria-live="polite">
         {loading && <p className="hint">Looking for routes…</p>}

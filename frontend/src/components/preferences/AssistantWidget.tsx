@@ -20,8 +20,13 @@ function messageFor(error: unknown): string {
   return 'Could not reach the server. Is the backend running?';
 }
 
+interface AssistantWidgetProps {
+  /** When given, results are shown by the page (route panels) instead of inside the widget. */
+  onResult?: (result: RouteResponse) => void;
+}
+
 /** Little guy in the bottom-left corner. Clicking it opens the prompt → summary flow. */
-export function AssistantWidget() {
+export function AssistantWidget({ onResult }: AssistantWidgetProps = {}) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<RequestStatus>({ state: 'idle' });
   const [result, setResult] = useState<RouteResponse | null>(null);
@@ -62,8 +67,13 @@ export function AssistantWidget() {
     const lastPrompt = [...messages].reverse().find(message => message.role === 'user')?.text ?? '';
     setStatus({ state: 'loading' });
     try {
-      setResult(await requestRoutes(lastPrompt));
+      const response = await requestRoutes(lastPrompt);
+      setResult(response);
       setStatus({ state: 'success' });
+      if (onResult) {
+        onResult(response);
+        setOpen(false);
+      }
     } catch (error) {
       setStatus({ state: 'error', message: messageFor(error) });
     }
@@ -92,7 +102,7 @@ export function AssistantWidget() {
             </div>
             <div className="assistant__preferences">
               <PreferencesBar interpretation={interpretation} off={off} status={status} onToggle={toggle} onFindRoutes={search} />
-              {result && route && (
+              {!onResult && result && route && (
                 <div className="assistant__results">
                   <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
                   <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} sources={result.sources} stops={route.stops} />
