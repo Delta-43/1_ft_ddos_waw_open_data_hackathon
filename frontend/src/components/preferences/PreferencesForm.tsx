@@ -59,7 +59,7 @@ export function PreferencesForm({ status, onSubmit }: Props) {
       noValidate
       onSubmit={event => { event.preventDefault(); interpret(); }}
     >
-      <label htmlFor="outing-query">What kind of outing do you want?</label>
+      <label htmlFor="outing-query">What are we exploring today?</label>
       <textarea
         id="outing-query"
         rows={3}
