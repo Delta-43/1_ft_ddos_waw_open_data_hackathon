@@ -72,29 +72,34 @@ function ensureLayer(map: Map, attribution: string) {
   }
   registerPinIcons(map);
   map.addSource(SOURCE_ID, { type: 'geojson', data: toGeoJSON([]), attribution });
-  map.addLayer({
-    id: LAYER_ID,
-    type: 'symbol',
-    source: SOURCE_ID,
-    layout: {
-      'icon-image': ['get', 'icon'],
-      'icon-allow-overlap': true,
-      // Smaller pins when zoomed out, so dense areas (e.g. the Łazienki places) don't pile up.
-      'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 14, 1],
-      // Titles appear from street level; the icon always wins over its label.
-      'text-field': ['step', ['zoom'], '', 14, ['get', 'title']],
-      'text-font': TILES.font,
-      'text-size': 12,
-      'text-offset': [0, 1.7],
-      'text-anchor': 'top',
-      'text-optional': true,
+  map.addLayer(
+    {
+      id: LAYER_ID,
+      type: 'symbol',
+      source: SOURCE_ID,
+      layout: {
+        'icon-image': ['get', 'icon'],
+        'icon-allow-overlap': true,
+        // Smaller pins when zoomed out, so dense areas (e.g. the Łazienki places) don't pile up.
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 14, 1],
+        // Titles appear from street level; the icon always wins over its label.
+        'text-field': ['step', ['zoom'], '', 14, ['get', 'title']],
+        'text-font': TILES.font,
+        'text-size': 12,
+        'text-offset': [0, 1.7],
+        'text-anchor': 'top',
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': '#1d2b3a',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.4,
+      },
     },
-    paint: {
-      'text-color': '#1d2b3a',
-      'text-halo-color': '#ffffff',
-      'text-halo-width': 1.4,
-    },
-  });
+    // Below any route layers (ids `route-*`), so route lines and numbered stops stay on top
+    // even when this layer is re-added after them.
+    map.getLayersOrder().find(id => id.startsWith('route-')),
+  );
 
   if (!existing) registerHandlers(map);
 }

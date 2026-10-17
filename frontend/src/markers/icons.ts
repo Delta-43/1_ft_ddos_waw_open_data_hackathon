@@ -115,10 +115,23 @@ function hexagonPath(ctx: CanvasRenderingContext2D, radius: number) {
   ctx.closePath();
 }
 
+/**
+ * One CPU-backed canvas for every icon. `willReadFrequently` keeps it off the GPU, so each
+ * `getImageData` readback is a memory copy instead of a GPU flush: icon registration went
+ * from ~300 ms to a few ms at startup (headless Chrome), where it stalled the intro flight.
+ */
+let iconCanvas: CanvasRenderingContext2D | undefined;
+
 function drawIcon(category: PinCategory): ImageData {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = SIZE;
-  const ctx = canvas.getContext('2d')!;
+  if (!iconCanvas) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SIZE;
+    iconCanvas = canvas.getContext('2d', { willReadFrequently: true })!;
+  }
+  const ctx = iconCanvas;
+  // save/restore keeps one glyph's state (line caps, fonts) out of the next icon.
+  ctx.save();
+  ctx.clearRect(0, 0, SIZE, SIZE);
   const accent = ACCENT[category];
 
   // Dark body with a soft outer glow and an accent rim.
@@ -134,7 +147,9 @@ function drawIcon(category: PinCategory): ImageData {
 
   ctx.fillStyle = accent;
   GLYPHS[category](ctx);
-  return ctx.getImageData(0, 0, SIZE, SIZE);
+  const image = ctx.getImageData(0, 0, SIZE, SIZE);
+  ctx.restore();
+  return image;
 }
 
 /** Registers one hexagon icon per category with the map (idempotent). */
