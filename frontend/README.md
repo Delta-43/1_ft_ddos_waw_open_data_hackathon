@@ -63,7 +63,7 @@ These keep panning, zooming and scrolling smooth. They were measured in headless
 
 | Rule | Why |
 | --- | --- |
-| Keep `fill-extrusion-opacity` at 1 | Below 1, MapLibre draws every building twice (a depth pass and a colour pass): +26% frame time. A `fill-extrusion-pattern` forces the same two-pass path |
+| Keep `fill-extrusion-opacity` at 1 | Below 1, MapLibre draws every building twice (a depth pass and a colour pass): +26% frame time. |
 | Extra per-building layers (roof slab, footprint lines) start at `DETAIL_MINZOOM` (16) | Each is a full extra pass over every building: +18% and +10% frame time at zoom 15 |
 | Device pixel ratio capped at 2 (`createMap`) | Saves shading 2.25× the pixels on 3× phone screens |
 | Outline scan runs on idle, in 6 ms slices, and stops when the camera moves | Main-thread long tasks during scroll-pause-scroll went from 6 to 0–1. The first scan on load runs in one go, before anyone interacts, so landmarks never open as solid boxes |

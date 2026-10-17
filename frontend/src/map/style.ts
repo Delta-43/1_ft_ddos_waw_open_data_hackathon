@@ -37,7 +37,7 @@ export const palette = {
   fog: '#e3ecf2',
 };
 
-export type Palette = typeof palette;
+type Palette = typeof palette;
 
 /** Fallback for buildings whose tiles carry no height (metres). */
 const FALLBACK_HEIGHT = 12;
