@@ -1,4 +1,4 @@
-import { Marker, type ExpressionSpecification, type LngLatLike, type Map } from 'maplibre-gl';
+import { Marker, type LngLatLike, type Map } from 'maplibre-gl';
 import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
 
 /** The camera the intro starts from: high above Warsaw, looking straight down. */
@@ -49,25 +49,6 @@ export function locateVisitor(timeoutMs = 4000): Promise<[number, number] | null
       { timeout: timeoutMs, maximumAge: 600_000 },
     );
   });
-}
-
-/**
- * Buildings rise out of the ground as the camera descends (zoom 13.5 → 14.8).
- * Data-driven heights can't use paint transitions, so the growth follows the zoom instead:
- * it costs nothing per frame. This is the "all rise together" variant, not a per-building ripple.
- */
-export function growBuildingsWithZoom(map: Map): void {
-  for (const [layer, property] of [
-    ['building-3d', 'fill-extrusion-height'],
-    ['building-3d', 'fill-extrusion-base'],
-    ['building-roof', 'fill-extrusion-height'],
-    ['building-roof', 'fill-extrusion-base'],
-  ] as const) {
-    if (!map.getLayer(layer)) continue;
-    const value = map.getPaintProperty(layer, property) as ExpressionSpecification | number | undefined;
-    if (value === undefined) continue;
-    map.setPaintProperty(layer, property, ['interpolate', ['linear'], ['zoom'], 13.5, 0, 14.8, value]);
-  }
 }
 
 /** Flies from INTRO_START down to street level over `target`, then calls `done`. */
