@@ -1,10 +1,8 @@
 # Handover
 
-- Current issue: Unassigned
-- Branch / PR: Not started
-- Last verified result: Starter available; see README.md
-- Blocker: None recorded
-- Next action: Read personal PROMPT.md and claim the first issue with the pair
-- Updated at (include timezone): Pending
-
-Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
+- Current issue: DATA-01 ("Fetch and normalise fresh OSM places/parks for one demo area on Saturday") — no GitHub issue number exists yet; human confirmed skipping issue creation for now (no `gh` CLI, no authenticated GitHub web access available to the agent). Link the issue in the PR once one exists.
+- Branch / PR: `sonia/data-01-osm-catalogue`, pushed to origin. PR not opened — agent has no `gh` CLI or logged-in browser session to create it. Open at: https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/new/sonia/data-01-osm-catalogue
+- Last verified result: Fresh Overpass fetch succeeded on 2026-10-17 at 13:11:18 +0200 for the Łazienki/Ujazdów demo bbox (`52.2060,21.0220,52.2250,21.0480`): 625 raw elements, 26 named places kept (museums, galleries, parks, named gardens) after dropping 599 unnamed `leisure=garden` fragments. Catalogued in `docs/DATA.md`. Sample committed at `data/fixtures/osm-places-sample.json`; full raw response cached (gitignored) at `data/local/osm_places_raw.json`. `ruff check backend` and `pytest backend/tests` both pass (5 tests, including 3 new offline tests for `backend/app/data/osm_places.py`'s `normalise()`).
+- Blocker: No GitHub issue number for DATA-01, and no way for this agent to create one or open the PR (no `gh`, no authenticated web session). Needs a human to either create the issue + PR, or supply an issue number so the PR can link it.
+- Next action: Get the DATA-01 issue number from Delta/the repo owner, open the PR from the pushed branch (title: "DATA-01: fetch and normalise a fresh OSM places sample"), link the issue, request review from `@Delta-43`. After merge, BE-02 (bounded places endpoint) can build on `backend/app/data/osm_places.py`.
+- Updated at (include timezone): 2026-10-17 13:20 Europe/Warsaw
