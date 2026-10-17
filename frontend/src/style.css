@@ -1,7 +1,8 @@
 /* Shared colours for the HTML overlay; map colours live in src/map/style.ts. */
 :root {
   --bg: #0b1220;
-  --panel: rgba(11, 18, 32, 0.82);
+  /* Opaque enough to read without backdrop-filter, which re-blurs on every map frame. */
+  --panel: rgba(11, 18, 32, 0.9);
   --rim: #7fb4e6;
   --rim-faint: rgba(127, 180, 230, 0.35);
   --text: #dce8f5;
@@ -41,7 +42,6 @@ body {
   padding: 0.85rem 1.5rem 0.9rem;
   text-align: center;
   background: var(--panel);
-  backdrop-filter: blur(6px);
   border-top: 1px solid var(--rim-faint);
   border-bottom: 1px solid var(--rim-faint);
   pointer-events: none; /* never block map gestures */
@@ -114,7 +114,6 @@ body {
 /* ---------- Pin popup ---------- */
 .pin-popup .maplibregl-popup-content {
   background: var(--panel);
-  backdrop-filter: blur(6px);
   border: 1px solid var(--rim-faint);
   border-radius: 2px;
   color: var(--text);

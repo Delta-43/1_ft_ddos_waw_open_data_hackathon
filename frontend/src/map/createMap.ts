@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // a self-contained worker chunk (the dist worker imports a sibling shared file).
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
+import { hideUnflaggedOutlines } from './buildingOutlines';
 import { ResetViewControl } from './controls';
 import { buildStyle, palette } from './style';
 
@@ -22,10 +23,17 @@ export function createMap(container: HTMLElement): Map {
     ...CAMERA_LIMITS,
     // Added below in non-compact form so tile/OSM credits are always visible.
     attributionControl: false,
+    // 3× phone screens would shade 2.25× the pixels of 2× for little visible gain.
+    pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    // No label fade: fading keeps redrawing the whole 3D scene after every move
+    // (measured 6.8 → 1.3 frames per stop); labels and pins appear instantly instead.
+    fadeDuration: 0,
   });
 
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new ResetViewControl(), 'top-right');
   map.addControl(new AttributionControl({ compact: false }), 'bottom-right');
+  // Show detailed building parts (Palace of Culture tiers, spires) instead of solid outlines.
+  hideUnflaggedOutlines(map);
   return map;
 }
