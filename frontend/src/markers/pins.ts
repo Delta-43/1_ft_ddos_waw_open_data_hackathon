@@ -126,8 +126,6 @@ function ensureLayer(map: Map) {
 /** Click and hover handlers, once per map. */
 function registerHandlers(map: Map) {
   map.on('click', LAYER_ID, (event: MapLayerMouseEvent) => {
-    // A route stop drawn on top of this pin owns the click (it opens the place-card pop-up).
-    if (map.getLayer('route-stop') && map.queryRenderedFeatures(event.point, { layers: ['route-stop'] }).length > 0) return;
     const feature = event.features?.[0];
     const pin = feature && storeFor(map).get(String(feature.properties.id));
     if (!pin) return;

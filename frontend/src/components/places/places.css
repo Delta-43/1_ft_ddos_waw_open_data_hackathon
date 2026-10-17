@@ -152,3 +152,9 @@
   line-height: 1;
 }
 .place-popup .maplibregl-popup-close-button:hover { background: var(--moon-fill-hover); }
+
+/* Numbered stop on a stem with a soft halo, after Delta's mockup. */
+.stop-marker { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.stop-marker__badge { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--route, #3d6b50); color: #fff; font: 700 0.95rem var(--moon-font, system-ui), sans-serif; border: 2px solid #fff; box-shadow: 0 0 0 7px color-mix(in srgb, var(--route, #3d6b50) 22%, transparent); }
+.stop-marker__stem { width: 2px; height: 1.6rem; background: var(--route, #3d6b50); }
+.stop-marker:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 3px; border-radius: 50%; }
