@@ -104,6 +104,14 @@ body {
   line-height: 1;
 }
 
+.historical-overlay-button {
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  min-width: 2rem;
+}
+
 /* Keep attribution visible and clear of the banner. */
 .maplibregl-ctrl-bottom-right {
   bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
