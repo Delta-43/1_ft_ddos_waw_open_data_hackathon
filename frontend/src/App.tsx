@@ -6,7 +6,7 @@ import { PreferenceChips } from './components/layout/PreferenceChips';
 import { TopBar } from './components/layout/TopBar';
 import { AssistantWidget } from './components/preferences/AssistantWidget';
 import { MapCredits } from './components/provenance/MapCredits';
-import { SourcesStrip } from './components/provenance/SourcesStrip';
+import { SourcesDrawer } from './components/provenance/SourcesDrawer';
 import { ResultsPanels } from './components/results/ResultsPanels';
 import { MapView } from './map/MapView';
 import { useOuting } from './useOuting';
@@ -95,6 +95,7 @@ export function App() {
         <TopBar
           mode={result?.mode}
           onOpenSources={result ? () => setSourcesOpen(open => !open) : undefined}
+          sourcesOpen={sourcesOpen}
         >
           {result && <PreferenceChips understood={result.preferences} busy={status.state === 'loading'} onChange={outing.refine} />}
         </TopBar>
@@ -111,21 +112,16 @@ export function App() {
           {!result && !assistantOpen && <HintPill>Describe your outing to see routes</HintPill>}
           {!result && located === false && <HintPill>Showing central Warsaw · location off</HintPill>}
         </div>
+        {result && (
+          <div className="sources-popover">
+            <SourcesDrawer id="sources-drawer" sources={result.sources} notice={result.notice} hidden={!sourcesOpen} />
+          </div>
+        )}
+        {/* Floating credit line over the map: licence credits and the privacy promise, no bar. */}
         <footer className="sources-bar">
-          <MapCredits />
-          {result ? (
-            <SourcesStrip
-              variant="bar"
-              notice={result.notice}
-              sources={result.sources}
-              mode={result.mode}
-              generatedAt={result.generated_at}
-              open={sourcesOpen}
-              onOpenChange={setSourcesOpen}
-            />
-          ) : (
-            <span className="sources-bar__empty">We don’t store your requests or location.</span>
-          )}
+          <p className="sources-bar__line">
+            <MapCredits /> · We don’t store your requests or location.
+          </p>
         </footer>
         <AssistantWidget
           open={assistantOpen}
