@@ -105,32 +105,43 @@
   white-space: nowrap;
 }
 
-/* ---------- Sources bar ---------- */
+/* ---------- Credit line: floats over the map, no bar ---------- */
 .sources-bar {
   position: fixed;
   inset: auto 0 0;
   z-index: 20;
-  height: calc(var(--sources-bar-height) + env(safe-area-inset-bottom));
+  min-height: calc(var(--sources-bar-height) + env(safe-area-inset-bottom));
   padding: 0 24px env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
-  background: var(--moon-gohan);
-  border-top: 1px solid var(--moon-beerus);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--moon-bulma);
+  /* A white halo keeps the licence credits legible over any part of the map. */
+  font-weight: 500;
+  text-shadow:
+    -1px -1px 0 var(--moon-goten), 1px -1px 0 var(--moon-goten), -1px 1px 0 var(--moon-goten), 1px 1px 0 var(--moon-goten),
+    0 0 3px var(--moon-goten), 0 0 6px var(--moon-goten);
+  pointer-events: none;
 }
-.sources-bar .sources-strip { position: relative; flex: 1; padding-top: 0; border-top: 0; }
-.sources-bar .sources-strip__meta { display: none; }
-.sources-bar .sources-drawer {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 12px);
-  width: min(30rem, calc(100vw - 2rem));
-  max-height: 60vh;
+.sources-bar__line { margin: 0; }
+.sources-bar a { pointer-events: auto; }
+
+/* ---------- Sources drawer: opens from the nav bar's Sources button ---------- */
+.sources-popover {
+  position: fixed;
+  top: calc(var(--top-chrome-height) + 12px);
+  right: 12px;
+  z-index: 25;
+  width: min(30rem, calc(100vw - 1.5rem));
+}
+.sources-popover .sources-drawer {
+  max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 2rem);
   overflow-y: auto;
   animation: drawer-in 0.6s var(--ease-signature);
 }
-.sources-bar__empty { margin: 0; font-size: 12px; line-height: 16px; color: var(--moon-trunks); }
 
-@keyframes drawer-in { from { opacity: 0; transform: translateY(0.75rem); } }
+@keyframes drawer-in { from { opacity: 0; transform: translateY(-0.75rem); } }
 
 /* ---------- "You are here" ---------- */
 .you-are-here {
@@ -152,7 +163,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .intro-curtain { transition-duration: 0.3s; }
-  .sources-bar .sources-drawer, .preferences-menu__panel { animation: none; }
+  .sources-popover .sources-drawer, .preferences-menu__panel { animation: none; }
 }
 
 .app-chrome--in > .hint-stack { pointer-events: none; }
@@ -194,19 +205,9 @@ button.preference-chip:hover { background: var(--moon-fill-hover); }
 .preference-chip:disabled { cursor: default; }
 .preference-chip:focus-visible { outline: none; box-shadow: var(--moon-focus); }
 
-/* ---------- Bottom bar: one line, map credit first ---------- */
-.sources-bar { gap: 20px; flex-wrap: nowrap; overflow: visible; }
-.map-credits { flex: none; font-size: 12px; line-height: 16px; color: var(--moon-trunks); white-space: nowrap; }
+/* ---------- Credit line contents ---------- */
 .map-credits a { color: var(--moon-bulma); text-decoration: none; }
 .map-credits a:hover { text-decoration: underline; }
-.sources-strip--bar .sources-strip__row { flex-wrap: nowrap; min-width: 0; }
-.sources-strip--bar .sources-strip__row > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sources-strip--bar .sources-strip__toggle { flex: none; margin-left: auto; }
 
 /* ---------- Assistant: its own column, never on top of the results ---------- */
 .app-chrome .assistant { right: 12px; bottom: calc(var(--sources-bar-height) + 12px + env(safe-area-inset-bottom)); }
@@ -225,24 +226,12 @@ button.preference-chip:hover { background: var(--moon-fill-hover); }
 
 @media (max-width: 700px) {
   .top-bar { flex-wrap: wrap; height: auto; min-height: 48px; padding-block: 4px; }
-  .sources-bar { gap: 12px; }
-  /* Licence credit must stay whole: on a phone it may wrap to two lines inside the 48 px bar. */
-  .map-credits { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; }
-  /* Before the first search the bar holds the credits and the privacy note: stack them, so the
-     required licence credits get the full width instead of a clipped sliver. */
-  .sources-bar:has(.sources-bar__empty) { flex-direction: column; align-items: stretch; justify-content: center; gap: 2px; }
-  .sources-bar:has(.sources-bar__empty) .map-credits { flex: none; }
-  .sources-bar__empty { font-size: 11px; line-height: 1.2; }
   /* On a phone the assistant replaces the results sheet while it is open. */
   .app-chrome--assistant-open .results { display: none; }
   /* Beats results.css's raised position for when the sheet is showing. */
   .app-chrome.app-chrome--assistant-open:has(.results) .assistant { bottom: calc(var(--sources-bar-height) + 12px + env(safe-area-inset-bottom)); }
-  /* The bottom bar already has a Sources button. */
-  .top-bar__sources { display: none; }
   .app-chrome .assistant__panel { width: calc(100vw - 2rem); max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6rem); }
 }
-.sources-bar .sources-strip { min-width: 0; }
-.sources-strip--bar .sources-strip__row { overflow: hidden; }
 
 /* ---------- Preferences icon + panel in the nav bar ---------- */
 .preferences-menu { position: relative; flex: none; }
@@ -284,14 +273,12 @@ button.preference-chip:hover { background: var(--moon-fill-hover); }
 }
 .preferences-menu .preference-chips { flex-wrap: wrap; overflow: visible; padding: 0; }
 
-/* ---------- Footer summary: short enough to always fit ---------- */
-.sources-strip__summary { font-size: 12px; line-height: 16px; color: var(--moon-trunks); white-space: nowrap; }
-
 @media (max-width: 700px) {
-  .map-credits { font-size: 11px; }
-  .sources-strip__summary { display: none; }
-  /* Icon-only Sources button on phones, so the full map credit fits. */
-  .sources-strip__toggle-text { display: none; }
-  .sources-bar .sources-strip__toggle { width: 32px; padding: 0; }
-  .sources-bar .sources-strip { flex: none; }
+  /* The licence credit stays whole: on a phone it wraps to a second line. */
+  .sources-bar { font-size: 11px; line-height: 14px; }
+  /* Icon-only on phones so the nav bar stays one row; the word stays for screen readers. */
+  .top-bar__sources { width: 40px; padding: 0; }
+  .top-bar__sources-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .sources-popover { top: calc(var(--top-chrome-height) + 4px); right: 8px; width: calc(100vw - 1rem); }
+}
 }
