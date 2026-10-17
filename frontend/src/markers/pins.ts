@@ -57,8 +57,8 @@ function ensureLayer(map: Map) {
       'text-optional': true,
     },
     paint: {
-      'text-color': '#dce8f5',
-      'text-halo-color': '#0b1220',
+      'text-color': '#1d2b3a',
+      'text-halo-color': '#ffffff',
       'text-halo-width': 1.4,
     },
   });
