@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { requestRoutes, type RouteResponse } from '../../api/routes';
 import { PlaceCardList } from '../places/PlaceCardList';
 import { DataModeBadge } from '../provenance/DataModeBadge';
-import { PreferencesForm, type RequestStatus } from './PreferencesForm';
+import { interpretPreferences, type Interpretation } from './interpretPreferences';
+import { PreferencesBar, type RequestStatus } from './PreferencesBar';
+import { PromptForm } from './PromptForm';
 import './preferences.css';
 
 function messageFor(error: unknown): string {
@@ -17,6 +19,10 @@ export function AssistantWidget() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<RequestStatus>({ state: 'idle' });
   const [result, setResult] = useState<RouteResponse | null>(null);
+  const [query, setQuery] = useState('');
+  const [interpretation, setInterpretation] = useState<Interpretation | null>(null);
+  // Names of preferences the user has switched OFF (everything starts on).
+  const [off, setOff] = useState<Set<string>>(new Set());
 
   // Escape closes the panel.
   useEffect(() => {
@@ -26,10 +32,25 @@ export function AssistantWidget() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  async function search(query: string) {
+  function interpret(prompt: string) {
+    setInterpretation(interpretPreferences(prompt));
+    setOff(new Set());
+    setResult(null);
+    setStatus({ state: 'idle' });
+  }
+
+  function toggle(name: string) {
+    setOff(previous => {
+      const next = new Set(previous);
+      if (!next.delete(name)) next.add(name);
+      return next;
+    });
+  }
+
+  async function search() {
     setStatus({ state: 'loading' });
     try {
-      setResult(await requestRoutes(query));
+      setResult(await requestRoutes(query.trim()));
       setStatus({ state: 'success' });
     } catch (error) {
       setStatus({ state: 'error', message: messageFor(error) });
@@ -40,17 +61,24 @@ export function AssistantWidget() {
 
   return (
     <div className="assistant">
-      {/* Always mounted, only hidden, so the prompt and summary survive closing the panel. */}
-      <section className="assistant__panel" aria-label="Outing assistant" hidden={!open}>
-        <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => setOpen(false)}>×</button>
-        <PreferencesForm status={status} onSubmit={search} />
-        {result && route && (
-          <div className="assistant__results">
-            <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
-            <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} />
-          </div>
+      {/* Always mounted, only hidden, so the prompt and preferences survive closing the assistant. */}
+      <div className="assistant__panels" hidden={!open}>
+        {interpretation && (
+          <section className="assistant__panel" aria-label="Preferences">
+            <PreferencesBar interpretation={interpretation} off={off} status={status} onToggle={toggle} onFindRoutes={search} />
+            {result && route && (
+              <div className="assistant__results">
+                <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
+                <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} />
+              </div>
+            )}
+          </section>
         )}
-      </section>
+        <section className="assistant__panel" aria-label="Chat">
+          <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => setOpen(false)}>×</button>
+          <PromptForm value={query} onChange={setQuery} onSubmit={interpret} />
+        </section>
+      </div>
       <div className="assistant__row">
         {!open && (
           <button type="button" className="assistant__bubble" onClick={() => setOpen(true)}>

@@ -55,10 +55,13 @@
 }
 .assistant__guy:hover, .assistant__guy:focus-visible { border-color: var(--rim); }
 
-.assistant__panel[hidden] { display: none; }
+.assistant__panels[hidden] { display: none; }
+/* Preferences bar on the left, chat on the right; stacked on narrow screens. */
+.assistant__panels { display: flex; align-items: flex-end; gap: 0.75rem; max-width: 100%; }
+@media (max-width: 700px) { .assistant__panels { flex-direction: column; align-items: stretch; } }
 .assistant__panel {
   position: relative;
-  width: min(24rem, 100%);
+  width: min(22rem, 100%);
   max-height: calc(100dvh - 8rem);
   overflow-y: auto;
   padding: 1rem;
@@ -105,7 +108,6 @@
 .preferences-form button:disabled { opacity: 0.5; cursor: default; }
 .preferences-form .hint { margin: 0; color: var(--muted); font-size: 0.75rem; }
 .preferences-form .error { margin: 0; color: #fca5a5; font-size: 0.85rem; }
-.preferences-form .prompt-echo { margin: 0; padding-left: 0.75rem; border-left: 3px solid var(--rim-faint); color: var(--muted); overflow-wrap: anywhere; }
 .preferences-form .summary { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
 .preferences-form .summary li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.45rem 0.75rem; border: 1px solid var(--rim-faint); background: rgba(127, 180, 230, 0.1); font-size: 0.95rem; }
 .preferences-form .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -135,6 +137,3 @@
 .preferences-form button.switch[aria-checked="true"] { background: var(--rim); border-color: var(--rim); }
 .preferences-form button.switch[aria-checked="true"]::after { transform: translateX(1.1rem); background: var(--bg); }
 .preferences-form button.switch:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.preferences-form .prompt-details summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
-.preferences-form .prompt-details summary:hover, .preferences-form .prompt-details summary:focus-visible { color: var(--text); }
-.preferences-form .prompt-details .prompt-echo { margin-top: 0.4rem; }
