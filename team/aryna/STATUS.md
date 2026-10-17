@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: #45 (attribution and zoom visible with the assistant open), from my part of #91. #89 merged at 23:41: the dark design is on main
-- Branch / PR: `aryna/45-attribution-zoom-visible`: on phones the assistant panel leaves the right edge to the map controls; the assistant wrapper lets clicks through; dead `assistant__panel--wide` CSS removed. #94 (route focus, Delta-style) is open for Delta to decide (conflicts with D4)
-- Last verified result: `pnpm run check` and `pnpm run build` pass. Headless Chrome 1440×900, 1024×768, 390×844, 360×740 with the assistant open before and after a search: zoom, compass and every credit link are on top and clickable; assistant controls still clickable
-- Blocker: none. Ola owns #45 on paper, so Ola and Delta review
-- Next action: next #91 item for me (panels, route comparison, place cards with the three skills); Sources entry for estimated building heights once D4's data source exists
-- Open items: #94 needs Delta's decision; it was built on Moon, so after #89 it needs a small `places.css` update
-- Updated at (include timezone): 2026-10-18 00:45 +0200 (Europe/Warsaw)
+- Current issue: #45 done (#96 merged). Route focus in Delta's style (#94) is open for Delta's decision; it conflicts with #91 D4
+- Branch / PR: `aryna/route-focus-delta-style` (#94), now merged with main's dark design (#89, #96): only buildings within 210 m of the selected route stay 3D, tinted in its colour; the rest fade flat under a pale veil; dashed route; numbered stops on stems
+- Last verified result: after merging main, `pnpm run check` and `pnpm run build` pass; headless Chrome on the dark design at 1440×900 and 390×844, switching routes moves the corridor and tint, no console errors
+- Blocker: Delta's decision on #94 vs D4 option A. Touches `frontend/src/map/`, so Delta reviews
+- Next action: place cards attached to their stops (#91 section 5), then route comparison and panels, each with the three skills
+- Open items: Sources entry for estimated building heights once D4's data source exists; #80 still says "finish Moon" (ask Delta to close or reword it)
+- Updated at (include timezone): 2026-10-18 01:00 +0200 (Europe/Warsaw)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
