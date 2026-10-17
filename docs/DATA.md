@@ -162,6 +162,14 @@ The route `green_score` and `quiet_score` are proxies calculated by `backend/app
 **UI rule (for #26 with Alban):** any display of these scores must show the "Proxy" label from `SourceLabel` and may say "greenery estimate" or "traffic-exposure estimate". It must not say measured, shade, canopy or noise level. A better greenery source exists but is not integrated: the Warsaw WMS layers `ZIELEN_DRZEWA`, `ZIELEN_TRAWNIKI` and others (see DATA-02 above), which are map tiles only. Modelled WMS noise (2022) could later replace the quiet proxy, labelled as modelled.
 
 **Sanity check (live run, 2026-10-17):** for the same museum outing, the route inside parks scored green 0.53 / quiet 0.64, the route through parks 0.12 / 0.56 and the direct route 0.00 / 0.46. The ordering matches the intent; the absolute values mean nothing on their own.
+## Stale live-feed rule
+
+A feed that answers is not a feed that is current. Vehicle locations, departures and station readings can stop updating during repairs, holdbacks or technical stops. Rule for every live-style input (implemented in `backend/app/services/freshness.py`):
+
+- Judge each record by its own timestamp. More than 30 minutes old, missing, unreadable or in the future means **not live**.
+- Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
+- Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
+- Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
 ## Routing provider verification (DATA-06)
 
 Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
