@@ -27,8 +27,14 @@ function App() {
     }
   }
 
-  return <main><h1>Warsaw 2076</h1><p>Integration starter — synthetic route data only.</p>
-    <PreferencesForm status={status} onSubmit={search} />
-    <pre aria-live="polite">{result}</pre></main>;
+  return <div className="layout">
+    <section className="map-area" aria-label="Map">Map placeholder (Alban's MapLibre map goes here)</section>
+    <aside className="sidebar">
+      <h1>Warsaw 2076</h1>
+      <p className="hint">Integration starter — synthetic route data only.</p>
+      <PreferencesForm status={status} onSubmit={search} />
+      <pre aria-live="polite">{result}</pre>
+    </aside>
+  </div>;
 }
 createRoot(document.getElementById('root')!).render(<App />);
