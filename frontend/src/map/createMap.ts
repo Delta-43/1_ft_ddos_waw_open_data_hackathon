@@ -1,4 +1,4 @@
-import { AttributionControl, Map, NavigationControl, setWorkerUrl } from 'maplibre-gl';
+import { Map, NavigationControl, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre v6 cannot locate its worker inside a bundle; `?worker&url` makes Vite emit
 // a self-contained worker chunk (the dist worker imports a sibling shared file).
@@ -15,13 +15,13 @@ setWorkerUrl(workerUrl);
  * else) only needs to supply an element and call `map.remove()` on teardown.
  * Default handlers already cover mouse, trackpad and touch pan/zoom/rotate/tilt.
  */
-export function createMap(container: HTMLElement): Map {
+export function createMap(container: HTMLElement, view: typeof INITIAL_VIEW = INITIAL_VIEW): Map {
   const map = new Map({
     container,
     style: buildStyle(palette),
-    ...INITIAL_VIEW,
+    ...view,
     ...CAMERA_LIMITS,
-    // Added below in non-compact form so tile/OSM credits are always visible.
+    // Tile/OSM credits are always visible in the page's bottom bar (MapCredits), not floating over the map.
     attributionControl: false,
     // 3× phone screens would shade 2.25× the pixels of 2× for little visible gain.
     pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
@@ -32,7 +32,6 @@ export function createMap(container: HTMLElement): Map {
 
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new ResetViewControl(), 'top-right');
-  map.addControl(new AttributionControl({ compact: false }), 'bottom-right');
   // Show detailed building parts (Palace of Culture tiers, spires) instead of solid outlines.
   hideUnflaggedOutlines(map);
   return map;

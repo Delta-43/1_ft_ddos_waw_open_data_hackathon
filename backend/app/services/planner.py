@@ -8,16 +8,19 @@ import json
 import math
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import cache
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from app.contract import CONTRACT_VERSION, RouteRequest
-from app.services import osm_context, routing, scoring
+from app.services import ai, opening_hours, osm_context, routing, scoring
 
 ROOT = Path(__file__).resolve().parents[3]
 PLACES_SNAPSHOT = ROOT / "data/fixtures/osm-places-sample.json"
 
+WARSAW = ZoneInfo("Europe/Warsaw")
+FIRST_STOP_LEAD_S = 1800  # rough time to reach the first museum when filtering the pool
 DEFAULT_START = (21.0122, 52.2297)  # Centrum, contract example start
 MUSEUM_VISIT_S = 2700
 PARK_VISIT_S = 600
@@ -41,8 +44,8 @@ class Interpreted:
     interpreted_by: str = "rules"
 
 
-def interpret(request: RouteRequest) -> Interpreted:
-    """Keyword rules; explicit preferences always win."""
+def interpret(request: RouteRequest, use_model: bool = True) -> Interpreted:
+    """Model reading if configured, else keyword rules; explicit preferences always win."""
     q = request.query.lower()
     prefs = request.preferences
     hours = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:h\b|hour|godz)", q)
@@ -55,6 +58,9 @@ def interpret(request: RouteRequest) -> Interpreted:
     )
     if result.max_duration_s is not None:
         result.max_duration_s = max(900, min(28800, result.max_duration_s))
+    model = ai.model_preferences(request.query) if use_model else None
+    if model:
+        result = Interpreted(**model, interpreted_by="model")
     if prefs:
         result.interests = prefs.interests or result.interests
         result.travel_mode = prefs.travel_mode or result.travel_mode
@@ -91,8 +97,18 @@ def _usable(raw: dict) -> bool:
     return raw.get("opening_hours") != "closed" and "remont" not in raw["name"].lower()
 
 
-def museums(interests: list[str]) -> list[dict]:
+def clock() -> datetime:
+    """Departure time for opening-hours checks: now, in Warsaw. Tests replace this."""
+    return datetime.now(WARSAW)
+
+
+def museums(interests: list[str], when: datetime | None = None) -> list[dict]:
+    """Candidate museums. With `when`, drop those whose OSM hours say closed at that time;
+    unknown hours are kept. If that would leave none, keep all so a route still exists."""
     raws = [r for r in _snapshot()["places"] if r["category"] in ("museum", "gallery") and _usable(r)]
+    if when is not None:
+        open_now = [r for r in raws if opening_hours.status(r.get("opening_hours"), when) != "closed"]
+        raws = open_now or raws
     if any(i.lower() in ("art", "gallery", "galleries") for i in interests):
         raws = [r for r in raws if r["category"] == "gallery"] or raws
     return [_place(r) for r in raws]
@@ -135,10 +151,10 @@ def _with_parks(start, stops: list[dict]) -> list[dict]:
     return out
 
 
-def candidate_stops(start, prefs: Interpreted) -> list[tuple[str, str, list[dict]]]:
+def candidate_stops(start, prefs: Interpreted, when: datetime | None = None) -> list[tuple[str, str, list[dict]]]:
     budget = prefs.max_duration_s or 10800
     count = max(1, min(3, (budget - 2700) // MUSEUM_VISIT_S))
-    pool = museums(prefs.interests)
+    pool = museums(prefs.interests, when)
     direct = _nearest_order(start, pool, count)
     in_parks = [m for m in pool if scoring.is_green(_xy(m))]
     park_museums = _nearest_order(start, in_parks, count) if in_parks else direct
@@ -192,6 +208,28 @@ def _explain(name: str, route: dict, prefs: Interpreted, baseline: dict | None) 
     return text
 
 
+def _hours_note(route: dict, departure: datetime) -> str:
+    """Sentence on opening hours at each museum's estimated arrival (OSM text, may be incomplete)."""
+    by_id = {p["id"]: p for p in route["places"]}
+    closed, unknown = [], []
+    for stop in route["stops"]:
+        place = by_id[stop["place_id"]]
+        if place["category"] != "museum":
+            continue
+        arrival = departure + timedelta(seconds=stop["arrival_offset_s"])
+        result = opening_hours.status(place["opening_hours"], arrival)
+        if result == "closed":
+            closed.append(f'{place["name"]} ({arrival:%H:%M})')
+        elif result == "unknown":
+            unknown.append(place["name"])
+    note = ""
+    if closed:
+        note += " Opening hours in OpenStreetMap say closed on arrival: " + ", ".join(closed) + "."
+    if unknown:
+        note += " Opening hours not known for: " + ", ".join(unknown) + "."
+    return note
+
+
 def _utility(route: dict, prefs: Interpreted, total_s: float) -> float:
     m = route["metrics"]
     weight = (prefs.quiet + prefs.green) or 1
@@ -208,7 +246,7 @@ def _sources(origins: set[str]) -> list[dict]:
         {"id": "osm-places", "name": "OpenStreetMap museums, galleries and parks", "mode": "real",
          "attribution": places["attribution"], "url": "https://www.openstreetmap.org/copyright",
          "retrieved_at": places["fetched_at"].replace("+0200", "+02:00"), "data_date": None,
-         "method": "Overpass snapshot of the Ujazdow and Lazienki area; opening hours are raw OSM text."},
+         "method": "Overpass snapshot of the Ujazdow and Lazienki area; opening hours are raw OSM text, checked against Warsaw time for the planned arrival where the text is readable."},
         {"id": "green-proxy", "name": "Greenery proxy from OSM parks", "mode": "proxy",
          "attribution": ctx["attribution"], "url": "https://www.openstreetmap.org/copyright",
          "retrieved_at": ctx["fetched_at"], "data_date": None, "method": scoring.GREEN_METHOD},
@@ -237,10 +275,11 @@ def _sources(origins: set[str]) -> list[dict]:
 
 def plan(request: RouteRequest) -> dict:
     prefs = interpret(request)
+    departure = clock()
     start_pt = request.preferences.start if request.preferences and request.preferences.start else None
     start = (start_pt.longitude, start_pt.latitude) if start_pt else DEFAULT_START
     routes, origins = [], set()
-    for key, name, stops in candidate_stops(start, prefs):
+    for key, name, stops in candidate_stops(start, prefs, departure + timedelta(seconds=FIRST_STOP_LEAD_S)):
         coords, distance, duration, legs, origin = _geometry(prefs.travel_mode, start, stops)
         origins.add(origin)
         geo_source = "straight-line" if origin == "straight_line" else "osrm"
@@ -277,6 +316,10 @@ def plan(request: RouteRequest) -> dict:
         route["rank"] = rank
         route["recommended"] = rank == 1
         route["explanation"] = _explain(route["name"], route, prefs, baseline)
+    worded = ai.model_explanations(request.query, routes)
+    for route in routes:
+        route["explanation"] = worded.get(route["id"], route["explanation"])
+        route["explanation"] += _hours_note(route, departure)
     if "straight_line" in origins:
         mode = "mock"
         notice = ("Routing service unavailable: some routes are straight lines, not street directions. "
@@ -287,6 +330,8 @@ def plan(request: RouteRequest) -> dict:
                   + (" (some from a cached response)" if mode == "cached" else "")
                   + ". Green and quiet scores are proxies from OSM parks and major roads, "
                     "not measured greenery or noise.")
+    if worded:
+        notice += " Explanations were worded by an AI model from these facts only."
     return {
         "contract_version": CONTRACT_VERSION,
         "mode": mode,

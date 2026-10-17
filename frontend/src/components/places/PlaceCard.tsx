@@ -1,5 +1,6 @@
 import type { PlaceCategory, Source } from '../../api/contract';
 import { SourceLabel } from '../provenance/SourceLabel';
+import { formatDuration } from './format';
 import type { Place, Stop } from './types';
 import './places.css';
 
@@ -9,16 +10,6 @@ const CATEGORY_TEXT: Record<PlaceCategory, string> = {
   park: 'Park',
   generic: 'Place',
 };
-
-/** "+1 h 21 min" from seconds; null stays unknown. */
-function formatDuration(seconds: number | null | undefined, prefix = ''): string {
-  if (seconds == null) return 'unknown';
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  const text = hours === 0 ? `${minutes} min` : rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, '0')} min`;
-  return prefix + text;
-}
 
 /** Short link text for a website; falls back to the raw value if it isn't a valid URL. */
 function websiteLabel(website: string): string {
@@ -36,9 +27,11 @@ interface PlaceCardProps {
   /** Present when the card is a stop on a route. */
   stop?: Stop;
   selected?: boolean;
+  /** Opens this place's pop-up on the map. */
+  onShowOnMap?: () => void;
 }
 
-export function PlaceCard({ place, source, stop, selected = false }: PlaceCardProps) {
+export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }: PlaceCardProps) {
   return (
     <article className={`place-card${selected ? ' place-card--selected' : ''}`}>
       <header className="place-card__header">
@@ -74,6 +67,11 @@ export function PlaceCard({ place, source, stop, selected = false }: PlaceCardPr
           </>
         )}
       </dl>
+      {onShowOnMap && (
+        <button type="button" className="place-card__show" onClick={onShowOnMap} aria-pressed={selected}>
+          Show on map
+        </button>
+      )}
     </article>
   );
 }
