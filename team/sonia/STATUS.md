@@ -1,8 +1,8 @@
 # Handover
 
 - Current issue: [#13 BE-02: Places endpoint and filters](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/13). Dependency DATA-01 (#9) merged. DATA-02 (#8, my half) merged via [PR #38](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/38); Delta still owns the routing-provider half of #8.
-- Branch / PR: `sonia/be-02-places-endpoint` → opening PR now, closes #13, review requested from `@Delta-43`.
+- Branch / PR: `sonia/be-02-places-endpoint` → [PR #43](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/43), closes #13, review requested from `@Delta-43`.
 - Last verified result: `GET /api/places` now serves the real DATA-01 OSM sample (26 places) instead of the hand-authored fixture, via new `backend/app/data/catalogue.py`. Category mapping kept inside the contract's existing `PlaceCategory` enum (museum/landmark/park/generic) — no contract change needed: OSM `garden`→`park`, OSM `gallery`→`generic` (not stretched into museum/landmark unilaterally). `address` stays `null` honestly (the OSM query never captured it). Response `mode` is `cached`. Fixed `test_places_bbox_filter` in `test_api.py`, which was asserting against the old fixture's hand-placed coordinates (lat ~52.23-52.24) that the real demo-area data (lat ~52.207-52.225) never reaches — picked a bbox that actually overlaps real data rather than disabling the test. `ruff check backend` and `pytest backend/tests` pass (33 tests, including schema validation of the live `/api/places` response against `contracts/api.schema.json`).
 - Blocker: None.
-- Next action: Wait for Delta's review. After merge, candidates for next work: extend `/api/places` with the Warsaw-open-data amenities (AED/toilets/events) if Delta+Alban agree to widen the contract's category enum for them, or move to QA-01 (demo checks) once BE-01/FE-01 are further along.
-- Updated at (include timezone): 2026-10-17 16:15 Europe/Warsaw
+- Next action: Wait for Delta's review on PR #43. After merge, candidates for next work: extend `/api/places` with the Warsaw-open-data amenities (AED/toilets/events) if Delta+Alban agree to widen the contract's category enum for them, or move to QA-01 (demo checks) once BE-01/FE-01 are further along.
+- Updated at (include timezone): 2026-10-17 16:18 Europe/Warsaw
