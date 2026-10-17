@@ -48,28 +48,52 @@ function corners(layer: HistoricalLayer): [[number, number], [number, number], [
   ];
 }
 
-/**
- * Registers every historical overlay as a hidden image layer, stacked on top
- * of the whole style (no `beforeId`) rather than tucked under the ground.
- * The game-map style's land/park/water fills are fully opaque, so a layer
- * placed underneath them - the more "natural" choice - is invisible; on top,
- * at partial opacity, the historical photo instead reads as a translucent
- * "ghost" over the modern 3D city, which doubles as a then-and-now effect.
- * Call once, after the style has loaded.
- */
-export function addHistoricalOverlays(map: Map): void {
-  for (const layer of HISTORICAL_LAYERS) {
-    if (map.getSource(sourceId(layer))) continue; // StrictMode double-mount safety
-    map.addSource(sourceId(layer), { type: 'image', url: layer.image_url, coordinates: corners(layer) });
-    map.addLayer({ id: layerId(layer), type: 'raster', source: sourceId(layer), paint: { 'raster-opacity': 0.75 }, layout: { visibility: 'none' } });
-  }
+/** A city WMS render that has not arrived by then counts as unavailable (the pitch must not wait). */
+export const LOAD_TIMEOUT_MS = 8000;
+
+function removeLayer(map: Map, layer: HistoricalLayer): void {
+  if (map.getLayer(layerId(layer))) map.removeLayer(layerId(layer));
+  if (map.getSource(sourceId(layer))) map.removeSource(sourceId(layer));
 }
 
-/** Shows exactly one historical layer (or none, for `layerIndex === -1`),
- * hiding the others. */
-export function showHistoricalLayer(map: Map, layerIndex: number): void {
+/**
+ * Shows exactly one historical layer (or none, for `layerIndex === -1`),
+ * hiding the others. Call only after the style has loaded.
+ *
+ * A layer's image source is added the first time that year is shown, not at
+ * startup: a pending image source keeps the map from ever going `idle`, and
+ * pins and route layers wait for `idle`, so a slow or stuck WMS would hide
+ * them while the overlay is not even on (reproduced with a WMS that never
+ * answers). If the image has not loaded within LOAD_TIMEOUT_MS, the layer is
+ * removed again and `onUnavailable` is called with its id.
+ *
+ * The layer is stacked on top of the whole style (no `beforeId`) rather than
+ * tucked under the ground: the game-map style's land/park/water fills are fully
+ * opaque, so a layer placed underneath them is invisible; on top, at partial
+ * opacity, the historical photo reads as a translucent "ghost" over the
+ * modern 3D city, which doubles as a then-and-now effect.
+ */
+export function showHistoricalLayer(map: Map, layerIndex: number, onUnavailable: (id: string) => void): void {
   HISTORICAL_LAYERS.forEach((layer, index) => {
-    if (!map.getLayer(layerId(layer))) return;
-    map.setLayoutProperty(layerId(layer), 'visibility', index === layerIndex ? 'visible' : 'none');
+    if (index !== layerIndex) {
+      if (map.getLayer(layerId(layer))) map.setLayoutProperty(layerId(layer), 'visibility', 'none');
+      return;
+    }
+    if (!map.getSource(sourceId(layer))) {
+      map.addSource(sourceId(layer), { type: 'image', url: layer.image_url, coordinates: corners(layer) });
+      map.addLayer({ id: layerId(layer), type: 'raster', source: sourceId(layer), paint: { 'raster-opacity': 0.75 } });
+      window.setTimeout(() => {
+        if (!map.getSource(sourceId(layer)) || map.isSourceLoaded(sourceId(layer))) return;
+        removeLayer(map, layer);
+        onUnavailable(layer.id);
+      }, LOAD_TIMEOUT_MS);
+    }
+    map.setLayoutProperty(layerId(layer), 'visibility', 'visible');
   });
+}
+
+/** Drops a layer whose image failed, so it no longer counts as loading. */
+export function removeHistoricalLayer(map: Map, id: string): void {
+  const layer = HISTORICAL_LAYERS.find(candidate => candidate.id === id);
+  if (layer) removeLayer(map, layer);
 }

@@ -1,5 +1,5 @@
 import type { ErrorEvent, IControl, Map } from 'maplibre-gl';
-import { addHistoricalOverlays, attributionText, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
+import { attributionText, HISTORICAL_LAYERS, removeHistoricalLayer, showHistoricalLayer } from './historicalOverlay';
 
 /** Floating attribution label, bottom-left (clear of the top-right toggle and
  * the bottom-right chat widget). The team's convention is that base-tile
@@ -48,13 +48,14 @@ class HistoricalAttributionLabel {
  * createMap.ts to add them separately) so a click before the style has
  * finished loading still ends up correct: the button's `index` updates
  * immediately either way, and the `load` handler re-applies it once the
- * layers actually exist, instead of the visual update silently being lost.
+ * style can take layers, instead of the visual update silently being lost.
  */
 export class HistoricalOverlayControl implements IControl {
   private container?: HTMLDivElement;
   private button?: HTMLButtonElement;
   private attribution?: HistoricalAttributionLabel;
   private index = -1; // -1 = off
+  private styleReady = false;
   private unavailable = new Set<string>(); // layer ids whose image failed to load
 
   private label(): string {
@@ -70,7 +71,11 @@ export class HistoricalOverlayControl implements IControl {
   }
 
   private applyIndex(map: Map): void {
-    showHistoricalLayer(map, this.index); // no-op before the layers exist; the sync below catches up
+    const layer = HISTORICAL_LAYERS[this.index];
+    // Before the style loads, only the button changes; the `load` handler catches up.
+    if (this.styleReady) {
+      showHistoricalLayer(map, layer && !this.unavailable.has(layer.id) ? this.index : -1, id => this.markUnavailable(map, id));
+    }
     if (this.button) {
       this.button.textContent = this.label();
       this.button.title = this.title();
@@ -78,6 +83,16 @@ export class HistoricalOverlayControl implements IControl {
     const active = this.index !== -1 && !this.unavailable.has(HISTORICAL_LAYERS[this.index].id);
     if (active) this.attribution?.show(attributionText(HISTORICAL_LAYERS[this.index]));
     else this.attribution?.hide();
+  }
+
+  /** A year whose image failed or timed out shows ⚠ and falls back to "off"
+   * if it was the one on screen, instead of leaving the toggle looking dead. */
+  private markUnavailable(map: Map, id: string): void {
+    if (this.unavailable.has(id)) return;
+    this.unavailable.add(id);
+    removeHistoricalLayer(map, id);
+    if (HISTORICAL_LAYERS[this.index]?.id === id) this.index = -1;
+    this.applyIndex(map);
   }
 
   onAdd(map: Map): HTMLElement {
@@ -98,19 +113,15 @@ export class HistoricalOverlayControl implements IControl {
     this.button = button;
     this.attribution = new HistoricalAttributionLabel(map);
 
-    // A failed image load (WMS slow/unreachable during the pitch) must not
-    // silently leave the toggle looking dead - mark that year unavailable
-    // and fall back to "off" if it was the one on screen.
+    // WMS unreachable during the pitch: see markUnavailable. A slow WMS is
+    // covered by the timeout in showHistoricalLayer.
     map.on('error', (event: ErrorEvent & { sourceId?: string }) => {
       const failed = HISTORICAL_LAYERS.find(layer => event.sourceId === `historical-${layer.id}`);
-      if (!failed || this.unavailable.has(failed.id)) return;
-      this.unavailable.add(failed.id);
-      if (HISTORICAL_LAYERS[this.index]?.id === failed.id) this.index = -1;
-      this.applyIndex(map);
+      if (failed) this.markUnavailable(map, failed.id);
     });
 
     const sync = () => {
-      addHistoricalOverlays(map);
+      this.styleReady = true;
       this.applyIndex(map);
     };
     if (map.isStyleLoaded()) sync();
