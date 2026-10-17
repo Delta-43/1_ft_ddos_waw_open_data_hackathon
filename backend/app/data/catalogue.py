@@ -1,16 +1,25 @@
-"""Serves /api/places from the real OSM sample (DATA-01), not a fixture.
+"""Serves /api/places from the real OSM sample (DATA-01 + DATA-05), not a
+fixture.
 
-Reads the committed data/fixtures/osm-places-sample.json (26 named places,
-Łazienki/Ujazdów demo area) and maps it to contracts/api.schema.json's
-Place and PlacesResponse shapes. mode="cached": this is a real fetch result
-stored at event time, not a live per-request call and not an invented mock.
+Reads the committed data/fixtures/osm-places-sample.json (75 named places,
+Łazienki/Ujazdów demo area: museums/parks/gardens/galleries from DATA-01,
+plus historic buildings/castles/churches/ruins from DATA-05) and maps it
+to contracts/api.schema.json's Place and PlacesResponse shapes.
+mode="cached": this is a real fetch result stored at event time, not a
+live per-request call and not an invented mock.
 
 Category mapping is intentionally narrow to the contract's PlaceCategory
 enum (museum, landmark, park, generic — "matches the frontend pin icons").
-OSM's "garden" maps to "park" (a named garden is green space, same as a
-park for this app). OSM's "gallery" maps to "generic" rather than being
-stretched into "museum" or "landmark" without the contract owners agreeing
-to a wider enum.
+- OSM "garden" -> "park" (a named garden is green space, same as a park
+  for this app).
+- OSM "castle"/"church"/"manor"/"ruins"/"building" (historic=*, DATA-05)
+  -> "landmark". Note "building" is a broad OSM value — most are genuine
+  Łazienki-complex structures (the old Orangery, the Observatory), but a
+  couple are mundane (e.g. a hospital ward building that happens to sit
+  on historic ground). Not hand-curated further; see docs/DATA.md.
+- OSM "gallery"/"artwork"/"attraction"/"information" -> "generic" rather
+  than stretched into "museum" or "landmark" without the contract owners
+  (Delta+Alban) agreeing to a wider enum.
 """
 import json
 from datetime import datetime, timezone
@@ -24,7 +33,15 @@ CATEGORY_MAP = {
     "museum": "museum",
     "park": "park",
     "garden": "park",
+    "castle": "landmark",
+    "church": "landmark",
+    "manor": "landmark",
+    "ruins": "landmark",
+    "building": "landmark",
     "gallery": "generic",
+    "artwork": "generic",
+    "attraction": "generic",
+    "information": "generic",
 }
 
 OSM_PLACES_SOURCE_ID = "osm-places-demo"

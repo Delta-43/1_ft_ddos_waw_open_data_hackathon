@@ -61,11 +61,11 @@
         },
         "green_score": {
           "value": 0.72,
-          "source_id": "fixture-scores"
+          "source_id": "sim-green-score"
         },
         "quiet_score": {
           "value": 0.64,
-          "source_id": "fixture-scores"
+          "source_id": "sim-quiet-score"
         }
       },
       "stops": [
@@ -182,11 +182,11 @@
         },
         "green_score": {
           "value": 0.28,
-          "source_id": "fixture-scores"
+          "source_id": "sim-green-score"
         },
         "quiet_score": {
           "value": 0.31,
-          "source_id": "fixture-scores"
+          "source_id": "sim-quiet-score"
         }
       },
       "stops": [
@@ -253,14 +253,24 @@
       "method": "Straight lines between stops; distance is the straight-line length and duration assumes 1.3 m/s walking. Not street directions."
     },
     {
-      "id": "fixture-scores",
-      "name": "Demo green and quiet scores",
+      "id": "sim-green-score",
+      "name": "Demo green score",
       "mode": "simulated",
       "attribution": "Team-authored demo fixture",
       "url": null,
       "retrieved_at": null,
       "data_date": null,
-      "method": "Invented values to show the comparison. Not measured greenery or noise."
+      "method": "Invented value to show route comparison; not computed from park proximity or any greenery data. A real OSM park/garden proxy exists (data/fixtures/osm-places-sample.json, DATA-01) but BE-01's scoring service does not read it yet."
+    },
+    {
+      "id": "sim-quiet-score",
+      "name": "Demo quiet score",
+      "mode": "simulated",
+      "attribution": "Team-authored demo fixture",
+      "url": null,
+      "retrieved_at": null,
+      "data_date": null,
+      "method": "Invented value to show route comparison; not measured noise in decibels. A real modelled noise layer exists at the city's WMS service (wms.um.warszawa.pl/serwis, HALAS_DROGOWY_LN_2022 and similar, see docs/DATA.md) but it is WMS-only (no per-point feature query confirmed) and BE-01's scoring service does not read it yet."
     }
   ]
 }
