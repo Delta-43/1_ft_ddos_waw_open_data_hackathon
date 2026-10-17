@@ -108,3 +108,49 @@ def test_proxy_sources_do_not_claim_measurements():
         assert sources[source_id]["mode"] == "proxy"
     assert "not tree canopy, shade or measured vegetation" in sources["green-proxy"]["method"]
     assert "not measured noise" in sources["quiet-proxy"]["method"]
+
+
+def _at(day: int, hour: int):
+    from datetime import datetime
+
+    return datetime(2026, 10, day, hour, 0, tzinfo=planner.WARSAW)
+
+
+def test_museums_closed_at_the_time_are_left_out_but_unknown_hours_stay():
+    sunday = {m["name"]: m for m in planner.museums([], _at(18, 12))}
+    monday = {m["name"]: m for m in planner.museums([], _at(19, 12))}
+    assert "Cele Bezpieki" not in sunday  # Mo-Fr only
+    assert "Cele Bezpieki" in monday
+    assert any(m["opening_hours"] is None for m in sunday.values())  # unknown is kept
+
+
+def test_at_night_only_unknown_hours_remain():
+    night = planner.museums([], _at(18, 3))
+    assert night and all(m["opening_hours"] is None for m in night)
+
+
+def test_hours_note_reports_closed_on_arrival_and_unknown():
+    route = {
+        "places": [
+            {"id": "a", "name": "Open Museum", "category": "museum", "opening_hours": "Mo-Su 10:00-18:00"},
+            {"id": "b", "name": "Late Museum", "category": "museum", "opening_hours": "Mo-Su 10:00-17:00"},
+            {"id": "c", "name": "Mystery Museum", "category": "museum", "opening_hours": None},
+            {"id": "d", "name": "Some Park", "category": "park", "opening_hours": None},
+        ],
+        "stops": [
+            {"place_id": "a", "arrival_offset_s": 0},
+            {"place_id": "b", "arrival_offset_s": 7200},  # 14:00 + 2 h = after closing
+            {"place_id": "c", "arrival_offset_s": 7300},
+            {"place_id": "d", "arrival_offset_s": 7400},
+        ],
+    }
+    note = planner._hours_note(route, _at(18, 15))
+    assert "closed on arrival: Late Museum (17:00)" in note
+    assert "not known for: Mystery Museum." in note
+    assert "Open Museum" not in note and "Some Park" not in note
+
+
+def test_plan_notes_unknown_hours_in_explanations(monkeypatch):
+    monkeypatch.setattr(planner, "clock", lambda: _at(18, 3))
+    data = planner.plan(RouteRequest(query="a quiet museum outing"))
+    assert any("not known for" in r["explanation"] for r in data["routes"])
