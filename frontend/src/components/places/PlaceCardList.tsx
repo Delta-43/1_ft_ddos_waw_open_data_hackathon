@@ -2,7 +2,6 @@ import { sourceFor, type ResponseMode, type Source } from '../../api/contract';
 import type { DataMode } from '../provenance/DataModeBadge';
 import { PlaceCard } from './PlaceCard';
 import type { Place, Stop } from './types';
-import './places.css';
 
 interface PlaceCardListProps {
   places: Place[];
@@ -27,12 +26,12 @@ export function PlaceCardList({ places, routeName, sources = [], stops }: PlaceC
     : places.map(place => ({ place, stop: undefined }));
 
   return (
-    <section className="place-card-list" aria-label={heading}>
-      <h2 className="place-card-list__heading">{heading}</h2>
+    <section className="grid gap-2" aria-label={heading}>
+      <h2 className="text-moon-10-caption uppercase font-medium text-trunks">{heading}</h2>
       {ordered.length === 0 ? (
-        <p className="place-card-list__empty">This route has no stops yet.</p>
+        <p className="text-moon-14 text-trunks">This route has no stops yet.</p>
       ) : (
-        <ol className="place-card-list__items">
+        <ol className="grid gap-2">
           {ordered.map(({ place, stop }) => (
             <li key={place.id}>
               <PlaceCard place={place} stop={stop} source={sourceFor(sources, place.source_id)} />

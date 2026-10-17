@@ -1,12 +1,21 @@
 import type { Source, SourceMode } from '../../api/contract';
 import { formatWarsawDate } from './formatDate';
-import './provenance.css';
 
 export const SOURCE_MODE_TEXT: Record<SourceMode, string> = {
   real: 'Real',
   historical: 'Historical',
   proxy: 'Proxy',
   simulated: 'Simulated',
+};
+
+const BASE = 'self-start inline-block max-w-full px-2 py-0.5 rounded-full text-moon-10-caption uppercase break-words';
+
+/** Modes differ in text AND fill/stroke, never in hue alone. */
+const MODE_STYLE: Record<SourceMode, string> = {
+  real: 'bg-bulma text-goku',
+  historical: 'ring-1 ring-inset ring-bulma text-bulma',
+  proxy: 'border border-dashed border-trunks text-bulma',
+  simulated: 'ring-1 ring-inset ring-beerus text-trunks',
 };
 
 /** Why each mode matters to a visitor; shown as the label's tooltip. */
@@ -23,14 +32,14 @@ const MODE_MEANING: Record<SourceMode, string> = {
  */
 export function SourceLabel({ source, compact = false }: { source: Source | undefined; compact?: boolean }) {
   if (!source) {
-    return <span className="source-label source-label--unknown">Source unknown</span>;
+    return <span className={`${BASE} ${MODE_STYLE.simulated}`}>Source unknown</span>;
   }
   const fetched = source.retrieved_at ? ` Fetched ${formatWarsawDate(source.retrieved_at)}.` : '';
   const title = `${MODE_MEANING[source.mode]} ${source.attribution}.${fetched}${source.method ? ` ${source.method}` : ''}`;
   return (
-    <span className={`source-label source-label--${source.mode}`} title={title}>
+    <span className={`${BASE} ${MODE_STYLE[source.mode]}`} title={title}>
       {SOURCE_MODE_TEXT[source.mode]}
-      {!compact && <span className="source-label__name"> · {source.name}</span>}
+      {!compact && <span className="normal-case tracking-normal"> · {source.name}</span>}
     </span>
   );
 }

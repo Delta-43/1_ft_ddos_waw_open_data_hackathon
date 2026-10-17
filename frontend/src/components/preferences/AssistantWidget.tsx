@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IconButton } from '@heathmont/moon-core-tw';
 import { requestRoutes, type RouteResponse } from '../../api/routes';
 import { PlaceCardList } from '../places/PlaceCardList';
 import { DataModeBadge } from '../provenance/DataModeBadge';
@@ -6,7 +7,6 @@ import { SourcesStrip } from '../provenance/SourcesStrip';
 import { interpretPreferences, type Interpretation } from './interpretPreferences';
 import { PreferencesBar, type RequestStatus } from './PreferencesBar';
 import { PromptForm } from './PromptForm';
-import './preferences.css';
 
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
 
@@ -72,29 +72,45 @@ export function AssistantWidget() {
   const route = result?.routes[0];
 
   return (
-    <div className="assistant">
+    <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 flex flex-col items-end gap-3 max-w-[calc(100%-2rem)]">
       {/* Always mounted, only hidden, so the conversation survives closing the panel. */}
       <section
-        className={expanded ? 'assistant__panel assistant__panel--wide' : 'assistant__panel'}
+        className={`moon-panel relative [&[hidden]]:hidden ${expanded
+          ? 'flex flex-col w-[min(30rem,calc(100vw-2rem))] h-[calc(100dvh-8rem)] overflow-hidden'
+          : 'w-[min(24rem,calc(100vw-2rem))] max-h-[calc(100dvh-8rem)] overflow-y-auto p-4'}`}
         aria-label="Outing assistant"
         hidden={!open}
       >
-        <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => setOpen(false)}>×</button>
+        <IconButton
+          variant="ghost"
+          size="xs"
+          className="absolute top-2 end-2 z-1"
+          aria-label="Close assistant"
+          icon={<CloseIcon />}
+          onClick={() => setOpen(false)}
+        />
         {expanded ? (
           <>
-            <div className="assistant__chat">
-              <ol className="chat-history" aria-label="Conversation" aria-live="polite">
+            <div className="flex-none flex flex-col gap-2 max-h-[55%] px-4 pt-4 pb-3 border-b border-beerus">
+              <ol className="flex flex-col gap-2 overflow-y-auto min-h-12 pe-8" aria-label="Conversation" aria-live="polite">
                 {messages.map((message, index) => (
-                  <li key={index} className={`chat-message chat-message--${message.role}`}>{message.text}</li>
+                  <li
+                    key={index}
+                    className={`max-w-[85%] px-3 py-2 rounded-moon-s-md text-moon-14 break-words ${message.role === 'user'
+                      ? 'self-end bg-piccolo text-goten'
+                      : 'self-start bg-gohan text-bulma'}`}
+                  >
+                    {message.text}
+                  </li>
                 ))}
               </ol>
               <PromptForm compact={false} value={query} onChange={setQuery} onSubmit={interpret} />
             </div>
-            <div className="assistant__preferences">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-4">
               <PreferencesBar interpretation={interpretation} off={off} status={status} onToggle={toggle} onFindRoutes={search} />
               {result && route && (
-                <div className="assistant__results">
-                  <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
+                <div className="mt-4 grid gap-3">
+                  <p className="flex flex-wrap items-center gap-2 text-moon-12 text-trunks"><DataModeBadge mode={result.mode} /> {result.notice}</p>
                   <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} sources={result.sources} stops={route.stops} />
                   <SourcesStrip sources={result.sources} mode={result.mode} generatedAt={result.generated_at} />
                 </div>
@@ -105,30 +121,49 @@ export function AssistantWidget() {
           <PromptForm compact value={query} onChange={setQuery} onSubmit={interpret} />
         )}
       </section>
-      <div className="assistant__row">
+      <div className="flex items-center gap-3">
         {!open && (
-          <button type="button" className="assistant__bubble" onClick={() => setOpen(true)}>
+          // Speech bubble; its tail points at the guy on the right.
+          <button
+            type="button"
+            className="moon-panel relative px-4 py-2 text-moon-14 transition-shadow hover:shadow-interactive focus-visible:shadow-interactive focus-visible:outline-none after:absolute after:top-1/2 after:-end-1.5 after:size-3 after:-translate-y-1/2 after:rotate-45 after:bg-goku after:content-['']"
+            onClick={() => setOpen(true)}
+          >
             What's up for today?
           </button>
         )}
-        <button
-          type="button"
-          className="assistant__guy"
+        <IconButton
+          variant="outline"
+          size="xl"
+          className="size-14 rounded-full bg-goku text-bulma shadow-moon-lg"
           aria-label={open ? 'Close assistant' : 'Open assistant'}
           aria-expanded={open}
+          icon={<GuyIcon />}
           onClick={() => setOpen(value => !value)}
-        >
-          <svg viewBox="0 0 48 56" width="40" height="46" aria-hidden="true">
-          <line x1="24" y1="4" x2="24" y2="11" stroke="currentColor" strokeWidth="2" />
-          <circle cx="24" cy="4" r="3" fill="currentColor" />
-          <rect x="8" y="11" width="32" height="26" rx="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
-          <circle cx="18" cy="23" r="3" fill="currentColor" />
-          <circle cx="30" cy="23" r="3" fill="currentColor" />
-          <path d="M18 31 Q24 35 30 31" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <rect x="14" y="40" width="20" height="12" rx="4" fill="none" stroke="currentColor" strokeWidth="2.5" />
-        </svg>
-        </button>
+        />
       </div>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function GuyIcon() {
+  return (
+    <svg viewBox="0 0 48 56" width="34" height="40" aria-hidden="true">
+      <line x1="24" y1="4" x2="24" y2="11" stroke="currentColor" strokeWidth="2" />
+      <circle cx="24" cy="4" r="3" fill="currentColor" />
+      <rect x="8" y="11" width="32" height="26" rx="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="18" cy="23" r="3" fill="currentColor" />
+      <circle cx="30" cy="23" r="3" fill="currentColor" />
+      <path d="M18 31 Q24 35 30 31" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <rect x="14" y="40" width="20" height="12" rx="4" fill="none" stroke="currentColor" strokeWidth="2.5" />
+    </svg>
   );
 }

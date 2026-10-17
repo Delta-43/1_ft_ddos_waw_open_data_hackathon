@@ -1,7 +1,6 @@
 import type { PlaceCategory, Source } from '../../api/contract';
 import { SourceLabel } from '../provenance/SourceLabel';
 import type { Place, Stop } from './types';
-import './places.css';
 
 const CATEGORY_TEXT: Record<PlaceCategory, string> = {
   museum: 'Museum',
@@ -40,17 +39,28 @@ interface PlaceCardProps {
 
 export function PlaceCard({ place, source, stop, selected = false }: PlaceCardProps) {
   return (
-    <article className={`place-card${selected ? ' place-card--selected' : ''}`}>
-      <header className="place-card__header">
-        {stop && <span className="place-card__order" aria-label={`Stop ${stop.order}`}>{stop.order}</span>}
-        <div className="place-card__heading">
-          <h3 className="place-card__name">{place.name}</h3>
-          <span className="place-card__category">{CATEGORY_TEXT[place.category] ?? CATEGORY_TEXT.generic}</span>
+    <article
+      className={`flex flex-col gap-2 px-4 py-3 rounded-moon-s-md bg-gohan text-bulma ring-1 ring-inset transition-shadow ${selected
+        ? 'ring-piccolo shadow-moon-md'
+        : 'ring-beerus'}`}
+    >
+      <header className="flex items-start gap-3">
+        {stop && (
+          <span
+            className="flex-none grid place-items-center size-6 rounded-full bg-piccolo text-goten text-moon-12 font-semibold tabular-nums"
+            aria-label={`Stop ${stop.order}`}
+          >
+            {stop.order}
+          </span>
+        )}
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <h3 className={`text-moon-16 break-words ${selected ? 'font-bold' : 'font-semibold'}`}>{place.name}</h3>
+          <span className="text-moon-12 text-trunks">{CATEGORY_TEXT[place.category] ?? CATEGORY_TEXT.generic}</span>
         </div>
       </header>
       <SourceLabel source={source} />
-      {place.summary && <p className="place-card__summary">{place.summary}</p>}
-      <dl className="place-card__details">
+      {place.summary && <p className="text-moon-14">{place.summary}</p>}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-moon-12 [&_dt]:text-trunks [&_dd]:tabular-nums [&_dd]:break-words">
         {stop && (
           <>
             <dt>Arrive</dt>
@@ -60,7 +70,7 @@ export function PlaceCard({ place, source, stop, selected = false }: PlaceCardPr
           </>
         )}
         <dt>Opening hours</dt>
-        <dd className={place.opening_hours ? 'place-card__hours' : undefined}>{place.opening_hours ?? 'Unknown'}</dd>
+        <dd>{place.opening_hours ?? 'Unknown'}</dd>
         {place.address && (
           <>
             <dt>Address</dt>
@@ -70,7 +80,7 @@ export function PlaceCard({ place, source, stop, selected = false }: PlaceCardPr
         {place.website && (
           <>
             <dt>Website</dt>
-            <dd><a href={place.website} target="_blank" rel="noreferrer">{websiteLabel(place.website)}</a></dd>
+            <dd><a className="text-bulma underline underline-offset-2 hover:text-trunks" href={place.website} target="_blank" rel="noreferrer">{websiteLabel(place.website)}</a></dd>
           </>
         )}
       </dl>

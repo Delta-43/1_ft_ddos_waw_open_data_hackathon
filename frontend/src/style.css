@@ -1,154 +1,94 @@
-/* Shared colours for the HTML overlay; map colours live in src/map/style.ts. */
-:root {
-  --bg: #0b1220;
-  /* Opaque enough to read without backdrop-filter, which re-blurs on every map frame. */
-  --panel: rgba(11, 18, 32, 0.9);
-  --rim: #7fb4e6;
-  --rim-faint: rgba(127, 180, 230, 0.35);
-  --text: #dce8f5;
-  --muted: #8aa4c4;
-  --banner-height: 5.5rem;
-  color-scheme: dark;
+/* Moon Design System: the dark theme (class on <html>) supplies colour, radius and shadow tokens,
+   Tailwind turns them into utilities (bg-goku, text-trunks, rounded-moon-s-md…). Map colours live
+   in src/map/style.ts. */
+@import '@heathmont/moon-themes-tw/lib/moon.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root.theme-moon-dark {
+    --dm-sans: 'DM Sans Variable';
+    --banner-height: 5.5rem;
+    color-scheme: dark;
+  }
+
+  html, body, #root { height: 100%; }
+
+  body {
+    @apply bg-goku text-bulma font-dm-sans text-moon-14 antialiased overflow-hidden;
+  }
+
+  @media (max-width: 600px) {
+    :root.theme-moon-dark { --banner-height: 4.75rem; }
+  }
 }
 
-* { box-sizing: border-box; }
+@layer components {
+  /* Full-viewport map; dvh avoids the mobile browser toolbar cutting it off. */
+  .map {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+  }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-}
+  /* Solid Moon surface for overlays: readable over the bright map without backdrop-filter,
+     which re-blurs on every map frame. */
+  .moon-panel {
+    @apply bg-goku text-bulma rounded-moon-s-md shadow-moon-lg ring-1 ring-inset ring-beerus;
+  }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  overflow: hidden;
-}
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 
-/* Full-viewport map; dvh avoids the mobile browser toolbar cutting it off. */
-.map {
-  position: fixed;
-  inset: 0;
-  height: 100dvh;
-}
+  /* ---------- MapLibre controls, in Moon's dark surface ---------- */
+  .maplibregl-ctrl.maplibregl-ctrl-group {
+    @apply bg-goku/90 rounded-moon-s-sm shadow-moon-sm ring-1 ring-inset ring-beerus overflow-hidden;
+  }
+  .maplibregl-ctrl-group button + button { @apply border-t border-beerus; }
+  .maplibregl-ctrl-group button:not(:disabled):hover { @apply bg-heles; }
+  /* Built-in icons are dark SVGs; invert them to Moon's light text colour. */
+  .maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1); }
 
-/* ---------- Bottom banner ---------- */
-.banner {
-  position: fixed;
-  left: 50%;
-  bottom: calc(1rem + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  width: min(40rem, calc(100% - 2rem));
-  padding: 0.85rem 1.5rem 0.9rem;
-  text-align: center;
-  background: var(--panel);
-  border-top: 1px solid var(--rim-faint);
-  border-bottom: 1px solid var(--rim-faint);
-  pointer-events: none; /* never block map gestures */
-}
+  .reset-view-button {
+    @apply text-bulma text-moon-18 leading-none;
+  }
 
-/* Thin accent lines at both ends, echoing the game-UI reference. */
-.banner::before,
-.banner::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 2.5rem;
-  height: 1px;
-  background: var(--rim);
-}
-.banner::before { left: -2.5rem; }
-.banner::after { right: -2.5rem; }
+  /* Keep attribution visible and clear of the banner. */
+  .maplibregl-ctrl-bottom-right {
+    bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
+  }
+  .maplibregl-ctrl.maplibregl-ctrl-attrib {
+    @apply bg-goku/75 text-trunks text-moon-10;
+  }
+  .maplibregl-ctrl-attrib a { @apply text-bulma; }
 
-.banner__title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 500;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-}
+  /* ---------- Pin popup (DOM built in src/markers/pins.ts) ---------- */
+  .pin-popup .maplibregl-popup-content {
+    @apply bg-goku text-bulma rounded-moon-s-md shadow-moon-lg ring-1 ring-inset ring-beerus px-4 py-3 font-dm-sans;
+  }
+  .pin-popup .maplibregl-popup-tip { display: none; }
+  .pin-popup .maplibregl-popup-close-button { @apply text-trunks text-moon-16 px-2 hover:text-bulma; }
 
-.banner__subtitle {
-  margin: 0.3rem 0 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  color: var(--muted);
+  .pin-popup__category {
+    @apply text-moon-10-caption uppercase font-medium text-trunks;
+  }
+  .pin-popup__title {
+    @apply mt-1 mb-2 me-4 text-moon-16 font-medium;
+  }
+  /* Same look as Moon's Tag in the krillin (warning) tone. */
+  .pin-popup__badge {
+    @apply inline-flex mb-2 px-2 py-0.5 rounded-moon-i-xs bg-krillin-10 text-krillin text-moon-9-caption uppercase font-medium;
+  }
+  .pin-popup dl {
+    @apply grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-moon-12;
+  }
+  .pin-popup dt { @apply text-trunks; }
 }
-
-@media (max-width: 600px) {
-  :root { --banner-height: 4.75rem; }
-  .banner { padding: 0.65rem 1rem; }
-  .banner::before, .banner::after { display: none; }
-  .banner__title { font-size: 0.9rem; letter-spacing: 0.22em; }
-  .banner__subtitle { font-size: 0.68rem; }
-}
-
-/* ---------- MapLibre controls, restyled dark ---------- */
-.maplibregl-ctrl-group {
-  background: var(--panel);
-  border: 1px solid var(--rim-faint);
-  box-shadow: none;
-}
-.maplibregl-ctrl-group button + button { border-top: 1px solid var(--rim-faint); }
-.maplibregl-ctrl-group button:not(:disabled):hover { background-color: rgba(127, 180, 230, 0.12); }
-/* Built-in icons are dark SVGs; invert them to light blue-grey. */
-.maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(0.85) sepia(0.2) hue-rotate(180deg); }
-
-.reset-view-button {
-  color: var(--text);
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-/* Keep attribution visible and clear of the banner. */
-.maplibregl-ctrl-bottom-right {
-  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
-}
-.maplibregl-ctrl.maplibregl-ctrl-attrib {
-  background: rgba(11, 18, 32, 0.75);
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-.maplibregl-ctrl-attrib a { color: var(--text); }
-
-/* ---------- Pin popup ---------- */
-.pin-popup .maplibregl-popup-content {
-  background: var(--panel);
-  border: 1px solid var(--rim-faint);
-  border-radius: 2px;
-  color: var(--text);
-  padding: 0.75rem 1rem;
-}
-.pin-popup .maplibregl-popup-tip { display: none; }
-.pin-popup .maplibregl-popup-close-button { color: var(--muted); font-size: 1rem; }
-
-.pin-popup__category {
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--rim);
-}
-.pin-popup__title {
-  margin: 0.2rem 1rem 0.4rem 0;
-  font-size: 1rem;
-  font-weight: 500;
-}
-.pin-popup__badge {
-  display: inline-block;
-  margin-bottom: 0.4rem;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid #e6c27a;
-  color: #e6c27a;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.pin-popup dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.15rem 0.6rem;
-  margin: 0;
-  font-size: 0.75rem;
-}
-.pin-popup dt { color: var(--muted); }
-.pin-popup dd { margin: 0; }

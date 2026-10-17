@@ -1,3 +1,4 @@
+import { Button, Hint, Switch } from '@heathmont/moon-core-tw';
 import type { Interpretation } from './interpretPreferences';
 
 export type RequestStatus =
@@ -19,34 +20,35 @@ type Props = {
 export function PreferencesBar({ interpretation, off, status, onToggle, onFindRoutes }: Props) {
   const loading = status.state === 'loading';
   return (
-    <section className="preferences-form" aria-label="Your preferences">
-      <h2>Your preferences</h2>
-      <ul className="summary">
+    <section className="grid gap-2" aria-label="Your preferences">
+      <h2 className="text-moon-16 font-medium">Your preferences</h2>
+      <ul className="grid gap-2">
         {interpretation.preferences.map(({ emoji, name }) => {
           const on = !off.has(name);
           return (
-            <li key={name} className={on ? undefined : 'is-off'}>
-              <span id={`pref-${name}`}><span aria-hidden="true">{emoji}</span> {name}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={on}
-                aria-labelledby={`pref-${name}`}
-                className="switch"
+            <li key={name} className="flex items-center justify-between gap-4 px-3 py-2 rounded-moon-s-sm bg-gohan text-moon-14">
+              <span className={on ? undefined : 'opacity-moon'}>
+                <span aria-hidden="true">{emoji}</span> {name}
+              </span>
+              {/* Headless UI switch (role="switch", aria-checked). It overwrites aria-labelledby, so name it with aria-label. */}
+              <Switch
+                size="xs"
+                checked={on}
                 disabled={loading}
-                onClick={() => onToggle(name)}
+                aria-label={name}
+                onChange={() => onToggle(name)}
               />
             </li>
           );
         })}
       </ul>
-      <p className="hint">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
-      <div className="actions">
-        <button type="button" disabled={loading} onClick={onFindRoutes}>{loading ? 'Loading…' : 'Find routes'}</button>
-      </div>
+      <p className="text-moon-12 text-trunks">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
+      <Button size="md" fullWidth disabled={loading} animation={loading ? 'progress' : undefined} onClick={onFindRoutes}>
+        {loading ? 'Loading…' : 'Find routes'}
+      </Button>
       <div aria-live="polite">
-        {loading && <p className="hint">Looking for routes…</p>}
-        {status.state === 'error' && <p role="alert" className="error">{status.message}</p>}
+        {loading && <p className="text-moon-12 text-trunks">Looking for routes…</p>}
+        {status.state === 'error' && <Hint error className="mt-0 text-moon-14">{status.message}</Hint>}
       </div>
     </section>
   );

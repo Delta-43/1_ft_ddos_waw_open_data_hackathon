@@ -34,18 +34,33 @@ src/
                 samplePins.ts (PLACEHOLDER pins)
   data/         types.ts (PinProvider), warsawOpenData.ts (empty stub), index.ts (registry, loadPins)
   api/          routes.ts (typed POST /api/routes client for the preferences form)
-  style.css     Overlay UI: banner, controls, popups
+  components/   Overlay React components, styled with Moon (see below)
+  style.css     Moon theme + Tailwind entry; MapLibre controls and popups
 ```
 
 ## Map style
 
-- **Look:** a bright game map that merges two references. The ground follows the GTA V map: cyan water, soft green parks, light urban ground, white roads with grey casings, dark district outlines and dark labels on white halos. The 3D buildings follow the Assassin's Creed Unity map: pale steel-blue walls and light roofs. Pins and the banner keep the dark hexagon / panel style from that map.
+- **Look:** a bright game map that merges two references. The ground follows the GTA V map: cyan water, soft green parks, light urban ground, white roads with grey casings, dark district outlines and dark labels on white halos. The 3D buildings follow the Assassin's Creed Unity map: pale steel-blue walls and light roofs. Pins keep the dark hexagon style from that map; the overlay UI uses the Moon Design System (below).
 - **Colours:** edit `palette` in `src/map/style.ts`. Every map colour is defined there, and the layers only reference the palette.
 - **District outlines:** Warsaw's 18 districts (OSM `admin_level` 9) are drawn as solid dark green lines, and neighbourhoods (`admin_level` 10) as dashed lines from zoom 14.
 - **Layers:** `buildStyle()` in the same file is an ordinary MapLibre style object using the [OpenMapTiles schema](https://openmaptiles.org/schema/) (`building`, `water`, `park`, `transportation` and so on). Add, remove or reorder layers there.
 - **Light, sky and fog:** the `light` and `sky` blocks of the style. The light sits 55° from vertical with intensity 0.5, so roofs don't catch full light and walls show clear light and shade; lit faces reach 1.0 × their colour, faces turned away 0.5 ×. Keep the light colour near white. MapLibre adds (1 − light colour) as ambient light, so a saturated light tints shadowed walls with its complementary colour.
 - **Camera and limits:** start view, Warsaw bounds, zoom range and the 75° pitch cap are in `src/map/config.ts`.
-- **Overlay UI:** the banner, controls and popups are styled in `src/style.css`.
+- **Overlay UI:** see Overlay UI: Moon Design System below.
+
+## Overlay UI: Moon Design System
+
+Everything drawn over the map (banner, assistant panel, preference switches, place cards, source labels, MapLibre controls and popups) uses the [Moon Design System](https://moon.io) dark theme.
+
+- **Packages:** `@heathmont/moon-core-tw` (React components and the Tailwind preset) and `@heathmont/moon-themes-tw` (theme CSS variables), built with Tailwind CSS 3 through PostCSS in `vite.config.ts`. Both are Moon v10. Moon has since moved to `@moondesignsystem/*`, which generates its CSS from Figma variables and needs a Figma API token, so it isn't used here.
+- **Theme:** `class="theme-moon-dark"` on `<html>` (in `index.html`) switches the tokens. The font is DM Sans (`@fontsource-variable/dm-sans`).
+- **Tokens:** use Moon's colour names as Tailwind utilities: `goku` (surface), `gohan` (raised surface), `beerus` (borders), `bulma` (text), `trunks` (muted text), `piccolo` (accent), plus `krillin`, `roshi`, `chichi` and the other support colours. Type sizes are `text-moon-12` … `text-moon-72`, radii are `rounded-moon-s-*` / `rounded-moon-i-*`, and shadows are `shadow-moon-*`. Avoid `text-piccolo` on dark surfaces because its contrast is too low.
+- **Components:** import from `@heathmont/moon-core-tw` (`Button`, `IconButton`, `Textarea`, `Switch`, `Chip`, `Hint`…). Two accessibility quirks matter:
+  - `Textarea` falls back to `aria-label="Textarea"` when there's no placeholder, so link the visible label with `aria-labelledby`.
+  - `Switch` (Headless UI) overwrites `aria-labelledby`, so name it with `aria-label`.
+  - `Hint` always has `role="alert"`, so use it for errors only, not for live counters.
+- **Shared classes:** `.moon-panel` (the solid overlay surface) and `.visually-hidden` are defined in `src/style.css`.
+- **Moon's peer range** is React 16–18. It runs on React 19 here: `pnpm peers check` warns about this, but nothing breaks.
 
 ## Buildings
 
