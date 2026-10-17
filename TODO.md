@@ -20,7 +20,8 @@ Each row is a GitHub issue (number in brackets). GitHub owns live status, owners
 | PITCH-01 ([#18](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/18)) | Delta | Narrative, delivery, questions | Starts at freeze | Timed rehearsal complete; claims match demo |
 | SLIDES-01 ([#19](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/19)) | Alban | Presentation design | Starts at freeze | Clear problem, demo, data, future city, and team slides |
 
-Stretch ideas, including milestones and achievements, remain in IDEA.md until experts explicitly select them. Do not open speculative implementation PRs.
+Stretch ideas, including milestones and achievements, the then-and-now era layer, and social walking, remain in IDEA.md until experts explicitly select them. Do not open speculative implementation PRs.
+One research check is not stretch work: Sonia verifies a Warsaw tree or drinking-fountain dataset and its licence as part of the source gate (see PLAN.md). Record the result in `docs/DATA.md`.
 
 ## Saturday source checks and simulation backlog
 

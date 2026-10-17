@@ -136,4 +136,6 @@ STACK.md is the shared technical/source entry point; SETUP.md covers a clean loc
 ## Stretch ideas and principles added on 17 October
 
 - Milestones and achievements (distance, places, districts, greener choices): stretch only; see IDEA.md.
+- Cultural time-travel layer ("then and now"), social-walking mock, and future-ready roadmap items (accessibility, cool routes, city-layers pattern): see IDEA.md, Cultural layer, community and future-ready directions. All are stretch or roadmap. Priority if time allows after core acceptance: (1) a thin era layer with 6–10 curated, labelled entries; (2) a *Simulated* social-walking card with fictional walkers. Everything else is a roadmap slide only. Both stretch items need an agreed contract with Alban and Delta, their own issue and branch, and must finish before the 06:00 freeze.
+- Source gate additions: before promising a cool-route mode, Sonia verifies one Warsaw tree or drinking-fountain dataset and its licence. Before using historical imagery, confirm reuse terms; otherwise use curated cards only.
 - Privacy and security: User data stays on the user's device. The backend keeps no user profiles, preferences or trip history; route requests are stateless. A future version sends personal context only per request, with a short-lived scoped token. See IDEA.md, Privacy and security.
