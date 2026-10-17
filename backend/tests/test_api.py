@@ -101,6 +101,42 @@ def test_invalid_places_requests_are_rejected(params):
     assert client.get("/api/places", params=params).status_code == 422
 
 
+def test_places_search_matches_polish_unicode_case_insensitively():
+    lower = client.get("/api/places", params={"q": "muzeum łowiectwa"}).json()
+    upper = client.get("/api/places", params={"q": "MUZEUM ŁOWIECTWA"}).json()
+    validator("PlacesResponse").validate(lower)
+    assert lower["places"]
+    assert {p["id"] for p in lower["places"]} == {p["id"] for p in upper["places"]}
+    for place in lower["places"]:
+        haystack = f"{place['name']} {place.get('address') or ''}".lower()
+        assert "muzeum łowiectwa" in haystack
+
+
+def test_places_search_no_match_returns_empty_list():
+    data = client.get("/api/places", params={"q": "nonexistent-place-xyz"}).json()
+    validator("PlacesResponse").validate(data)
+    assert data["places"] == []
+
+
+def test_places_search_combines_with_category_and_limit():
+    data = client.get("/api/places", params={"q": "muzeum", "category": "museum"}).json()
+    assert data["places"] and all(p["category"] == "museum" for p in data["places"])
+
+    limited = client.get("/api/places", params={"q": "muzeum", "limit": 1}).json()
+    assert len(limited["places"]) == 1
+    assert len(data["places"]) > 1  # sanity: more than one match exists to limit
+
+
+def test_places_search_absent_q_keeps_existing_behavior():
+    with_q_absent = client.get("/api/places", params={"category": "museum"}).json()
+    assert with_q_absent["places"]
+
+
+@pytest.mark.parametrize("params", [{"q": ""}, {"q": "   "}, {"q": "x" * 101}])
+def test_invalid_places_search_is_rejected(params):
+    assert client.get("/api/places", params=params).status_code == 422
+
+
 def test_places_served_from_db_match_contract():
     data = client.get("/api/places", params={"category": "museum"}).json()
     validator("PlacesResponse").validate(data)
