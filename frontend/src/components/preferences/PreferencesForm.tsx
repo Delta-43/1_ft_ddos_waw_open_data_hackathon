@@ -20,6 +20,8 @@ export function PreferencesForm({ status, onSubmit }: Props) {
   const [query, setQuery] = useState('');
   const [touched, setTouched] = useState(false);
   const [interpretation, setInterpretation] = useState<Interpretation | null>(null);
+  // Names of preferences the user has switched OFF (everything starts on).
+  const [off, setOff] = useState<Set<string>>(new Set());
   const trimmed = query.trim();
   const loading = status.state === 'loading';
   const emptyError = touched && trimmed.length === 0;
@@ -28,6 +30,15 @@ export function PreferencesForm({ status, onSubmit }: Props) {
     setTouched(true);
     if (trimmed.length === 0) return;
     setInterpretation(interpretPreferences(trimmed));
+    setOff(new Set());
+  }
+
+  function toggle(name: string) {
+    setOff(previous => {
+      const next = new Set(previous);
+      if (!next.delete(name)) next.add(name);
+      return next;
+    });
   }
 
   if (interpretation) {
@@ -36,9 +47,23 @@ export function PreferencesForm({ status, onSubmit }: Props) {
         <h2>Your preferences</h2>
         <blockquote className="prompt-echo">{trimmed}</blockquote>
         <ul className="summary">
-          {interpretation.preferences.map(({ emoji, name }) => (
-            <li key={name}><span aria-hidden="true">{emoji}</span> {name}</li>
-          ))}
+          {interpretation.preferences.map(({ emoji, name }) => {
+            const on = !off.has(name);
+            return (
+              <li key={name} className={on ? undefined : 'is-off'}>
+                <span id={`pref-${name}`}><span aria-hidden="true">{emoji}</span> {name}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={on}
+                  aria-labelledby={`pref-${name}`}
+                  className="switch"
+                  disabled={loading}
+                  onClick={() => toggle(name)}
+                />
+              </li>
+            );
+          })}
         </ul>
         <p className="hint">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
         <div className="actions">
