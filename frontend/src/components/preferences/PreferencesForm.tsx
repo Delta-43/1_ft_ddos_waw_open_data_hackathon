@@ -65,7 +65,6 @@ export function PreferencesForm({ status, onSubmit }: Props) {
         rows={3}
         maxLength={MAX_LENGTH}
         value={query}
-        placeholder="e.g. A quiet, green museum outing"
         aria-invalid={emptyError}
         aria-describedby="outing-hint"
         onChange={event => { setQuery(event.target.value); setTouched(true); }}
