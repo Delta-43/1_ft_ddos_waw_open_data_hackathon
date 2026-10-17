@@ -1,1 +1,8 @@
 body { font-family: system-ui, sans-serif; margin: 2rem; background: #101827; color: #eee; } main { max-width: 60rem; margin: auto; } input, button { padding: .75rem; margin: .5rem; } pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.preferences-form { display: grid; gap: .25rem; }
+.preferences-form textarea { padding: .75rem; font: inherit; width: 100%; box-sizing: border-box; }
+.preferences-form textarea[aria-invalid="true"] { outline: 2px solid #f87171; }
+.preferences-form .hint { margin: 0 .5rem; color: #9ca3af; font-size: .875rem; }
+.preferences-form .error { margin: .25rem .5rem; color: #fca5a5; }
+.preferences-form .examples { display: flex; flex-wrap: wrap; align-items: center; }
