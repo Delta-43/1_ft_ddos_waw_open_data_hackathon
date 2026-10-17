@@ -4,7 +4,8 @@ Sonia owns this catalogue; Delta approves service integrations.
 
 | Dataset/service | Source URL | Licence/terms | Fetched at | Coverage/freshness | Mode | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Starter route | Repository fixture | Team-authored synthetic example | Not applicable | Straight-line illustration only | mock | Sonia |
+| Demo routes (`route-response.json`) | Repository fixture | Team-authored synthetic example | Not applicable | Two straight-line routes; invented green/quiet scores | mock | Sonia |
+| Demo places (`places-response.json`) | Repository fixture | Team-authored; real names, approximate coordinates | Not applicable | Five central Warsaw places; no opening hours | mock | Sonia |
 
 For each import, retain source identifiers, normalise coordinates, and record missing fields.
 Do not commit personal calendars, habits, tokens, or a real user's location history.

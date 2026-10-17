@@ -1,0 +1,80 @@
+{
+  "contract_version": "1.0",
+  "mode": "mock",
+  "notice": "Demo fixture: simulated place list with approximate coordinates. Not OpenStreetMap data.",
+  "generated_at": "2026-10-17T13:00:00+02:00",
+  "places": [
+    {
+      "id": "fixture:chopin-museum",
+      "name": "Fryderyk Chopin Museum",
+      "longitude": 21.0236,
+      "latitude": 52.2365,
+      "category": "museum",
+      "summary": null,
+      "opening_hours": null,
+      "address": null,
+      "website": null,
+      "source_id": "fixture-places"
+    },
+    {
+      "id": "fixture:national-museum",
+      "name": "National Museum in Warsaw",
+      "longitude": 21.0247,
+      "latitude": 52.2316,
+      "category": "museum",
+      "summary": null,
+      "opening_hours": null,
+      "address": null,
+      "website": null,
+      "source_id": "fixture-places"
+    },
+    {
+      "id": "fixture:ujazdowski-park",
+      "name": "Ujazdowski Park",
+      "longitude": 21.0255,
+      "latitude": 52.2215,
+      "category": "park",
+      "summary": null,
+      "opening_hours": null,
+      "address": null,
+      "website": null,
+      "source_id": "fixture-places"
+    },
+    {
+      "id": "fixture:lazienki-palace-on-the-isle",
+      "name": "Palace on the Isle, Royal Łazienki",
+      "longitude": 21.0353,
+      "latitude": 52.215,
+      "category": "museum",
+      "summary": null,
+      "opening_hours": null,
+      "address": null,
+      "website": null,
+      "source_id": "fixture-places"
+    },
+    {
+      "id": "fixture:palace-of-culture",
+      "name": "Palace of Culture and Science",
+      "longitude": 21.0059,
+      "latitude": 52.2318,
+      "category": "landmark",
+      "summary": null,
+      "opening_hours": null,
+      "address": null,
+      "website": null,
+      "source_id": "fixture-places"
+    }
+  ],
+  "sources": [
+    {
+      "id": "fixture-places",
+      "name": "Demo place list",
+      "mode": "simulated",
+      "attribution": "Team-authored demo fixture",
+      "url": null,
+      "retrieved_at": null,
+      "data_date": null,
+      "method": "Real place names with hand-placed approximate coordinates. No opening hours or summaries; not from OpenStreetMap."
+    }
+  ]
+}

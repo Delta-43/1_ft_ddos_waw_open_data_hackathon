@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/contracts/api.schema.json",
+  "title": "Warsaw 2076 API contract",
+  "description": "Contract version 1.0. Coordinates are [longitude, latitude] (WGS84). Distances in metres, durations in seconds, timestamps ISO 8601 with offset.",
+  "$defs": {
+    "ContractVersion": { "const": "1.0" },
+    "ResponseMode": {
+      "description": "Overall response origin. mock = fixture, live = fresh provider calls, cached = stored provider responses.",
+      "enum": ["mock", "live", "cached"]
+    },
+    "SourceMode": {
+      "description": "Per-input provenance shown in the UI. real = fresh fetch, historical = older measurements, proxy = derived estimate (method documented), simulated = invented for the demo.",
+      "enum": ["real", "historical", "proxy", "simulated"]
+    },
+    "Timestamp": { "type": "string", "format": "date-time", "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$" },
+    "Longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+    "Latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+    "Point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["longitude", "latitude"],
+      "properties": {
+        "longitude": { "$ref": "#/$defs/Longitude" },
+        "latitude": { "$ref": "#/$defs/Latitude" }
+      }
+    },
+    "TravelMode": { "enum": ["walk", "bike"] },
+    "PlaceCategory": {
+      "description": "Matches the frontend pin icons. Unknown data uses generic.",
+      "enum": ["museum", "landmark", "park", "generic"]
+    },
+    "Priorities": {
+      "description": "Relative weights from 0 (ignore) to 1 (most important).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quiet": { "type": "number", "minimum": 0, "maximum": 1 },
+        "green": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "Preferences": {
+      "description": "Optional structured preferences. Holds no user identifiers; nothing here is stored by the backend.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "interests": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+        },
+        "travel_mode": { "$ref": "#/$defs/TravelMode" },
+        "max_duration_s": { "type": "integer", "minimum": 900, "maximum": 28800 },
+        "priorities": { "$ref": "#/$defs/Priorities" },
+        "start": { "$ref": "#/$defs/Point" }
+      }
+    },
+    "RouteRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query"],
+      "properties": {
+        "query": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "preferences": { "$ref": "#/$defs/Preferences" }
+      }
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "mode", "attribution"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "mode": { "$ref": "#/$defs/SourceMode" },
+        "attribution": { "type": "string", "description": "Credit line the UI must show; licence name where known." },
+        "url": { "type": ["string", "null"] },
+        "retrieved_at": { "oneOf": [{ "$ref": "#/$defs/Timestamp" }, { "type": "null" }] },
+        "data_date": { "type": ["string", "null"], "description": "Period the data describes, e.g. 2022 for a noise map." },
+        "method": { "type": ["string", "null"], "description": "Required in practice for proxy and simulated inputs." }
+      }
+    },
+    "Metric": {
+      "description": "A value with its provenance. value is null when unknown; never invent it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source_id"],
+      "properties": {
+        "value": { "type": ["number", "null"] },
+        "source_id": { "type": "string" }
+      }
+    },
+    "Place": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "longitude", "latitude", "category", "opening_hours", "source_id"],
+      "properties": {
+        "id": { "type": "string", "description": "Stable ID; OSM IDs look like osm:node/123. Fixtures use fixture:<slug>." },
+        "name": { "type": "string" },
+        "longitude": { "$ref": "#/$defs/Longitude" },
+        "latitude": { "$ref": "#/$defs/Latitude" },
+        "category": { "$ref": "#/$defs/PlaceCategory" },
+        "summary": { "type": ["string", "null"] },
+        "opening_hours": { "type": ["string", "null"], "description": "Raw OSM opening_hours text, or null when unknown." },
+        "address": { "type": ["string", "null"] },
+        "website": { "type": ["string", "null"] },
+        "source_id": { "type": "string" }
+      }
+    },
+    "Stop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "place_id"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 1 },
+        "place_id": { "type": "string" },
+        "arrival_offset_s": { "type": ["integer", "null"], "minimum": 0 },
+        "visit_duration_s": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "LineString": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": { "const": "LineString" },
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [{ "$ref": "#/$defs/Longitude" }, { "$ref": "#/$defs/Latitude" }]
+          }
+        }
+      }
+    },
+    "Route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "rank", "recommended", "travel_mode", "explanation", "geometry", "geometry_kind", "metrics", "stops", "places"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "rank": { "type": "integer", "minimum": 1, "description": "1 = best match for the preferences." },
+        "recommended": { "type": "boolean", "description": "Exactly one route per response is true." },
+        "travel_mode": { "$ref": "#/$defs/TravelMode" },
+        "explanation": { "type": "string", "description": "Short text grounded only in metrics and places in this response." },
+        "geometry": { "$ref": "#/$defs/LineString" },
+        "geometry_kind": {
+          "description": "street = from a routing service; straight_line = illustrative only, label it in the UI.",
+          "enum": ["street", "straight_line"]
+        },
+        "geometry_source_id": { "type": "string" },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["distance_m", "duration_s", "green_score", "quiet_score"],
+          "properties": {
+            "distance_m": { "$ref": "#/$defs/Metric" },
+            "duration_s": { "$ref": "#/$defs/Metric" },
+            "green_score": { "$ref": "#/$defs/Metric", "description": "0 to 1, higher is greener." },
+            "quiet_score": { "$ref": "#/$defs/Metric", "description": "0 to 1, higher is quieter." }
+          }
+        },
+        "stops": { "type": "array", "items": { "$ref": "#/$defs/Stop" } },
+        "places": { "type": "array", "items": { "$ref": "#/$defs/Place" } }
+      }
+    },
+    "InterpretedPreferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interests", "travel_mode", "max_duration_s", "priorities", "interpreted_by"],
+      "properties": {
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "travel_mode": { "$ref": "#/$defs/TravelMode" },
+        "max_duration_s": { "type": ["integer", "null"] },
+        "priorities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["quiet", "green"],
+          "properties": {
+            "quiet": { "type": "number", "minimum": 0, "maximum": 1 },
+            "green": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "interpreted_by": { "enum": ["fixture", "rules", "model"] }
+      }
+    },
+    "RouteResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "mode", "notice", "generated_at", "preferences", "routes", "sources"],
+      "properties": {
+        "contract_version": { "$ref": "#/$defs/ContractVersion" },
+        "mode": { "$ref": "#/$defs/ResponseMode" },
+        "notice": { "type": "string", "description": "Banner text; always shown." },
+        "generated_at": { "$ref": "#/$defs/Timestamp" },
+        "preferences": { "$ref": "#/$defs/InterpretedPreferences" },
+        "routes": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/Route" } },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Source" } }
+      }
+    },
+    "PlacesResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "mode", "notice", "generated_at", "places", "sources"],
+      "properties": {
+        "contract_version": { "$ref": "#/$defs/ContractVersion" },
+        "mode": { "$ref": "#/$defs/ResponseMode" },
+        "notice": { "type": "string" },
+        "generated_at": { "$ref": "#/$defs/Timestamp" },
+        "places": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/Place" } },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Source" } }
+      }
+    }
+  }
+}

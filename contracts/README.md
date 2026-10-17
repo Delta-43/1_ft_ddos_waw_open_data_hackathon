@@ -1,14 +1,61 @@
-# Shared contract
+# Shared contract (version 1.0)
 
-Delta and Alban jointly approve changes here before either pair implements them.
+Delta and Alban jointly approve changes here before either pair implements them. Change the schema, fixtures, backend tests and `frontend/src/api/contract.ts` in the same PR.
 
-- `GET /api/health` → `{ "status": "ok", "mode": "fixture" }` in the starter.
-- `POST /api/routes` accepts `{ "query": "A quiet museum outing" }`; query is 1–1000 characters.
-- Success response: `route.schema.json`; example: `../data/fixtures/route-response.json`.
-- Invalid requests return HTTP 422 using FastAPI's standard `detail` validation response.
-- Frontend must handle non-2xx responses and unreachable backend.
-- GeoJSON is longitude, latitude. Future distances use metres and durations use seconds.
-- Add filters, route metrics, timestamps, and source metadata by agreement; these are not implemented in the starter.
-- Keep fixtures and backend checks updated in the same PR as contract changes.
+- Schema: `api.schema.json` (JSON Schema 2020-12). Each request or response is a definition under `$defs`.
+- Fixtures: `../data/fixtures/route-response.json` and `../data/fixtures/places-response.json`. Both are labelled `mock`.
+- TypeScript types: `../frontend/src/api/contract.ts`.
+- Units: GeoJSON order is longitude, latitude (WGS84). Distances in metres, durations in seconds, timestamps ISO 8601 with an offset.
 
-Onboarding: STACK.md and SETUP.md contain the shared prerequisites. No personal agent skills or private infrastructure are required. Fresh Saturday implementation must be validated separately from the reference scaffold.
+## Endpoints
+
+| Method and path | Request | Success response |
+| --- | --- | --- |
+| `GET /api/health` | None | `{ "status": "ok", "mode": "fixture", "contract_version": "1.0" }` |
+| `POST /api/routes` | `RouteRequest` | `RouteResponse` |
+| `GET /api/places` | Query: `category` (`museum`, `landmark`, `park`, `generic`), `bbox=min_lon,min_lat,max_lon,max_lat`, `limit` 1–100 (default 50) | `PlacesResponse` |
+
+Invalid requests return HTTP 422 with FastAPI's standard `detail` body. The frontend must also handle other non-2xx responses and an unreachable backend.
+
+## RouteRequest
+
+```json
+{
+  "query": "A quiet, green museum afternoon",
+  "preferences": {
+    "interests": ["museums"],
+    "travel_mode": "walk",
+    "max_duration_s": 10800,
+    "priorities": { "quiet": 0.8, "green": 0.8 },
+    "start": { "longitude": 21.0122, "latitude": 52.2297 }
+  }
+}
+```
+
+- `query` is required, 1–1000 characters. Everything in `preferences` is optional.
+- `travel_mode`: `walk` or `bike`. `max_duration_s`: 900–28800. Priorities: 0 (ignore) to 1 (most important).
+- Unknown fields are rejected with 422, at every level.
+
+## RouteResponse
+
+- `mode` and `notice`: overall data origin and a banner the UI always shows.
+- `preferences`: what the backend understood, with `interpreted_by` set to `fixture`, `rules` or `model`. Forms can show it back to the user.
+- `routes`: 1–3 candidates. `rank` 1 is the best match and exactly one has `recommended: true`.
+  - `geometry` is a GeoJSON LineString. `geometry_kind` is `street` (from a routing service) or `straight_line` (illustrative; the UI must say so).
+  - `metrics`: `distance_m`, `duration_s`, `green_score` and `quiet_score` (0–1, higher is better). Each is `{ "value", "source_id" }`, and `value` is `null` when unknown.
+  - `stops`: visit order, with optional arrival offset and visit duration in seconds.
+  - `places`: the place cards for this route.
+  - `explanation`: short text grounded only in this response's metrics and places.
+- `sources`: provenance for every `source_id`. `mode` is `real`, `historical`, `proxy` or `simulated`; `attribution` must be shown; `method` explains proxies and simulations.
+
+## Place
+
+`id`, `name`, `longitude`, `latitude`, `category` and `source_id` are always present. `opening_hours` is the raw OSM text or `null` when unknown; never fill it in. `summary`, `address` and `website` are optional and may be `null`. OSM IDs look like `osm:node/123`; fixtures use `fixture:<slug>`.
+
+## Privacy
+
+Requests carry no user identifiers or profile references, and the backend does not store or log request bodies. Future personal context is sent per request with a short-lived scoped token and is never stored. See IDEA.md, Privacy and security.
+
+## Compatibility
+
+Additive changes (new optional fields) need agreement but no version bump. Removing or renaming a field, or changing a type, bumps `contract_version` and must update both sides in one PR.
