@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: none open for me except team-wide #6. #27 DATA-08 closed; #51 and #62 merged
-- Branch / PR: `aryna/place-popups`: place-card pop-ups above stops, route-update race fix (affects main), frontend direction in DECISIONS.md. This commit missed #62's merge by minutes
-- Last verified result: check + build pass; ruff + pytest 36 passed. Headless Chrome (SwiftShader) clicked the full flow on desktop 1440×900 and mobile 390×844: intro lands at zoom 15 / pitch 60 with the location-off hint; prompt → Find routes → 2 route cards + 4 place cards + route layer and stops on the map; switching route updates the stops; the Sources drawer opens; no console errors
-- Blocker: none. This PR edits files owned by Alban (map, App, layout) and Ola (widget button and results hand-off), at Aryna's explicit request; they need to review
-- Next action: get the pop-ups PR merged; then pitch prep at 06:00 (screenshots of cards, labels and pop-ups, second-device check, rehearsal)
-- Open items: Alban to review my #6 result; Tailscale demo check waits for Delta; the bright map (#39) vs the dark design canvas needs a chat with Alban
-- Updated at (include timezone): 2026-10-17 18:38 +0200 (Europe/Warsaw)
+- Current issue: #45 done (#96 merged). Route focus in Delta's style (#94) is open for Delta's decision; it conflicts with #91 D4
+- Branch / PR: `aryna/route-focus-delta-style` (#94), now merged with main's dark design (#89, #96): only buildings within 210 m of the selected route stay 3D, tinted in its colour; the rest fade flat under a pale veil; dashed route; numbered stops on stems
+- Last verified result: after merging main, `pnpm run check` and `pnpm run build` pass; headless Chrome on the dark design at 1440×900 and 390×844, switching routes moves the corridor and tint, no console errors
+- Blocker: Delta's decision on #94 vs D4 option A. Touches `frontend/src/map/`, so Delta reviews
+- Next action: place cards attached to their stops (#91 section 5), then route comparison and panels, each with the three skills
+- Open items: Sources entry for estimated building heights once D4's data source exists; #80 still says "finish Moon" (ask Delta to close or reword it)
+- Updated at (include timezone): 2026-10-18 01:00 +0200 (Europe/Warsaw)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.

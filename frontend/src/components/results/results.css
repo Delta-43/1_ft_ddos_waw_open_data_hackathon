@@ -1,17 +1,16 @@
-/* Direction A: routes on the left, stops on the right; one bottom sheet on mobile.
-   Moon Design System v1: white cards, black selection, 4% fills. */
+/* Direction A: routes on the left, stops on the right; one bottom sheet on mobile. */
 .results__heading {
-  /* Sits on the bright map: a white chip keeps it readable. */
+  /* Sits on the bright map: a dark pill keeps it readable. */
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--moon-radius-full);
-  background: var(--moon-gohan);
-  box-shadow: var(--moon-shadow-sm);
-  margin: 0 0 8px;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  color: var(--moon-bulma);
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  background: var(--panel);
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .results__tabs { display: none; }
@@ -23,84 +22,70 @@
   max-height: calc(100vh - var(--top-chrome-height) - var(--sources-bar-height) - 6.5rem);
   max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6.5rem);
   overflow-y: auto;
-  /* Room for card shadows inside the scroll box. */
-  padding: 2px 4px 8px;
 }
-.results__panel--routes { left: 1.25rem; width: 23.5rem; }
+.results__panel--routes { left: 1.5rem; width: 23rem; }
 /* Leaves the map controls column free on the right. */
-.results__panel--stops { right: 3.75rem; width: 24.5rem; }
+.results__panel--stops { right: 4rem; width: 24rem; }
 
 .route-comparison__list {
   display: grid;
-  gap: 12px;
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .route-card {
-  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 0.6rem;
+  padding: 1rem;
   text-align: left;
-  border: 0;
-  border-radius: var(--moon-radius-md);
-  background: var(--moon-gohan);
-  box-shadow: var(--moon-shadow-sm);
-  color: var(--moon-bulma);
+  border-radius: 12px;
+  border: 1px solid var(--rim-faint);
+  background: var(--panel);
+  color: var(--text);
   font: inherit;
   cursor: pointer;
-  transition: box-shadow 0.2s ease-in-out;
+  transition: border-color 0.3s ease-in-out;
 }
-.route-card:hover { box-shadow: var(--moon-shadow-lg); }
-.route-card--selected,
-.route-card--selected:hover { box-shadow: var(--moon-shadow-lg), inset 0 0 0 2px var(--moon-bulma); }
-.route-card--selected .route-card__name { font-weight: 700; }
-.route-card:focus-visible { outline: none; box-shadow: var(--moon-shadow-sm), var(--moon-focus); }
+.route-card:hover { border-color: #5f6368; }
+.route-card--selected { border-color: var(--rim); }
+.route-card--selected .route-card__name,
+.route-card--selected .route-card__metric-value { color: #fff; font-weight: 700; }
+.route-card:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
 
-.route-card__title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.route-card__name { font-size: 16px; line-height: 24px; font-weight: 600; }
+.route-card__title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.route-card__name { font-size: 1rem; font-weight: 500; }
 .route-card__recommended {
-  padding: 0 8px;
-  border-radius: var(--moon-radius-full);
-  background: var(--moon-bulma);
-  color: var(--moon-goten);
-  font-size: 10px;
-  line-height: 20px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 10px;
+  background: #e8eaed;
+  color: var(--ink, #202124);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-/* Metrics on a 4% fill, like the date-picker range rows. */
 .route-card__metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  padding: 8px;
-  border-radius: var(--moon-radius-sm);
-  background: var(--moon-fill);
+  gap: 0.5rem;
 }
-.route-card__metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 2px 4px; }
-.route-card__metric-label { font-size: 12px; line-height: 16px; color: var(--moon-trunks); }
-.route-card__metric-value { font-size: 16px; line-height: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
-/* Four columns are narrow: tags stay on one line and truncate; the full text is in the tooltip. */
+.route-card__metric { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.route-card__metric-label { font-size: 0.75rem; color: var(--muted); }
+.route-card__metric-value { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .route-card__metric .source-label {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 10px;
-  line-height: 16px;
-  padding: 0 6px;
+  font-size: 0.7rem;
+  padding: 0 0.4rem;
   letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
 }
 
-.route-card__explanation { font-size: 14px; line-height: 20px; }
-.route-card__note { font-size: 12px; line-height: 16px; color: var(--moon-trunks); }
+.route-card__explanation { font-size: 0.875rem; line-height: 1.45; }
+.route-card__note { font-size: 0.75rem; color: var(--muted); }
 
 @media (max-width: 700px) {
   .results {
@@ -111,43 +96,36 @@
     height: 44dvh;
     display: flex;
     flex-direction: column;
-    background: var(--moon-gohan);
-    border-radius: var(--moon-radius-lg) var(--moon-radius-lg) 0 0;
-    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.4);
+    background: rgba(22, 23, 23, 0.94);
+    border-top: 1px solid var(--rim-faint);
+    border-radius: 24px 24px 0 0;
   }
-  /* Moon segmented tabs: a 4% track with a white selected pill. */
   .results__tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-    margin: 12px 16px 0;
-    padding: 4px;
-    border-radius: var(--moon-radius-sm);
-    background: var(--moon-fill);
+    padding: 0.25rem 0.75rem 0;
+    border-bottom: 1px solid #3c4043;
   }
   .results__tab {
-    min-height: 32px;
+    min-height: 2.75rem;
     border: 0;
-    border-radius: 6px;
+    border-bottom: 2px solid transparent;
     background: none;
-    color: var(--moon-trunks);
+    color: var(--muted);
     font: inherit;
-    font-size: 14px;
-    line-height: 24px;
-    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
     cursor: pointer;
   }
-  .results__tab[aria-selected='true'] { background: var(--moon-gohan); color: var(--moon-bulma); box-shadow: var(--moon-shadow-sm); }
-  .results__tab:focus-visible { outline: none; box-shadow: var(--moon-focus); }
+  .results__tab[aria-selected='true'] { color: #fff; font-weight: 700; border-bottom-color: #fff; }
   .results__panel {
     position: static;
     width: auto;
     max-height: none;
     flex: 1;
-    padding: 12px 16px;
+    padding: 0.9rem 1rem;
   }
-  /* The sheet is already white: headings drop their floating chip. */
-  .results .results__heading, .results .place-card-list__heading { padding: 0; box-shadow: none; background: none; }
   .results[data-tab='routes'] .results__panel--stops,
   .results[data-tab='stops'] .results__panel--routes { display: none; }
   .route-card__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -157,12 +135,12 @@
 
 /* The response notice: quiet, but always visible with the routes. */
 .route-comparison__notice {
-  margin: 0 0 12px;
-  padding: 8px 12px;
-  border-radius: var(--moon-radius-sm);
-  background: var(--moon-gohan);
-  box-shadow: var(--moon-shadow-sm);
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--moon-trunks);
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--rim-faint);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
 }
