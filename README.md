@@ -7,7 +7,7 @@ Personalised city navigation for the Warsaw Open Data Hackathon.
 1. Read `AGENTS.md`, `STACK.md`, `SETUP.md`, `IDEA.md`, and `PLAN.md`.
 2. Read your `team/<name>/PROMPT.md` and update your `STATUS.md`.
 3. Delta bootstraps GitHub and branch protection using `docs/GITHUB.md` before feature work.
-4. Both pairs agree on `contracts/route.schema.json` and its example.
+4. Both pairs agree on `contracts/api.schema.json` and the fixtures in `data/fixtures/`.
 5. Follow `docs/DEVELOPMENT.md` to run the starter and connect across devices.
 6. Claim one issue from `TODO.md`; use a separate branch and checkout per person.
 
@@ -31,4 +31,4 @@ Privacy: User data stays on the user's device. The backend keeps no user profile
 | `team/` | Agent prompts and short handover notes |
 | `.github/` | CI and contribution templates |
 
-The starter proves connectivity using an explicitly mocked route. The map (MapLibre with OpenFreeMap tiles) is in place; street routing, AI, SQLite persistence and MCP are not implemented yet.
+The starter serves contract 1.0 (`contracts/`) from labelled fixtures: two candidate routes and a place list. The map (MapLibre with OpenFreeMap tiles) is in place; street routing, AI, SQLite persistence and MCP are not implemented yet.
