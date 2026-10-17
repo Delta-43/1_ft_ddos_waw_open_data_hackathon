@@ -434,4 +434,11 @@ def plan(request: RouteRequest) -> dict:
         },
         "routes": routes,
         "sources": _sources(origins, is_itinerary),
+        # #85 step 4: lets the UI confirm the backend honoured its own request, rather
+        # than guessing from route names. Always exactly request.destination_place_id/
+        # via_place_ids, never substituted - null when there was no explicit itinerary.
+        "applied_itinerary": (
+            {"destination_place_id": request.destination_place_id, "via_place_ids": list(request.via_place_ids or [])}
+            if is_itinerary else None
+        ),
     }

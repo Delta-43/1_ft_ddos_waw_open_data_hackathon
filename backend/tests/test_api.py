@@ -57,7 +57,15 @@ def test_route_response_matches_contract():
     }
     response = client.post("/api/routes", json=body)
     assert response.status_code == 200
-    validator("RouteResponse").validate(response.json())
+    data = response.json()
+    validator("RouteResponse").validate(data)
+    assert data["applied_itinerary"] is None
+
+
+def test_health_reports_capabilities():
+    data = client.get("/api/health").json()
+    assert data["capabilities"]["ordered_stops"] is True
+    assert data["capabilities"]["place_search"] is False
 
 
 @pytest.mark.parametrize(
@@ -84,7 +92,11 @@ def test_route_request_accepts_real_destination_and_via_stops():
             "via_place_ids": [MUZEUM_LOWIECTWA], "comment": "Wolią Mauzoleum na koniec, proszę"}
     response = client.post("/api/routes", json=body)
     assert response.status_code == 200
-    validator("RouteResponse").validate(response.json())
+    data = response.json()
+    validator("RouteResponse").validate(data)
+    assert data["applied_itinerary"] == {
+        "destination_place_id": MAUZOLEUM, "via_place_ids": [MUZEUM_LOWIECTWA],
+    }
 
 
 def test_route_request_rejects_unknown_place_ids():
