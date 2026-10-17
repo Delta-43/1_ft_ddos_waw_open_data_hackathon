@@ -77,7 +77,7 @@ export function PreferencesForm({ status, onSubmit }: Props) {
           }
         }}
       />
-      <p id="outing-hint" className="hint">{query.length}/{MAX_LENGTH} characters · Enter to send, Shift+Enter for a new line</p>
+      <p id="outing-hint" className="hint">{query.length}/{MAX_LENGTH} characters</p>
       {emptyError && <p role="alert" className="error">Please describe your outing first.</p>}
       <button type="submit">Show my preferences</button>
     </form>
