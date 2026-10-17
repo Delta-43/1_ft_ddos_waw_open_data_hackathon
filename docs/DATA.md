@@ -4,7 +4,7 @@ Sonia owns this catalogue; Delta approves service integrations.
 
 | Dataset/service | Source URL | Licence/terms | Fetched at | Coverage/freshness | Mode | Owner |
 | --- | --- | --- | --- | --- | --- | --- |
-| Demo routes (`route-response.json`) | Repository fixture | Team-authored synthetic example | Not applicable | Two straight-line routes; invented green/quiet scores | mock | Sonia |
+| Demo routes (`route-response.json`) | Repository fixture | Team-authored synthetic example | Not applicable | Two straight-line routes; invented green/quiet scores, each labelled with which real dataset it could draw from once BE-01 exists (SIM-01) | mock | Sonia |
 | Demo places (`places-response.json`) | Repository fixture | Team-authored; real names, approximate coordinates | Not applicable | Five central Warsaw places; no opening hours | mock | Sonia |
 | OSM places (Łazienki/Ujazdów demo area) | https://overpass-api.de/api/interpreter | ODbL; © OpenStreetMap contributors | 2026-10-17T16:19:06+0200 | One ~2km x 2km demo bounding box (`52.2060,21.0220,52.2250,21.0480`); 1124 raw elements, 75 named places (museums, galleries, parks, named gardens, historic buildings/castles/churches/ruins) after dropping unnamed fragments and low-value historic tags | real | Sonia |
 | Warsaw open data: air quality | https://dane.um.warszawa.pl/api/action/get_bopipk_monitoring_jakosci_powietrza | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 141 monitoring stations city-wide, live readings | real | Sonia |
@@ -90,6 +90,17 @@ Checked 2026-10-17, ~14:40–14:55 Europe/Warsaw. OSM places (DATA-01) and one o
 | Copernicus tree cover / Urban Atlas, SEWiK accidents, Panorama demographics | Not re-checked | **Deferred, per PLAN.md** | No new information this pass — PLAN.md's existing assessment (account/token or reuse-terms friction, historical/stale data, out of core scope) stands. Not worth spending source-gate time on these given the freeze is approaching. |
 
 Organiser data rules: not separately reconfirmed this pass — see PLAN.md's existing note that this was last addressed at research time (16 October), not re-verified live with organisers during this session.
+
+## Environmental and disruption demo fixtures (SIM-01)
+
+`data/fixtures/route-response.json`'s `green_score`/`quiet_score` metrics were sharing one generic `fixture-scores` source. Split into `sim-green-score` and `sim-quiet-score`, each labelled `mode: "simulated"` with a `method` that names the real input that exists but isn't wired up yet, instead of a flat "invented values" note:
+
+- `sim-green-score`: references the real OSM park/garden sample (DATA-01, `data/fixtures/osm-places-sample.json`) as a future proximity-proxy input. Still invented — BE-01's scoring service doesn't read it.
+- `sim-quiet-score`: references the real Warsaw WMS noise layers (DATA-02, `HALAS_DROGOWY_LN_2022` etc.) as a future modelled-noise input. Still invented — the WMS is raster/`GetMap` only, no confirmed per-point query, and BE-01 doesn't read it either.
+
+This satisfies "visibly simulated, no fake measured dB or implied live readings" more precisely than a single generic source: a reader of `sources[]` now sees exactly which real dataset each simulated score *could* eventually draw from, without implying it already does.
+
+**Traffic, incidents and roadworks are not in `contracts/api.schema.json` at all** — there is no `Route` or `PlacesResponse` field for them. Rather than inventing new JSON fields the contract owners (Delta + Alban) haven't agreed to, or fabricating a disruptions fixture with nowhere in the schema to put it, this is flagged as an open question: do we want a contract field for route disruptions before BE-01 lands, or is a mention inside `Route.explanation` text enough for the demo? Current routes are also `geometry_kind: "straight_line"` (illustrative only, not navigable), so a roadwork-on-this-exact-path disruption wouldn't mean much until BE-01 adds real street geometry — simulating it now would be simulating a problem that doesn't exist yet for the current fixture. Deferred, not silently dropped.
 
 ## Fresh event-time data
 
