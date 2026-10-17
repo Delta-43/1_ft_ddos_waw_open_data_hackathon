@@ -13,10 +13,13 @@ interface PlaceCardListProps {
   sources?: Source[];
   /** The route's stops; when given, cards follow visit order and show timings. */
   stops?: Stop[];
+  /** The place whose pop-up is open on the map. */
+  selectedPlaceId?: string;
+  onShowOnMap?: (placeId: string) => void;
 }
 
 /** Cards for one route's stops, in visit order when stops are known. */
-export function PlaceCardList({ places, routeName, sources = [], stops }: PlaceCardListProps) {
+export function PlaceCardList({ places, routeName, sources = [], stops, selectedPlaceId, onShowOnMap }: PlaceCardListProps) {
   const heading = routeName ? `Stops on ${routeName}` : 'Stops';
   const byId = new Map(places.map(place => [place.id, place]));
   const ordered = stops
@@ -35,7 +38,13 @@ export function PlaceCardList({ places, routeName, sources = [], stops }: PlaceC
         <ol className="place-card-list__items">
           {ordered.map(({ place, stop }) => (
             <li key={place.id}>
-              <PlaceCard place={place} stop={stop} source={sourceFor(sources, place.source_id)} />
+              <PlaceCard
+                place={place}
+                stop={stop}
+                source={sourceFor(sources, place.source_id)}
+                selected={place.id === selectedPlaceId}
+                onShowOnMap={onShowOnMap && (() => onShowOnMap(place.id))}
+              />
             </li>
           ))}
         </ol>

@@ -131,3 +131,8 @@ def test_air_quality_features_carry_freshness():
         fresh = feature["properties"]["freshness"]
         assert set(fresh) == {"updated_at", "age_s", "fresh", "reason"}
         assert fresh["fresh"] is (fresh["reason"] is None)
+def test_layer_source_modes_are_valid_source_modes():
+    modes = set(SCHEMA["$defs"]["SourceMode"]["enum"])
+    for layer in ("air_quality", "aed", "toilets", "events"):
+        for source in client.get(f"/api/layers/{layer}").json()["sources"]:
+            assert source["mode"] in modes

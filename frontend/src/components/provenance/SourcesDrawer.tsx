@@ -4,10 +4,11 @@ import { SourceLabel } from './SourceLabel';
 import './provenance.css';
 
 /** Answers: where does this data come from, how fresh is it, and how to cite it. */
-export function SourcesDrawer({ sources, id, hidden }: { sources: Source[]; id?: string; hidden?: boolean }) {
+export function SourcesDrawer({ sources, id, hidden, notice }: { sources: Source[]; id?: string; hidden?: boolean; notice?: string }) {
   const credits = [...new Map(sources.map(source => [source.attribution, source])).values()];
   return (
     <section className="sources-drawer" id={id} aria-label="Data sources" hidden={hidden}>
+      {notice && <p className="sources-drawer__notice" role="note">{notice}</p>}
       <h3 className="sources-drawer__heading">Where does this data come from?</h3>
       <ul className="sources-drawer__list">
         {sources.map(source => (

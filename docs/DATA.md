@@ -112,6 +112,26 @@ DATA-10's full acceptance ("stop each provider in turn and run the demo") needs 
   - The full open-data cache (`data/local/warsaw_open_data_raw.json`, also gitignored — absent on a fresh checkout or a teammate's machine) missing → the build falls back to the committed 8-record sample and says so honestly in the source's `method` text, rather than silently claiming the full dataset. **Pass.**
   - `city.db` present but corrupted (not a valid SQLite file) → **fails**: `app.db.connect()` only checks the file's age against its fixtures, never that it's actually readable, so a corrupted-but-newer file produces an unhandled `sqlite3.DatabaseError` → 500, not a graceful fallback. Captured as `test_corrupted_db_does_not_crash_the_places_endpoint`, marked `xfail(strict=True)` so it documents the gap without failing CI. `backend/app/db.py` is Delta's file (outside this issue's `backend/tests/`+docs boundary), so this is flagged, not fixed, here — filed as [#56](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/issues/56).
 
+## Historical map layers (1930s–40s Warsaw), explored not implemented
+
+Checked 2026-10-17 in response to a "could we show the historic city shape" question. The same `wms.um.warszawa.pl/serwis` WMS server already catalogued above (DATA-02, noise/greenery) also carries a rich set of historical layers, confirmed reachable and real:
+
+| Layer | What it is |
+| --- | --- |
+| `HISTORIA_GRANICA_1916`/`1930`/`1938`/`1939_1945`/`1951`/`1957`/`1977`/`1992` | Warsaw city-boundary outline for each year — confirmed by rendering `HISTORIA_GRANICA_1930` and visually comparing to the modern extent (noticeably smaller, as expected pre-1951 annexation) |
+| `HISTORIA_ULICE_1939` | 1939 street network |
+| `RASTER_PLAN_1939` | Georeferenced scanned 1939 city plan |
+| `RASTER_FOTOPLAN_1935` | 1935 aerial orthophoto |
+| `RASTER_ORTOFOTO_1945` | 1945 aerial orthophoto (reportedly built from Soviet reconnaissance photography of the post-uprising, heavily destroyed city) |
+| `MPZP_OBIEKTY_WPISANE_DO_REJESTRU_ZABYTKOW` / `MPZP_BUDYNKI_WPISANE_DO_REJESTRU_ZABYTKOW` | Current official heritage/monument register |
+| `MPZP_GRANICE_OBSZAROW_OBJETYCH_OCHRONA_KONSERWATORSKA` | Heritage-conservation-zone boundaries |
+
+**Render-only, not queryable — tested, not assumed.** Capabilities marks `HISTORIA_GRANICA_1930` `queryable="true"`, but `GetFeatureInfo` returns an empty-but-valid `<GetFeatureInfo_Result>` for every request tried: WMS 1.1.1 and 1.3.0, `text/xml`/`text/html`/default `INFO_FORMAT`, at a point confirmed (by rendering the exact same bbox) to sit dead-centre on the rendered line. As a control, the same request pattern against the `ORTO` basemap layer returned a real Oracle MapViewer server error instead of a silent empty result, confirming the server does process these requests — `HISTORIA_GRANICA_1930` and likely its sibling layers simply have no attribute data exposed for query, a known Oracle MapViewer pattern for cartographic-only themes. **Conclusion: usable as a raster overlay (fade/opacity-slider between the modern basemap and a historical year, the same pattern used by existing sites like staremapy.waw.pl), not usable for "is this point inside the 1930 boundary" style vector queries** without separately digitising the boundary or finding it as real vector data elsewhere (OpenHistoricalMap — `overpass-api.openhistoricalmap.org` — was not checked for Warsaw coverage and is the obvious next place to look if a vector boundary becomes a requirement).
+
+**Rich per-building historical context**: not a new data source, an extension of what's already fetched. OSM frequently tags historic buildings with `wikipedia`/`wikidata`/`start_date`, which DATA-05's query doesn't currently request. Adding those tags, then resolving `wikipedia` values through Wikipedia's free `pl.wikipedia.org/api/rest_v1/page/summary/<title>` REST endpoint (no key), would give an AI-ready paragraph per landmark already in `osm-places-sample.json`. `fotopolska.eu` and `warszawa1939.pl` have much richer crowdsourced archival photography for this era but are browse-only websites, not APIs — useful for manual pitch-deck material, not a live integration.
+
+**Status: exploratory only, not built.** No code changes from this; a candidate for a follow-up issue if the team wants the overlay slider or the Wikipedia-summary extension before freeze.
+
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
@@ -124,3 +144,23 @@ A feed that answers is not a feed that is current. Vehicle locations, departures
 - Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
 - Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
 - Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
+## Routing provider verification (DATA-06)
+
+Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
+
+| Pair (from → to) | Profile | Points | Distance | Duration | Straight line |
+| --- | --- | --- | --- | --- | --- |
+| Centrum Sztuki Współczesnej (21.0307378, 52.2196963) → Muzeum Łowiectwa i Jeździectwa (21.0390467, 52.2135312) | foot | 200 | 1220 m | 976 s | 886 m (route 1.38×) |
+| same | bike | 130 | 1906 m | 517 s | 886 m (route 2.15×) |
+| Mauzoleum Walki i Męczeństwa (21.0236508, 52.2176184) → Cele Bezpieki (21.0239587, 52.2206202) | foot | 48 | 482 m | 388 s | 332 m (route 1.45×) |
+| same | bike | 46 | 488 m | 197 s | 332 m (route 1.47×) |
+
+Many vertices and a distance well above the straight line show the geometry follows streets and paths. The first bike route is much longer than the walking route, so the bike profile avoids paths the foot profile uses (not investigated further).
+
+Limits and behaviour, as recorded:
+- **Coverage:** not limited to Warsaw. A Łazienki → Paris foot request also returned `Ok`. The demo area needs no coverage workaround.
+- **Terms and quota:** a public community service with no key, no published quota in our requests (no rate-limit headers were returned) and no uptime guarantee. Keep use light and identify the client (`User-Agent: warsaw2076-hackathon-delta/1.0`). Re-read the service's usage policy before relying on it beyond the demo.
+- **Timeout:** 8 s per request; one request per candidate route.
+- **Fallback chain:** `ROUTING_SOURCE=live` tries live, then the cache; `ROUTING_SOURCE=cache` (use for the pitch) tries the cache first. Live responses are cached in `data/local/osrm-cache` (not committed). `data/fixtures/osrm-cache` holds 20 committed responses for the demo prompts.
+- **Total failure:** the planner returns straight lines with `geometry_kind: straight_line`, response `mode: mock` and a notice saying so. These are never presented as street routes (test: `test_routing_outage_falls_back_to_labelled_straight_lines`).
+- **Not verified:** behaviour under repeated load, and the service's availability at pitch time. Switch to `ROUTING_SOURCE=cache` before the demo.

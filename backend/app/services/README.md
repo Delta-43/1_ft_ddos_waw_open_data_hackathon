@@ -33,3 +33,17 @@ Any future live transit integration (vehicle positions, departures) must pass re
 show stale vehicles as "last seen HH:MM" or drop them, never as live; never extrapolate a position across a gap; fall back to
 the schedule, labelled as schedule. Air-quality features already carry `properties.freshness` (`updated_at`, `age_s`, `fresh`,
 `reason`); cached readings are therefore reported as stale, which is accurate.
+## MCP (MCP-01)
+
+`app/adapters/mcp_server.py` is a Streamable HTTP MCP server (official `mcp` SDK, stateless JSON). Its tools call
+`planner.plan` and `app.db`, the same services as REST: `plan_outing`, `search_places`, `list_layers`, `get_layer`.
+
+```bash
+# MCP_TOKEN in .env (required; the server refuses to start without it)
+PYTHONPATH=backend python -m app.adapters.mcp_server --host "$(tailscale ip -4)" --port 8001
+MCP_URL=http://<tailscale-ip>:8001/mcp python scripts/mcp_client_demo.py "a quiet museum outing"
+```
+
+Endpoint `http://<tailscale-ip>:8001/mcp`, header `Authorization: Bearer <MCP_TOKEN>`. Bind to the Tailscale address only;
+never expose it publicly. Add other Host names (for example the MagicDNS name) with `MCP_ALLOWED_HOSTS`.
+Requests are stateless and nothing about the caller is stored.

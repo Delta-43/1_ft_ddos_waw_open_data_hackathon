@@ -1,12 +1,16 @@
-/* Shared colours for the HTML overlay; map colours live in src/map/style.ts. */
+/* Shared colours for the HTML overlay; map colours live in src/map/style.ts.
+   Palette after Google Research's Language Explorer: near-black panels, grey until active,
+   white when active, hairline greys, one blue accent. */
 :root {
-  --bg: #0b1220;
+  --bg: #000;
   /* Opaque enough to read without backdrop-filter, which re-blurs on every map frame. */
-  --panel: rgba(11, 18, 32, 0.9);
-  --rim: #7fb4e6;
-  --rim-faint: rgba(127, 180, 230, 0.35);
-  --text: #dce8f5;
-  --muted: #8aa4c4;
+  --panel: rgba(22, 23, 23, 0.94);
+  --rim: #8ab4f8;
+  --rim-faint: #3c4043;
+  --text: #e8eaed;
+  --muted: #9aa0a6;
+  --accent-strong: #1a73e8;
+  --ink: #202124;
   --banner-height: 5.5rem;
   color-scheme: dark;
 }

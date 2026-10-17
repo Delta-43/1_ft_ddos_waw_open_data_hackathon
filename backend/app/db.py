@@ -81,7 +81,7 @@ def build(path: Path = DB_PATH) -> Path:
             _insert_source(conn, {
                 "id": source_id,
                 "name": f"Warsaw open data: {label}",
-                "mode": "cached",
+                "mode": "real",  # fetched from dane.um.warszawa.pl; envelope mode is "cached"
                 "attribution": od["attribution"],
                 "url": f"https://dane.um.warszawa.pl/api/action/{dataset['endpoint']}",
                 "retrieved_at": _rfc3339(od["fetched_at"]),
@@ -115,13 +115,23 @@ def _insert_source(conn: sqlite3.Connection, s: dict[str, Any]) -> None:
     )
 
 
+def _open() -> sqlite3.Connection:
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 def connect() -> sqlite3.Connection:
-    """Read connection; builds the database first if it is missing or older than its fixtures."""
+    """Read connection; rebuilds the database if it is missing, stale or not a readable SQLite file."""
     inputs = [OSM_SAMPLE, OPEN_DATA_SAMPLE] + ([OPEN_DATA_CACHE] if OPEN_DATA_CACHE.exists() else [])
     if not DB_PATH.exists() or DB_PATH.stat().st_mtime < max(p.stat().st_mtime for p in inputs):
         build()
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    try:
+        conn = _open()
+        conn.execute("SELECT 1 FROM sources LIMIT 1")
+    except sqlite3.DatabaseError:  # corrupt or wrong schema: city data is rebuildable from fixtures
+        build()
+        conn = _open()
     return conn
 
 

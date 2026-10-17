@@ -9,16 +9,22 @@ type Props = {
   onSubmit: (prompt: string) => void;
   /** Compact = first prompt in the small panel; otherwise the input under the chat history. */
   compact: boolean;
+  /** A search is running: the button spins faster and further sends wait. */
+  busy?: boolean;
 };
 
-export function PromptForm({ value, onChange, onSubmit, compact }: Props) {
+export function PromptForm({ value, onChange, onSubmit, compact, busy = false }: Props) {
   const [touched, setTouched] = useState(false);
   const trimmed = value.trim();
   const emptyError = touched && trimmed.length === 0;
 
   function submit() {
     setTouched(true);
-    if (trimmed.length > 0) onSubmit(trimmed);
+    if (trimmed.length > 0 && !busy) {
+      onSubmit(trimmed);
+      // The box is cleared after sending; don't greet the next message with an "empty" error.
+      setTouched(false);
+    }
   }
 
   return (
@@ -43,7 +49,7 @@ export function PromptForm({ value, onChange, onSubmit, compact }: Props) {
       />
       <p id="outing-hint" className="hint">{value.length}/{MAX_LENGTH} characters</p>
       {emptyError && <p role="alert" className="error">Please describe your outing first.</p>}
-      <button type="submit">{compact ? "Let's explore" : 'Send'}</button>
+      <button type="submit" className="gradient-ring-button" disabled={busy}>{busy ? 'Finding routes…' : 'Find routes'}</button>
     </form>
   );
 }
