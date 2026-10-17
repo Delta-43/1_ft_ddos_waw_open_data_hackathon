@@ -100,3 +100,11 @@ def test_routing_outage_falls_back_to_labelled_straight_lines():
     assert all(r["geometry_kind"] == "straight_line" for r in data["routes"])
     assert any(s["id"] == "straight-line" and s["mode"] == "simulated" for s in data["sources"])
     assert "not street directions" in data["notice"]
+
+
+def test_proxy_sources_do_not_claim_measurements():
+    sources = {s["id"]: s for s in planner._sources(set())}
+    for source_id in ("green-proxy", "quiet-proxy"):
+        assert sources[source_id]["mode"] == "proxy"
+    assert "not tree canopy, shade or measured vegetation" in sources["green-proxy"]["method"]
+    assert "not measured noise" in sources["quiet-proxy"]["method"]
