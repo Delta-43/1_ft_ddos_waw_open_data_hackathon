@@ -49,25 +49,35 @@ function corners(layer: HistoricalLayer): [[number, number], [number, number], [
 }
 
 /**
- * Registers every historical overlay as a hidden image layer, stacked on top
- * of the whole style (no `beforeId`) rather than tucked under the ground.
- * The game-map style's land/park/water fills are fully opaque, so a layer
- * placed underneath them - the more "natural" choice - is invisible; on top,
- * at partial opacity, the historical photo instead reads as a translucent
- * "ghost" over the modern 3D city, which doubles as a then-and-now effect.
- * Call once, after the style has loaded.
+ * Registers one historical overlay as an image layer, above the whole basemap
+ * rather than tucked under the ground. The game-map style's land/park/water
+ * fills are fully opaque, so a layer placed underneath them - the more
+ * "natural" choice - is invisible; above them, at partial opacity, the
+ * historical photo reads as a translucent "ghost" over the modern 3D city,
+ * which doubles as a then-and-now effect. It still goes below the city pins
+ * and route layers, so those stay readable on top of it.
+ *
+ * Added lazily, on first selection: an image source starts downloading as
+ * soon as it is added, and until it finishes MapLibre reports the style as
+ * not loaded and never fires `idle`. Adding all three WMS images at startup
+ * let a slow city WMS stall everything that waits on those signals (routes,
+ * pins, the intro).
  */
-export function addHistoricalOverlays(map: Map): void {
-  for (const layer of HISTORICAL_LAYERS) {
-    if (map.getSource(sourceId(layer))) continue; // StrictMode double-mount safety
-    map.addSource(sourceId(layer), { type: 'image', url: layer.image_url, coordinates: corners(layer) });
-    map.addLayer({ id: layerId(layer), type: 'raster', source: sourceId(layer), paint: { 'raster-opacity': 0.75 }, layout: { visibility: 'none' } });
-  }
+function ensureHistoricalLayer(map: Map, layer: HistoricalLayer): void {
+  if (map.getSource(sourceId(layer))) return; // already added (or StrictMode double-mount)
+  map.addSource(sourceId(layer), { type: 'image', url: layer.image_url, coordinates: corners(layer) });
+  const beforeId = map.getLayersOrder().find(id => id === 'pins' || id.startsWith('route-'));
+  map.addLayer(
+    { id: layerId(layer), type: 'raster', source: sourceId(layer), paint: { 'raster-opacity': 0.75 }, layout: { visibility: 'none' } },
+    beforeId,
+  );
 }
 
 /** Shows exactly one historical layer (or none, for `layerIndex === -1`),
- * hiding the others. */
+ * hiding the others. Call only after the style has loaded. */
 export function showHistoricalLayer(map: Map, layerIndex: number): void {
+  const selected = HISTORICAL_LAYERS[layerIndex];
+  if (selected) ensureHistoricalLayer(map, selected);
   HISTORICAL_LAYERS.forEach((layer, index) => {
     if (!map.getLayer(layerId(layer))) return;
     map.setLayoutProperty(layerId(layer), 'visibility', index === layerIndex ? 'visible' : 'none');

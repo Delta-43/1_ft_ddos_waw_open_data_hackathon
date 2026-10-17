@@ -1,5 +1,5 @@
 import type { ErrorEvent, IControl, Map } from 'maplibre-gl';
-import { addHistoricalOverlays, attributionText, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
+import { attributionText, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
 
 /** Floating attribution label, bottom-left (clear of the top-right toggle and
  * the bottom-right chat widget). The team's convention is that base-tile
@@ -56,6 +56,7 @@ export class HistoricalOverlayControl implements IControl {
   private attribution?: HistoricalAttributionLabel;
   private index = -1; // -1 = off
   private unavailable = new Set<string>(); // layer ids whose image failed to load
+  private styleReady = false; // set once by the map's `load`; layers can only be added after it
 
   private label(): string {
     if (this.index === -1) return '🕰';
@@ -70,7 +71,8 @@ export class HistoricalOverlayControl implements IControl {
   }
 
   private applyIndex(map: Map): void {
-    showHistoricalLayer(map, this.index); // no-op before the layers exist; the sync below catches up
+    // Before `load` only the button updates; the sync in onAdd applies the selection afterwards.
+    if (this.styleReady) showHistoricalLayer(map, this.index);
     if (this.button) {
       this.button.textContent = this.label();
       this.button.title = this.title();
@@ -109,8 +111,9 @@ export class HistoricalOverlayControl implements IControl {
       this.applyIndex(map);
     });
 
+    // No image is added here: each year's source is added on its first selection.
     const sync = () => {
-      addHistoricalOverlays(map);
+      this.styleReady = true;
       this.applyIndex(map);
     };
     if (map.isStyleLoaded()) sync();
