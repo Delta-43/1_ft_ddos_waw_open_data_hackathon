@@ -82,6 +82,16 @@ export function playIntro(map: Map, target: LngLatLike, done: () => void): void 
   map.flyTo({ ...view, duration: 2500, easing: easeSignature, essential: true });
 }
 
+/** Re-aims the intro (or a finished intro) at the visitor, ending at the same street-level view. */
+export function retargetIntro(map: Map, target: LngLatLike, landed: boolean): void {
+  const view = { center: target, zoom: INITIAL_VIEW.zoom, pitch: INITIAL_VIEW.pitch, bearing: INITIAL_VIEW.bearing };
+  if (reducedMotion()) {
+    map.jumpTo(view);
+    return;
+  }
+  map.flyTo({ ...view, duration: landed ? 1200 : 2500, easing: easeSignature, essential: true });
+}
+
 /** A glowing "You are here" dot; glow marks data, and this is the visitor's own position. */
 export function markVisitor(map: Map, point: [number, number]): Marker {
   const dot = document.createElement('div');
