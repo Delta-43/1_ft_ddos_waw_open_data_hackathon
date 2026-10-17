@@ -45,7 +45,7 @@
   cursor: pointer;
   transition: border-color 0.3s ease-in-out;
 }
-.route-card:hover { border-color: rgba(127, 180, 230, 0.6); }
+.route-card:hover { border-color: #5f6368; }
 .route-card--selected { border-color: var(--rim); }
 .route-card--selected .route-card__name,
 .route-card--selected .route-card__metric-value { color: #fff; font-weight: 700; }
@@ -56,8 +56,8 @@
 .route-card__recommended {
   padding: 0.1rem 0.5rem;
   border-radius: 10px;
-  background: #dce8f5;
-  color: #0b1220;
+  background: #e8eaed;
+  color: var(--ink, #202124);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -91,7 +91,7 @@
     height: 44dvh;
     display: flex;
     flex-direction: column;
-    background: rgba(11, 18, 32, 0.92);
+    background: rgba(22, 23, 23, 0.94);
     border-top: 1px solid var(--rim-faint);
     border-radius: 24px 24px 0 0;
   }
@@ -99,7 +99,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 0.25rem 0.75rem 0;
-    border-bottom: 1px solid rgba(127, 180, 230, 0.2);
+    border-bottom: 1px solid #3c4043;
   }
   .results__tab {
     min-height: 2.75rem;

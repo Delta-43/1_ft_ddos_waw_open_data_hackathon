@@ -4,9 +4,7 @@
 :root {
   --ease-signature: cubic-bezier(0.6, 0, 0.05, 1);
   --top-chrome-height: 5.25rem;
-  --sources-bar-height: 2.75rem;
-  /* The map attribution sits just above the sources bar (style.css uses this variable). */
-  --banner-height: var(--sources-bar-height);
+  --sources-bar-height: 3rem;
 }
 
 /* ---------- Intro: black curtain, then the city ---------- */
@@ -77,8 +75,8 @@
   font-size: 0.8rem;
   line-height: 1.4;
   color: var(--muted);
-  background: rgba(11, 18, 32, 0.78);
-  border-bottom: 1px solid rgba(127, 180, 230, 0.2);
+  background: rgba(22, 23, 23, 0.85);
+  border-bottom: 1px solid #3c4043;
 }
 
 /* Map controls sit below the top chrome (doubled class beats maplibre-gl.css, which may load later). */
@@ -109,7 +107,7 @@
   inset: -3px;
   z-index: -1;
   border-radius: 30px;
-  background: linear-gradient(90deg, #3a5a86, #7fb4e6, #e8f0ff, #7fb4e6, #3a5a86) 0 0 / 300% 100%;
+  background: linear-gradient(90deg, #1a73e8, #8ab4f8, #ffffff, #8ab4f8, #1a73e8) 0 0 / 300% 100%;
   filter: blur(15px);
   opacity: 0.6;
   animation: halo-slide 8s ease-in-out infinite;
@@ -118,7 +116,7 @@
   display: block;
   padding: 0.5rem 1rem;
   border-radius: 30px;
-  background: rgba(11, 18, 32, 0.92);
+  background: rgba(22, 23, 23, 0.94);
   border: 1px solid var(--rim-faint);
   font-size: 0.875rem;
   color: var(--text);
@@ -144,7 +142,7 @@
   position: absolute;
   inset: -150%;
   z-index: -2;
-  background: conic-gradient(#3a5a86, #7fb4e6, #e8f0ff, #7fb4e6, #3a5a86);
+  background: conic-gradient(#1a73e8, #8ab4f8, #ffffff, #8ab4f8, #1a73e8);
   opacity: 0.75;
   animation: ring-spin 5s linear infinite;
   transition: opacity 0.3s ease-in-out;
@@ -155,7 +153,7 @@
   inset: 1px;
   z-index: -1;
   border-radius: 23px;
-  background: #0b1220;
+  background: #161717;
 }
 .gradient-ring-button:hover::before { opacity: 1; }
 .gradient-ring-button:disabled::before { animation-duration: 1.4s; }
@@ -168,8 +166,8 @@
   position: fixed;
   inset: auto 0 0;
   z-index: 20;
-  min-height: var(--sources-bar-height);
-  padding: 0.5rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
+  height: calc(var(--sources-bar-height) + env(safe-area-inset-bottom));
+  padding: 0 1.5rem env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
   background: var(--panel);
@@ -190,8 +188,6 @@
 
 @keyframes drawer-in { from { opacity: 0; transform: translateY(0.75rem); } }
 
-/* The assistant sits above the sources bar. */
-.app-chrome .assistant { bottom: calc(var(--sources-bar-height) + 1rem + env(safe-area-inset-bottom)); }
 
 /* ---------- "You are here" ---------- */
 .you-are-here {
@@ -199,7 +195,7 @@
   height: 14px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 4px #ffffffd1, 0 0 12px #7fb4e6a6, 0 0 0 2px #0b1220;
+  box-shadow: 0 0 4px #ffffffd1, 0 0 12px #8ab4f8a6, 0 0 0 2px #161717;
 }
 
 @media (max-width: 700px) {
@@ -217,3 +213,96 @@
 }
 
 .app-chrome--in > .hint-stack { pointer-events: none; }
+
+/* ---------- Understood preferences in the nav bar (Language Explorer's filter tabs) ---------- */
+.top-bar__middle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.preference-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.25rem 0;
+}
+.preference-chips[aria-busy='true'] { opacity: 0.6; }
+
+.preference-chip {
+  flex: none;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 1rem;
+  border: 1px solid var(--rim-faint);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  white-space: nowrap;
+  transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+button.preference-chip { cursor: pointer; }
+button.preference-chip:hover { color: #fff; border-color: #5f6368; }
+.preference-chip[aria-pressed='true'],
+.preference-chip--static { color: #fff; font-weight: 700; border-color: #5f6368; }
+.preference-chip[aria-pressed='false'] { text-decoration: line-through; }
+.preference-chip:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
+.preference-chips__by { flex: none; font-size: 0.75rem; color: var(--muted); white-space: nowrap; margin-left: 0.25rem; }
+
+/* ---------- Bottom bar: one line, map credit first ---------- */
+.sources-bar { gap: 1.25rem; flex-wrap: nowrap; overflow: visible; }
+.map-credits { flex: none; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.map-credits a { color: var(--text); text-decoration: none; }
+.map-credits a:hover { color: #fff; text-decoration: underline; }
+.sources-strip--bar .sources-strip__row { flex-wrap: nowrap; min-width: 0; }
+.sources-strip--bar .sources-strip__row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sources-strip--bar .sources-strip__toggle { flex: none; margin-left: auto; }
+
+/* ---------- Assistant: its own column, never on top of the results ---------- */
+.app-chrome .assistant { right: 1rem; bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
+.app-chrome .assistant__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 7rem);
+  background: var(--panel);
+  backdrop-filter: none;
+  border-color: var(--rim-faint);
+}
+.app-chrome .assistant__panel[hidden] { display: none; }
+.app-chrome .chat-history { flex: 1; min-height: 0; overflow-y: auto; }
+.chat-message--pending { color: var(--muted); font-style: italic; }
+/* While the assistant is open it takes the right-hand column. */
+.app-chrome--assistant-open .results__panel--stops { display: none; }
+
+@media (max-width: 700px) {
+  .top-bar { flex-wrap: wrap; height: auto; min-height: 3rem; padding-block: 0.4rem; }
+  .top-bar__middle { order: 3; flex-basis: 100%; justify-content: flex-start; }
+  body:has(.preference-chips) { --top-chrome-height: 9rem; }
+  .notice-banner { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sources-bar { gap: 0.75rem; }
+  .sources-strip--bar .sources-strip__row > span { display: none; }
+  .map-credits { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* On a phone the assistant replaces the results sheet while it is open. */
+  .app-chrome--assistant-open .results { display: none; }
+  /* Beats results.css's raised position for when the sheet is showing. */
+  .app-chrome.app-chrome--assistant-open:has(.results) .assistant { bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
+  /* The bottom bar already has a Sources button. */
+  .top-bar__sources { display: none; }
+  .app-chrome .assistant__panel { width: calc(100vw - 2rem); max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6rem); }
+}
+.sources-bar .sources-strip { min-width: 0; }
+.sources-strip--bar .sources-strip__row { overflow: hidden; }

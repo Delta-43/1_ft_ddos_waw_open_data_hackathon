@@ -55,7 +55,7 @@ function ensureLayers(map: Map): void {
     source: ROUTE_SOURCE,
     filter: ['==', selected, true] as FilterSpecification,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#7fb4e6', 'line-width': 16, 'line-blur': 10, 'line-opacity': 0.75 },
+    paint: { 'line-color': '#8ab4f8', 'line-width': 16, 'line-blur': 10, 'line-opacity': 0.75 },
   });
   map.addLayer({
     // Dark casing keeps both lines readable on the bright game-map ground.
@@ -63,14 +63,14 @@ function ensureLayers(map: Map): void {
     type: 'line',
     source: ROUTE_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#0b1220', 'line-width': ['case', selected, 8, 6], 'line-opacity': ['case', selected, 0.95, 0.6] },
+    paint: { 'line-color': '#161717', 'line-width': ['case', selected, 8, 6], 'line-opacity': ['case', selected, 0.95, 0.6] },
   });
   map.addLayer({
     id: 'route-line',
     type: 'line',
     source: ROUTE_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ['case', selected, '#ffffff', '#7fb4e6'], 'line-width': ['case', selected, 4, 3] },
+    paint: { 'line-color': ['case', selected, '#ffffff', '#8ab4f8'], 'line-width': ['case', selected, 4, 3] },
   });
   map.addLayer({
     id: 'route-stop',
@@ -78,7 +78,7 @@ function ensureLayers(map: Map): void {
     source: STOP_SOURCE,
     paint: {
       'circle-radius': 12,
-      'circle-color': '#0b1220',
+      'circle-color': '#161717',
       'circle-stroke-color': '#ffffff',
       'circle-stroke-width': 2,
     },
