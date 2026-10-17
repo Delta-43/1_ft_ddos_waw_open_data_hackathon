@@ -37,6 +37,7 @@ export function ResultsPanels({ result, selectedId, onSelect }: ResultsPanelsPro
           selectedId={route?.id}
           onSelect={id => { onSelect(id); setTab('stops'); }}
           explainedByModel={result.preferences.interpreted_by === 'model'}
+          notice={result.notice}
         />
       </div>
       <div className="results__panel results__panel--stops">
