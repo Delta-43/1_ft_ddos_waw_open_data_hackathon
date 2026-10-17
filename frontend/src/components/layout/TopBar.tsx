@@ -11,9 +11,7 @@ interface TopBarProps {
   children?: ReactNode;
 }
 
-const NO_RESULT_NOTICE = 'Routes, places and their data sources appear after you describe an outing.';
-
-/** Slim fixed bar plus the always-visible notice line. Single screen, so no nav menu. */
+/** Slim fixed bar; once there is a result, the response notice sits underneath. Single screen, so no nav menu. */
 export function TopBar({ mode, notice, onOpenSources, children }: TopBarProps) {
   return (
     <div className="top-chrome">
@@ -25,7 +23,7 @@ export function TopBar({ mode, notice, onOpenSources, children }: TopBarProps) {
           <button type="button" className="top-bar__sources" onClick={onOpenSources}>ⓘ Sources</button>
         )}
       </header>
-      <p className="notice-banner" role="note">{notice ?? NO_RESULT_NOTICE}</p>
+      {notice && <p className="notice-banner" role="note">{notice}</p>}
     </div>
   );
 }

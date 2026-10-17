@@ -306,3 +306,6 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 }
 .sources-bar .sources-strip { min-width: 0; }
 .sources-strip--bar .sources-strip__row { overflow: hidden; }
+
+/* Before the first result there is no notice line, so the chrome is just the bar. */
+body:not(:has(.notice-banner)) { --top-chrome-height: 3.25rem; }
