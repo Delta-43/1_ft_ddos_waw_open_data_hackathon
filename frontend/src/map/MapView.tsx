@@ -6,7 +6,7 @@ import { addPins } from '../markers/pins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, growBuildingsWithZoom, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
-import { fitRoute, showRoutes } from './routes';
+import { fitRoute, onStopClick, showRoutes } from './routes';
 
 interface MapViewProps {
   routes?: Route[];
@@ -17,21 +17,27 @@ interface MapViewProps {
   onIntroStart?: () => void;
   /** Intro finished; `located` is false when it landed on the central-Warsaw fallback. */
   onIntroDone?: (located: boolean) => void;
+  /** The map instance, once created (for pop-ups anchored to places). */
+  onMapReady?: (map: Map | null) => void;
+  /** A numbered stop marker was clicked. */
+  onStopClick?: (placeId: string) => void;
 }
 
 // Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
-  const callbacks = useRef({ onIntroStart, onIntroDone });
-  callbacks.current = { onIntroStart, onIntroDone };
+  const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
+  callbacks.current = { onIntroStart, onIntroDone, onMapReady, onStop };
 
   useEffect(() => {
     const map = createMap(container.current!, INTRO_START);
     mapRef.current = map;
+    callbacks.current.onMapReady?.(map);
+    onStopClick(map, placeId => callbacks.current.onStop?.(placeId));
     // Dev-only handle for the browser console and automated checks.
     if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
     const abort = new AbortController();
@@ -61,6 +67,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     return () => {
       abort.abort();
       mapRef.current = null;
+      callbacks.current.onMapReady?.(null);
       map.remove();
     };
   }, []);

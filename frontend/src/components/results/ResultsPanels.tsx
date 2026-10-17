@@ -8,6 +8,8 @@ interface ResultsPanelsProps {
   result: RouteResponse;
   selectedId: string | undefined;
   onSelect: (id: string) => void;
+  selectedPlaceId?: string;
+  onShowPlace: (placeId: string) => void;
 }
 
 type Tab = 'routes' | 'stops';
@@ -16,7 +18,7 @@ type Tab = 'routes' | 'stops';
  * Desktop: routes on the left, stops and place cards on the right.
  * Mobile: one frosted bottom sheet with Routes · Stops tabs (Sources lives in the bottom bar).
  */
-export function ResultsPanels({ result, selectedId, onSelect }: ResultsPanelsProps) {
+export function ResultsPanels({ result, selectedId, onSelect, selectedPlaceId, onShowPlace }: ResultsPanelsProps) {
   const [tab, setTab] = useState<Tab>('routes');
   const route = result.routes.find(candidate => candidate.id === selectedId) ?? result.routes[0];
   const tabs: [Tab, string][] = [['routes', 'Routes'], ['stops', 'Stops']];
@@ -42,7 +44,15 @@ export function ResultsPanels({ result, selectedId, onSelect }: ResultsPanelsPro
       </div>
       <div className="results__panel results__panel--stops">
         {route && (
-          <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} sources={result.sources} stops={route.stops} />
+          <PlaceCardList
+            places={route.places}
+            mode={result.mode}
+            routeName={route.name}
+            sources={result.sources}
+            stops={route.stops}
+            selectedPlaceId={selectedPlaceId}
+            onShowOnMap={onShowPlace}
+          />
         )}
       </div>
     </div>
