@@ -135,3 +135,24 @@ Checked 2026-10-17 in response to a "could we show the historic city shape" ques
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
+
+## Routing provider verification (DATA-06)
+
+Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
+
+| Pair (from → to) | Profile | Points | Distance | Duration | Straight line |
+| --- | --- | --- | --- | --- | --- |
+| Centrum Sztuki Współczesnej (21.0307378, 52.2196963) → Muzeum Łowiectwa i Jeździectwa (21.0390467, 52.2135312) | foot | 200 | 1220 m | 976 s | 886 m (route 1.38×) |
+| same | bike | 130 | 1906 m | 517 s | 886 m (route 2.15×) |
+| Mauzoleum Walki i Męczeństwa (21.0236508, 52.2176184) → Cele Bezpieki (21.0239587, 52.2206202) | foot | 48 | 482 m | 388 s | 332 m (route 1.45×) |
+| same | bike | 46 | 488 m | 197 s | 332 m (route 1.47×) |
+
+Many vertices and a distance well above the straight line show the geometry follows streets and paths. The first bike route is much longer than the walking route, so the bike profile avoids paths the foot profile uses (not investigated further).
+
+Limits and behaviour, as recorded:
+- **Coverage:** not limited to Warsaw. A Łazienki → Paris foot request also returned `Ok`. The demo area needs no coverage workaround.
+- **Terms and quota:** a public community service with no key, no published quota in our requests (no rate-limit headers were returned) and no uptime guarantee. Keep use light and identify the client (`User-Agent: warsaw2076-hackathon-delta/1.0`). Re-read the service's usage policy before relying on it beyond the demo.
+- **Timeout:** 8 s per request; one request per candidate route.
+- **Fallback chain:** `ROUTING_SOURCE=live` tries live, then the cache; `ROUTING_SOURCE=cache` (use for the pitch) tries the cache first. Live responses are cached in `data/local/osrm-cache` (not committed). `data/fixtures/osrm-cache` holds 20 committed responses for the demo prompts.
+- **Total failure:** the planner returns straight lines with `geometry_kind: straight_line`, response `mode: mock` and a notice saying so. These are never presented as street routes (test: `test_routing_outage_falls_back_to_labelled_straight_lines`).
+- **Not verified:** behaviour under repeated load, and the service's availability at pitch time. Switch to `ROUTING_SOURCE=cache` before the demo.
