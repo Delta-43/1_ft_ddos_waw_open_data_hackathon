@@ -1,0 +1,23 @@
+name: Team task
+description: One bounded, reviewable deliverable
+title: "[AREA] "
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome and acceptance criteria
+      description: What observable result makes this done?
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Owner and reviewer
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and permitted files
+  - type: textarea
+    id: checks
+    attributes:
+      label: Validation and demo steps

@@ -1,0 +1,24 @@
+{
+  "mode": "mock",
+  "notice": "Synthetic straight-line geometry; not street directions or verified environmental data.",
+  "routes": [
+    {
+      "id": "demo-green",
+      "name": "Illustrative green route",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            21.0122,
+            52.2297
+          ],
+          [
+            21.017,
+            52.235
+          ]
+        ]
+      },
+      "places": []
+    }
+  ]
+}

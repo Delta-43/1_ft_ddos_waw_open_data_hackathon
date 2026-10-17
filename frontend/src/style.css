@@ -1,0 +1,1 @@
+body { font-family: system-ui, sans-serif; margin: 2rem; background: #101827; color: #eee; } main { max-width: 60rem; margin: auto; } input, button { padding: .75rem; margin: .5rem; } pre { white-space: pre-wrap; overflow-wrap: anywhere; }
