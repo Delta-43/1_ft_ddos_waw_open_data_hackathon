@@ -136,6 +136,14 @@ Checked 2026-10-17 in response to a "could we show the historic city shape" ques
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
 
+## Stale live-feed rule
+
+A feed that answers is not a feed that is current. Vehicle locations, departures and station readings can stop updating during repairs, holdbacks or technical stops. Rule for every live-style input (implemented in `backend/app/services/freshness.py`):
+
+- Judge each record by its own timestamp. More than 30 minutes old, missing, unreadable or in the future means **not live**.
+- Show such records as "last seen HH:MM" or leave them out. Never draw them as live, never extrapolate their position, and never fill the gap with a guess.
+- Show `retrieved_at` and the record's own update time next to any "live" claim in the UI and the pitch.
+- Status today: no vehicle-position or departure feed is integrated (DATA-09 deferred them), so only the air-quality layer is affected. Its features carry `properties.freshness`, and the committed cached readings are correctly reported as stale. If a live transit feed is added later it must use `split_live`.
 ## Routing provider verification (DATA-06)
 
 Provider: FOSSGIS OSRM, `https://routing.openstreetmap.de/routed-foot` and `/routed-bike` (OpenStreetMap data, ODbL). No account or key. Code: `backend/app/services/routing.py`. Verified live on 2026-10-17 at 18:10 +02:00 with `overview=full&geometries=geojson`. HTTP 200 and `code: Ok` for all four requests, 0.19–0.20 s each, GeoJSON `LineString` in longitude, latitude order:
