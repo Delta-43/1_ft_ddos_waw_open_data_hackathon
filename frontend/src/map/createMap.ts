@@ -15,11 +15,11 @@ setWorkerUrl(workerUrl);
  * else) only needs to supply an element and call `map.remove()` on teardown.
  * Default handlers already cover mouse, trackpad and touch pan/zoom/rotate/tilt.
  */
-export function createMap(container: HTMLElement): Map {
+export function createMap(container: HTMLElement, view: typeof INITIAL_VIEW = INITIAL_VIEW): Map {
   const map = new Map({
     container,
     style: buildStyle(palette),
-    ...INITIAL_VIEW,
+    ...view,
     ...CAMERA_LIMITS,
     // Added below in non-compact form so tile/OSM credits are always visible.
     attributionControl: false,

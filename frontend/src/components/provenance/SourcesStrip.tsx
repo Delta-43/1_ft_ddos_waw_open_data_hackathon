@@ -9,11 +9,16 @@ interface SourcesStripProps {
   sources: Source[];
   mode: ResponseMode;
   generatedAt?: string;
+  /** Optional control from outside, e.g. a "Sources" button in the top bar. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /** Credits line for the sources on screen, with a toggle that opens the full Sources drawer. */
-export function SourcesStrip({ sources, mode, generatedAt }: SourcesStripProps) {
-  const [open, setOpen] = useState(false);
+export function SourcesStrip({ sources, mode, generatedAt, open: openProp, onOpenChange }: SourcesStripProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
   const drawerId = useId();
   const credits = [...new Set(sources.filter(source => source.mode !== 'simulated').map(source => source.attribution))];
   const simulated = sources.filter(source => source.mode === 'simulated').length;
@@ -31,7 +36,7 @@ export function SourcesStrip({ sources, mode, generatedAt }: SourcesStripProps) 
           className="sources-strip__toggle"
           aria-expanded={open}
           aria-controls={drawerId}
-          onClick={() => setOpen(value => !value)}
+          onClick={() => setOpen(!open)}
         >
           {open ? 'Hide sources' : 'Sources ⓘ'}
         </button>
