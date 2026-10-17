@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: Sonia's half of #8 is done (PR #38 merged; #8 reopened for Delta's routing-provider half). Next: #13 BE-02 places endpoint. DATA-01 (#9) and DATA-04 (#21) both merged via [PR #33](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/33) and [PR #35](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/35) (reviewed and approved by Delta).
-- Branch / PR: none open. [PR #38](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/38) (DATA-02, my half) approved and merged.
-- Last verified result: Classified the remaining STACK.md sources in my lane on 2026-10-17. GIOŚ air quality reachable (no key) but only 10 Warsaw stations vs the 141 already integrated from the city portal — deferred as redundant. Warsaw WMS noise (`wms.um.warszawa.pl/serwis`) verified real and reachable: 2017+2022 road/rail/air/industrial/tram noise bands, WMS-only (no WFS). Bonus find on the same WMS service: greenery vector-ish layers (`ZIELEN_DRZEWA`, `ZIELEN_TRAWNIKI`, etc.) — flagged for whoever picks up DATA-07, not integrated by me (out of this issue's file boundary). GTFS confirmed reachable (~95MB zip) — left for Delta's DATA-09. Copernicus/SEWiK/Panorama not re-checked; PLAN.md's existing deferred classification stands. All written up in `docs/DATA.md` under "Kickoff source gate (DATA-02)".
-- Blocker: None for this issue. (Separately, open sports fields geocoding from PR #35 is still blocked on live Nominatim access from this sandbox's network — noted there, not re-blocking this issue.)
-- Review follow-ups from Delta (PR #33, do in BE-02): replace the personal email in `osm_places.py` `USER_AGENT` with the repository URL; write `fetched_at` as RFC 3339 with a colon offset (`+02:00`); keep `pyproject.toml` dependencies in sync with `backend/requirements.txt` (CI installs from the latter). Use `Refs #N`, not `Closes #N`, for a partial fix
-- Next action: BE-02 (bounded places endpoint), combining `backend/app/data/osm_places.py` and `backend/app/data/warsaw_open_data.py`.
-- Updated at (include timezone): 2026-10-17 16:08 +02:00 (follow-ups added by Delta)
+- Current issue: none assigned yet. BE-02 (#13) done via [PR #43](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/43) (approved and merged). DATA-01 (#9), DATA-04 (#21) and my half of DATA-02 (#8, PR #38) merged; Delta still owns the routing-provider half of #8.
+- Branch / PR: none open
+- Last verified result: `GET /api/places` serves the real DATA-01 OSM sample (26 places, `mode: cached`) via `backend/app/data/catalogue.py`; `ruff check backend` and `pytest backend/tests` pass on main (33 tests)
+- Blocker: None
+- Review follow-ups from Delta (PRs #33 and #43): replace the personal email in `osm_places.py` `USER_AGENT` with the repository URL; keep `pyproject.toml` dependencies in sync with `backend/requirements.txt` (CI installs from the latter). Use `Refs #N`, not `Closes #N`, for a partial fix
+- Next action: ask Delta for the next issue. Candidates: QA-01 (#17, demo checks) once BE-01/FE-01 land, or widening `/api/places` with Warsaw open-data amenities if Delta and Alban agree a wider category enum
+- Updated at (include timezone): 2026-10-17 16:25 +02:00 (follow-ups added by Delta)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
