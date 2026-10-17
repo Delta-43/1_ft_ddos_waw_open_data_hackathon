@@ -30,9 +30,9 @@ src/
   map/          createMap.ts (map + controls), style.ts (bright game style), config.ts (camera, tiles),
                 controls.ts (reset view), buildingOutlines.ts (show building parts),
                 MapView.tsx (React wrapper)
-  markers/      types.ts (Pin), pins.ts (addPins/clearPins + popups), icons.ts (hexagon icons),
-                samplePins.ts (PLACEHOLDER pins)
-  data/         types.ts (PinProvider), warsawOpenData.ts (empty stub), index.ts (registry, loadPins)
+  markers/      types.ts (Pin), pins.ts (addPins/clearPins + popups), icons.ts (hexagon icons)
+  data/         places.ts (/api/places), cityLayers.ts (/api/layers), api.ts (fetch, source labels),
+                types.ts (PinProvider), index.ts (registry, loadPins)
   api/          routes.ts (typed POST /api/routes client for the preferences form)
   style.css     Overlay UI: banner, controls, popups
 ```
@@ -74,16 +74,27 @@ Together, the opacity and detail-zoom rules took mean frame time during a camera
 
 ## Pins and data sources
 
-`addPins(map, pins)` puts all pins in one GeoJSON source drawn by a single GPU symbol layer, with no DOM markers, so thousands of pins stay smooth. Calling it again with an existing `id` replaces that pin; `clearPins(map)` removes them all. For very dense datasets, enable `cluster: true` on the source in `src/markers/pins.ts`.
+The map shows pins from the backend, all over Warsaw:
+
+| Pins | Endpoint | Source |
+| --- | --- | --- |
+| Museums, landmarks, parks, other places | `GET /api/places` | OpenStreetMap (ODbL), fetched at event time |
+| Air quality stations, defibrillators (AED), public toilets, cultural events | `GET /api/layers/{air_quality,aed,toilets,events}` (GeoJSON) | Warsaw open data, dane.um.warszawa.pl (CC BY) |
+
+- `src/data/places.ts` and `src/data/cityLayers.ts` request the whole Warsaw bounding box at each endpoint's maximum limit (100 places, 500 per layer), through the relative `/api` path that Vite proxies to the backend. More data in the backend's store (e.g. the full Warsaw cache in `data/local`) appears without frontend changes.
+- Every popup shows the data mode as a badge ("Real data, fetched at event time", "Cached open data · sample subset"; "sample subset" when the source's `method` says so), plus the source name and retrieval time. The map's attribution line credits each source; the API's credit text is escaped before MapLibre renders it as HTML.
+- If the backend is unreachable, the map still works without pins; each failed provider is logged.
+- Today the backend holds the committed samples: 26 OSM places around Łazienki/Ujazdów and 8 features per city layer.
+
+`addPins(map, pins)` puts all pins in one GeoJSON source drawn by a single GPU symbol layer, with no DOM markers, so thousands of pins stay smooth. Calling it again with an existing `id` replaces that pin; `clearPins(map)` removes them all. Pins shrink when zoomed out. For very dense datasets, enable `cluster: true` on the source in `src/markers/pins.ts`.
 
 To add a data source:
 
-1. Implement `PinProvider` (in `src/data/types.ts`) in a new file under `src/data/`. Its `fetchPins()` returns `Pin[]` (see `src/markers/types.ts`). Put the source, date and licence of each record in `properties`.
+1. Implement `PinProvider` (in `src/data/types.ts`) in a new file under `src/data/`. Its `fetchPins()` returns `Pin[]` (see `src/markers/types.ts`), each with its source's `badge` and `attribution`. `src/data/api.ts` has the shared fetch and source-label helpers.
 2. Register the provider in the `providers` list in `src/data/index.ts`. `MapView` loads every provider at start-up and passes the pins to `addPins()`. A provider that fails is logged and skipped.
-3. Show the provider's `attribution` wherever its pins are shown.
-4. Remove `samplePins` from `MapView.tsx` once real pins exist.
+3. For a new pin type, add a category and its hexagon glyph in `src/markers/types.ts` and `src/markers/icons.ts`.
 
-Warsaw's open-data API needs a key, and keys must stay on the backend. Fetch city data through a relative `/api/...` endpoint served by the backend, never directly from the browser. `src/data/warsawOpenData.ts` is the stub for this.
+City data that needs a key must come through a relative `/api/...` endpoint served by the backend, never directly from the browser.
 
 ## External services
 
