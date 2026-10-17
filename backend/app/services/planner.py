@@ -209,11 +209,12 @@ def _visit_s(stop: dict) -> int:
     return MUSEUM_VISIT_S if stop["category"] == "museum" else PARK_VISIT_S
 
 
-def _build_route(key: str, name: str, start, stops: list[dict], prefs: Interpreted) -> tuple[dict, str]:
+def _build_route(key: str, name: str, start, stops: list[dict], prefs: Interpreted) -> tuple[dict, str, float]:
     """One route's geometry, metrics and stop timing, plus its geometry origin
-    ("live"/"cached"/"straight_line", for the caller's `sources` and `mode`).
-    Shared by the museum-outing candidates and #85's explicit-itinerary route;
-    `_utility` is popped by the caller once ranking is decided."""
+    ("live"/"cached"/"straight_line", for the caller's `sources` and `mode`) and total
+    elapsed time including visits (travel `duration_s` alone excludes those). Shared by
+    the museum-outing candidates and #85's explicit-itinerary route; `_utility` is popped
+    by the caller once ranking is decided."""
     coords, distance, duration, legs, origin = _geometry(prefs.travel_mode, start, stops)
     geo_source = "straight-line" if origin == "straight_line" else "osrm"
     scores = scoring.score_line(coords)
@@ -242,7 +243,7 @@ def _build_route(key: str, name: str, start, stops: list[dict], prefs: Interpret
             "green_score": {"value": scores["green_score"]},
             "duration_s": {"value": duration}}}, prefs, offset),
     }
-    return route, origin
+    return route, origin, offset
 
 
 def _resolve_itinerary_stops(destination_place_id: str, via_place_ids: list[str] | None) -> list[dict]:
@@ -287,13 +288,18 @@ def _explain(name: str, route: dict, prefs: Interpreted, baseline: dict | None) 
     return text
 
 
-def _hours_note(route: dict, departure: datetime) -> str:
-    """Sentence on opening hours at each museum's estimated arrival (OSM text, may be incomplete)."""
+def _hours_note(route: dict, departure: datetime, categories: set[str] | None = {"museum"}) -> str:
+    """Sentence on opening hours at each stop's estimated arrival (OSM text, may be incomplete).
+    `categories=None` checks every stop regardless of category - used for #85's explicit
+    itinerary, since the user chose these stops themselves and any of them (a garden, a
+    ruin) may carry a real opening_hours tag. The museum-outing candidates keep the
+    original museum-only check: parks there are the planner's own detour picks, not a
+    user-named destination, so their hours were never part of this note's contract."""
     by_id = {p["id"]: p for p in route["places"]}
     closed, unknown = [], []
     for stop in route["stops"]:
         place = by_id[stop["place_id"]]
-        if place["category"] != "museum":
+        if categories is not None and place["category"] not in categories:
             continue
         arrival = departure + timedelta(seconds=stop["arrival_offset_s"])
         result = opening_hours.status(place["opening_hours"], arrival)
@@ -365,16 +371,17 @@ def plan(request: RouteRequest) -> dict:
     start = (start_pt.longitude, start_pt.latitude) if start_pt else DEFAULT_START
     is_itinerary = request.destination_place_id is not None
     routes, origins = [], set()
+    itinerary_total_s = None
     if is_itinerary:
         # #85 step 2: the user named exact stops, so plan one route that visits them
         # in the given order and ends at the destination - never a museum template.
         stops = _resolve_itinerary_stops(request.destination_place_id, request.via_place_ids)
-        route, origin = _build_route("itinerary", "Your requested itinerary", start, stops, prefs)
+        route, origin, itinerary_total_s = _build_route("itinerary", "Your requested itinerary", start, stops, prefs)
         origins.add(origin)
         routes.append(route)
     else:
         for key, name, stops in candidate_stops(start, prefs, departure + timedelta(seconds=FIRST_STOP_LEAD_S)):
-            route, origin = _build_route(key, name, start, stops, prefs)
+            route, origin, _ = _build_route(key, name, start, stops, prefs)
             origins.add(origin)
             routes.append(route)
     routes.sort(key=lambda r: r.pop("_utility"), reverse=True)
@@ -388,7 +395,15 @@ def plan(request: RouteRequest) -> dict:
     worded = ai.model_explanations(request.query, routes)
     for route in routes:
         route["explanation"] = worded.get(route["id"], route["explanation"])
-        route["explanation"] += _hours_note(route, departure)
+        route["explanation"] += _hours_note(route, departure, categories=None if is_itinerary else {"museum"})
+    # #85 step 3: an explicit itinerary isn't dropped or rejected just for running long -
+    # it's reported honestly, same spirit as _hours_note never guessing instead of hiding.
+    if is_itinerary and prefs.max_duration_s and itinerary_total_s > prefs.max_duration_s:
+        over_min = round((itinerary_total_s - prefs.max_duration_s) / 60)
+        routes[0]["explanation"] += (
+            f" This itinerary takes about {round(itinerary_total_s / 60)} min including stops, "
+            f"{over_min} min over the requested {round(prefs.max_duration_s / 60)} min budget."
+        )
     if "straight_line" in origins:
         mode = "mock"
         notice = ("Routing service unavailable: some routes are straight lines, not street directions. "
@@ -400,9 +415,10 @@ def plan(request: RouteRequest) -> dict:
                   + ". Green and quiet scores are proxies from OSM parks and major roads, "
                     "not measured greenery or noise.")
     if is_itinerary:
-        notice += (" Visits the requested destination and stops, in the order given; "
-                   "a time budget (max_duration_s) is not yet enforced against this itinerary, "
-                   "so it may run longer than requested.")
+        notice += (" Visits the requested destination and stops, in the order given. Closed or "
+                   "unknown opening hours and an exceeded time budget are reported in the "
+                   "explanation, not silently dropped - but the backend still returns the "
+                   "itinerary rather than refusing it outright.")
     if worded:
         notice += " Explanations were worded by an AI model from these facts only."
     return {

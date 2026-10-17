@@ -39,8 +39,10 @@ export interface RouteRequest {
   preferences?: Preferences;
   /**
    * Refs #85. Resolved against the catalogue (GET /api/places); unknown ids get a 422.
-   * The response visits it last, but opening hours and max_duration_s aren't enforced
-   * against it yet - gate structured itinerary submission on the future
+   * The response visits it last; closed/unknown opening hours and an exceeded
+   * max_duration_s are reported in the route's explanation rather than silently
+   * dropped, but there's no no-feasible-route outcome or applied_itinerary field yet -
+   * gate structured itinerary submission on the future
    * HealthResponse.capabilities.ordered_stops, not on this field existing.
    */
   destination_place_id?: string;
