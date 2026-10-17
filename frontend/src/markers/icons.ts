@@ -11,6 +11,10 @@ const ACCENT: Record<PinCategory, string> = {
   museum: '#9ecbff',
   park: '#7fd1a8',
   generic: '#c8d6e8',
+  air: '#6fd3ff',
+  aed: '#ff6b6b',
+  toilet: '#b9a2ff',
+  event: '#ffb74d',
 };
 
 export const iconId = (category: PinCategory) => `pin-hex-${category}`;
@@ -51,6 +55,49 @@ const GLYPHS: Record<PinCategory, (ctx: CanvasRenderingContext2D) => void> = {
   generic(ctx) {
     ctx.beginPath();
     ctx.arc(32, 32, 6, 0, Math.PI * 2);
+    ctx.fill();
+  },
+  air(ctx) {
+    // Three wind lines of different lengths.
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = ctx.fillStyle;
+    for (const [y, x2] of [[24, 42], [32, 46], [40, 38]]) {
+      ctx.beginPath();
+      ctx.moveTo(19, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+  },
+  aed(ctx) {
+    // Heart with a medical cross cut out of it.
+    ctx.beginPath();
+    ctx.moveTo(32, 45);
+    ctx.bezierCurveTo(14, 33, 18, 17, 32, 25);
+    ctx.bezierCurveTo(46, 17, 50, 33, 32, 45);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(11, 18, 32, 0.92)';
+    ctx.fillRect(30, 26, 4, 12);
+    ctx.fillRect(26, 30, 12, 4);
+  },
+  toilet(ctx) {
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('WC', 32, 33);
+  },
+  event(ctx) {
+    // Five-pointed star.
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 6.5 : 14;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      const x = 32 + r * Math.cos(a);
+      const y = 33 + r * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
     ctx.fill();
   },
 };
