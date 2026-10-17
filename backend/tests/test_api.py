@@ -99,3 +99,27 @@ def test_places_bbox_filter():
 )
 def test_invalid_places_requests_are_rejected(params):
     assert client.get("/api/places", params=params).status_code == 422
+
+
+def test_places_served_from_db_match_contract():
+    data = client.get("/api/places", params={"category": "museum"}).json()
+    validator("PlacesResponse").validate(data)
+    assert data["places"] and all(p["category"] == "museum" for p in data["places"])
+    assert {s["id"] for s in data["sources"]} == {p["source_id"] for p in data["places"]}
+
+
+def test_layers_index_and_geojson():
+    index = client.get("/api/layers").json()["layers"]
+    assert {layer["id"] for layer in index} == {"air_quality", "aed", "toilets", "events"}
+    assert all(layer["count"] > 0 for layer in index)
+    body = client.get("/api/layers/aed", params={"limit": 3}).json()
+    assert body["type"] == "FeatureCollection" and len(body["features"]) == 3
+    lon, lat = body["features"][0]["geometry"]["coordinates"]
+    assert 20 < lon < 22 and 51 < lat < 53  # longitude first
+    assert body["sources"][0]["attribution"]
+
+
+def test_layer_bbox_and_validation():
+    assert client.get("/api/layers/nope").status_code == 422
+    assert client.get("/api/layers/aed", params={"bbox": "0,0,1,1"}).json()["features"] == []
+    assert client.get("/api/layers/aed", params={"bbox": "1,0,0,1"}).status_code == 422
