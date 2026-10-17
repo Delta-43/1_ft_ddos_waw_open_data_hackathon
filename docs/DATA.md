@@ -115,3 +115,15 @@ DATA-10's full acceptance ("stop each provider in turn and run the demo") needs 
 ## Fresh event-time data
 
 Read STACK.md for source URLs, authentication, limits and simulation defaults. PLAN.md records earlier research, not guaranteed uptime. Fetch fresh event-time samples and append their results here; no private research repository or cache access is required. Record failures as well as successes.
+
+## Optional source checks: events, roadworks, GTFS (DATA-09)
+
+Timeboxed to 30 minutes, run 2026-10-17 from 18:14 +02:00 by Delta. Rule applied: integrate only verified, useful responses; otherwise keep the labelled simulation or defer.
+
+| Source | Result | Decision |
+| --- | --- | --- |
+| Events calendar (`get_bmm_kalendarz_wydarzen`) | Already fetched by DATA-04 and served as the `events` layer. The 8 committed sample events all start between 2026-12-04 and 2027-01-29, so none falls on the demo weekend. The full 352 placed events were not re-inspected in this check | **Keep as a map layer**, labelled cached. Do not claim "events today" in the pitch |
+| Road construction disruptions (`get_bin_utrudnienia_drogowe`) | Listed in the portal catalogue (`utrudnienia-w-ruchu-drogowym`, refresh 1 minute, last metadata change 2026-06-01). **Response not fetched**: the dataset needs `DANE_WWA_API_KEY` and no key is set on the shared server host | **Defer.** Roadwork disruptions stay a labelled simulation (SIM-01). Re-check only if Sonia runs the fetch with her key before the freeze |
+| GTFS (`https://mkuran.pl/gtfs/warsaw.zip`) | Reachable, HTTP 200, 99.8 MB, `Last-Modified` 2026-10-16 23:03 UTC. Read the zip directory with range requests without downloading the file. `feed_info`: feed version 2026-10-17 00:15:22, publisher Mikołaj Kuranowski. 7,246 stops, 329 routes; `stop_times.txt` is 511.8 MB unzipped | **Defer.** Real and fresh, but full multimodal routing is out of scope (AGENTS.md) and `stop_times` is too large to parse for the demo. A stops-only layer (0.6 MB `stops.txt`) is possible later; it adds nothing to a quiet museum walk |
+
+Not verified: GTFS licence/terms (check `attributions.txt` and the publisher page before any reuse), the content of the roadworks response, and event dates beyond the committed sample. The dependency on INT-01 (#14) was not met when this ran; nothing was integrated, so it does not matter.
