@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: #11 FE-03 Place cards (next: #27 DATA-08)
-- Branch / PR: `aryna/11-place-cards`; PR linked from #11, review requested from @kaveOO
-- Last verified result: `pnpm run check` and `pnpm run build` pass; the components are not yet imported by the app, so the build doesn't cover them; a scratch server-side render showed mock/cached/live badges and the empty state
-- Blocker: shared fixture `data/fixtures/route-response.json` has `places: []`, so the demo shows no cards (fixture is API-01: Delta + Alban). DATA-08 needs per-place source fields (kind, source, date, licence) agreed by Delta + Alban
-- Next action: ask Delta/Alban to add 2–3 places to the fixture and to agree per-place provenance fields; then start DATA-08 `SourceLabel` in `components/provenance/`
-- Agreed component folders: places/ + provenance/ (Aryna); preferences/ + status/ (Ola); confirm with Ola
-- Updated at (include timezone): 2026-10-17 13:11 +0200 (Europe/Warsaw)
+- Current issue: #27 DATA-08 Display source modes and dates (waiting for contract PR #32)
+- Branch / PR: none yet for DATA-08; it starts when #32 merges. #11 FE-03 is done (PR #31 merged)
+- Last verified result: SETUP-01 (#6) local checks pass on `main` at `1cc0a44`: ruff, pytest (2 passed), frontend check and build, `/api/health`, `/api/routes` through the Vite proxy, and 422 for an empty query. The result is posted on #6
+- Blocker: DATA-08 needs per-place provenance (`source_id` and `sources[]`) from PR #32 (Delta + Alban)
+- Next action: once #32 merges, switch `components/places/types.ts` to `src/api/contract.ts` and add `SourceLabel` in `components/provenance/` (real / historical / proxy / simulated, with attribution and date)
+- Open items: Alban to review my #6 result; Tailscale demo check waits for Delta's invitation and demo URL; tell Ola the folder split (places/, provenance/ = Aryna; preferences/, status/ = Ola)
+- Updated at (include timezone): 2026-10-17 13:46 +0200 (Europe/Warsaw)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
