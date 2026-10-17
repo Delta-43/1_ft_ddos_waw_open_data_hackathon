@@ -40,9 +40,20 @@ def build_query(bbox: str = DEMO_BBOX) -> str:
   node["tourism"="museum"]({bbox});
   way["tourism"="museum"]({bbox});
   node["tourism"="gallery"]({bbox});
+  node["historic"]({bbox});
+  way["historic"]({bbox});
 );
 out center tags;
 """
+
+
+# historic=* in this demo area is mostly two things: ~90 individual
+# commemorative plaques/statues (historic=memorial) and ~45 buildings
+# tagged just historic=yes (ambiguous - could be anything). Neither is a
+# place worth a card on a museum/park outing. Kept values are actual
+# visitable buildings/sites. This mirrors dropping unnamed gardens in
+# DATA-01: a documented usefulness filter, not distrust of the source.
+HISTORIC_VALUES_KEPT = {"castle", "church", "manor", "building", "ruins", "monument", "archaeological_site"}
 
 
 def fetch_overpass(bbox: str = DEMO_BBOX, attempts_per_endpoint: int = 2) -> dict[str, Any]:
@@ -71,17 +82,25 @@ def fetch_overpass(bbox: str = DEMO_BBOX, attempts_per_endpoint: int = 2) -> dic
 
 
 def _category(tags: dict[str, str]) -> str:
-    return tags.get("tourism") or tags.get("leisure") or "unknown"
+    return tags.get("tourism") or tags.get("leisure") or tags.get("historic") or "unknown"
 
 
 def normalise(elements: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep only named elements; preserve OSM id, name, coordinates and known tags."""
+    """Keep only named elements; preserve OSM id, name, coordinates and known tags.
+
+    historic=memorial and historic=yes are dropped unless the element also
+    carries a tourism/leisure tag that already qualifies it - see
+    HISTORIC_VALUES_KEPT above."""
     places = []
     for element in elements:
         tags = element.get("tags", {})
         name = tags.get("name")
         if not name:
             continue
+        category = _category(tags)
+        if "historic" in tags and not (tags.get("tourism") or tags.get("leisure")):
+            if tags["historic"] not in HISTORIC_VALUES_KEPT:
+                continue
         if element["type"] == "node":
             lon, lat = element.get("lon"), element.get("lat")
         else:
@@ -95,7 +114,7 @@ def normalise(elements: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "name": name,
                 "longitude": lon,
                 "latitude": lat,
-                "category": _category(tags),
+                "category": category,
                 "opening_hours": tags.get("opening_hours"),
                 "website": tags.get("website"),
                 "source": "osm",
