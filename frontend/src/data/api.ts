@@ -45,3 +45,14 @@ export function sourceRows(source: ApiSource | undefined): Record<string, string
 
 /** "2027-01-29T19:00:00+01" → "2027-01-29 19:00" (the API's offsets are not always ISO). */
 export const shortTime = (value: string) => value.slice(0, 16).replace('T', ' ');
+
+const WARSAW_TZ = 'Europe/Warsaw';
+const dayKey = (date: Date) => date.toLocaleDateString('en-CA', { timeZone: WARSAW_TZ });
+
+/** An ISO time with offset as Warsaw local time: "13:00" today, "2026-10-16 13:00" otherwise. */
+export function warsawTime(iso: string): string | undefined {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return undefined;
+  const time = date.toLocaleTimeString('en-GB', { timeZone: WARSAW_TZ, hour: '2-digit', minute: '2-digit' });
+  return dayKey(date) === dayKey(new Date()) ? time : `${dayKey(date)} ${time}`;
+}

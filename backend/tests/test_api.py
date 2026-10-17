@@ -123,3 +123,10 @@ def test_layer_bbox_and_validation():
     assert client.get("/api/layers/nope").status_code == 422
     assert client.get("/api/layers/aed", params={"bbox": "0,0,1,1"}).json()["features"] == []
     assert client.get("/api/layers/aed", params={"bbox": "1,0,0,1"}).status_code == 422
+
+
+def test_layer_source_modes_are_valid_source_modes():
+    modes = set(SCHEMA["$defs"]["SourceMode"]["enum"])
+    for layer in ("air_quality", "aed", "toilets", "events"):
+        for source in client.get(f"/api/layers/{layer}").json()["sources"]:
+            assert source["mode"] in modes

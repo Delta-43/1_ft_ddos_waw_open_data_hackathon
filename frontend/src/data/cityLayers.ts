@@ -1,5 +1,5 @@
 import type { Pin, PinCategory } from '../markers/types';
-import { getJson, modeBadge, shortTime, sourceRows, WARSAW_BBOX, type ApiSource } from './api';
+import { getJson, modeBadge, shortTime, sourceRows, WARSAW_BBOX, warsawTime, type ApiSource } from './api';
 import type { PinProvider } from './types';
 
 type Props = Record<string, unknown>;
@@ -16,17 +16,40 @@ interface Measurement {
   time?: string;
 }
 
+/** The backend's verdict on one reading (`properties.freshness`, backend/app/services/freshness.py). */
+interface Freshness {
+  updated_at: string | null;
+  fresh: boolean;
+  reason: 'stale' | 'no_timestamp' | 'timestamp_in_future' | null;
+}
+
 const text = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
+
+/**
+ * How current an air-quality reading is. The backend judges freshness (30-minute rule); the map
+ * only words its verdict and never calls a reading live on its own. Without a verdict (older
+ * backends) it states the time and makes no claim either way.
+ */
+function readingRow(freshness: Freshness | undefined, latest: string | undefined): string | undefined {
+  if (!freshness) return latest ? `Last updated ${shortTime(latest)}` : undefined;
+  const at = freshness.updated_at ? warsawTime(freshness.updated_at) : undefined;
+  if (freshness.fresh && at) return `Live reading, updated ${at}`;
+  if (at) return `Cached reading, last updated ${at}`;
+  return 'Cached reading, update time unknown';
+}
 
 /** Popup rows per layer, from the layer-specific feature properties. */
 const ROWS: Record<string, (p: Props) => Record<string, string | undefined>> = {
   air_quality: p => {
     const measurements = Array.isArray(p.measurements) ? (p.measurements as Measurement[]) : [];
     const main = measurements.filter(m => ['PM2.5', 'PM10', 'NO2', 'O3'].includes(m.param));
+    // Latest measurement time, the same reading the backend's freshness verdict judges.
+    const latest = measurements.map(m => m.time).filter((t): t is string => !!t).sort().at(-1);
+    const freshness = p.freshness && typeof p.freshness === 'object' ? (p.freshness as Freshness) : undefined;
     return {
+      Reading: readingRow(freshness, latest),
       'Air quality index': text(p.overall_index),
       Readings: main.map(m => `${m.param} ${m.value} ${m.unit}`).join(' · ') || undefined,
-      Measured: measurements[0]?.time ? shortTime(measurements[0].time) : undefined,
     };
   },
   aed: p => ({ Access: text(p.access), Hours: text(p.access_hours) }),
