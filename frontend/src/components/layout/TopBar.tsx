@@ -6,12 +6,14 @@ import './layout.css';
 interface TopBarProps {
   mode?: ResponseMode;
   onOpenSources?: () => void;
+  /** Whether the Sources drawer (id "sources-drawer") is open. */
+  sourcesOpen?: boolean;
   /** The preferences menu icon, shown next to Sources. */
   children?: ReactNode;
 }
 
 /** Slim fixed bar. Single screen, so no nav menu. The response notice lives in the routes panel and Sources drawer. */
-export function TopBar({ mode, onOpenSources, children }: TopBarProps) {
+export function TopBar({ mode, onOpenSources, sourcesOpen = false, children }: TopBarProps) {
   return (
     <div className="top-chrome">
       <header className="top-bar">
@@ -20,7 +22,15 @@ export function TopBar({ mode, onOpenSources, children }: TopBarProps) {
         <span className="top-bar__spacer" />
         {children}
         {onOpenSources && (
-          <button type="button" className="top-bar__sources" onClick={onOpenSources}>ⓘ Sources</button>
+          <button
+            type="button"
+            className="top-bar__sources"
+            aria-expanded={sourcesOpen}
+            aria-controls="sources-drawer"
+            onClick={onOpenSources}
+          >
+            ⓘ <span className="top-bar__sources-text">Sources</span>
+          </button>
         )}
       </header>
     </div>
