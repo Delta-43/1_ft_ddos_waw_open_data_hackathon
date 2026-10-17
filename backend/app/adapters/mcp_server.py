@@ -53,10 +53,15 @@ def build_server(allowed_hosts: list[str] | None = None) -> FastMCP:
         green: float | None = None,
         start_longitude: float | None = None,
         start_latitude: float | None = None,
+        destination_place_id: str | None = None,
+        via_place_ids: list[str] | None = None,
+        comment: str | None = None,
     ) -> dict:
         """Plan candidate routes for an outing (contract 1.0 RouteResponse).
 
         quiet and green are 0..1 priorities; durations are seconds; coordinates are lon, lat.
+        destination_place_id and via_place_ids (0-5, ordered, unique, from search_places) are
+        validated against the catalogue but not yet routed through (Refs #85, step 1 of 4).
         """
         priorities = {k: v for k, v in (("quiet", quiet), ("green", green)) if v is not None}
         start = None
@@ -73,10 +78,19 @@ def build_server(allowed_hosts: list[str] | None = None) -> FastMCP:
             if v is not None
         }
         try:
-            request = RouteRequest(query=query, preferences=Preferences(**prefs) if prefs else None)
+            request = RouteRequest(
+                query=query,
+                preferences=Preferences(**prefs) if prefs else None,
+                destination_place_id=destination_place_id,
+                via_place_ids=via_place_ids,
+                comment=comment,
+            )
         except ValidationError as exc:
             raise ValueError(str(exc)) from exc
-        return planner.plan(request)
+        try:
+            return planner.plan(request)
+        except planner.InvalidItinerary as exc:
+            raise ValueError(str(exc)) from exc
 
     @mcp.tool()
     def search_places(

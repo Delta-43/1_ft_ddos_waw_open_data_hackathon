@@ -40,6 +40,7 @@ Invalid requests return HTTP 422 with FastAPI's standard `detail` body. The fron
 - `query` is required, 1–1000 characters. Everything in `preferences` is optional.
 - `travel_mode`: `walk` or `bike`. `max_duration_s`: 900–28800. Priorities: 0 (ignore) to 1 (most important).
 - Unknown fields are rejected with 422, at every level.
+- `destination_place_id` and `via_place_ids` (#85, step 1 of 4): optional catalogue place ids (`GET /api/places`'s `id`, e.g. `osm:node/123`). `via_place_ids` is an ordered list of 0–5 unique ids, visited before `destination_place_id`, which must not also appear in it. Unknown ids, duplicates, or more than 5 stops return 422. **Not yet routed through**: the backend validates these fields but the response doesn't visit them yet — gate structured itinerary submission on `GET /api/health`'s future `capabilities.ordered_stops`, not on these fields being accepted. `comment` (0–500 characters) may only influence preference reading, never geometry, hours or facts, and is never stored or logged.
 
 ## RouteResponse
 

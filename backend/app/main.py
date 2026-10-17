@@ -29,7 +29,10 @@ def health():
 @app.post("/api/routes")
 def routes(request: RouteRequest):
     # Shared with MCP: both call planner.plan. The request is not stored or logged.
-    return planner.plan(request)
+    try:
+        return planner.plan(request)
+    except planner.InvalidItinerary as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 def parse_bbox(bbox: str | None) -> tuple[float, float, float, float] | None:

@@ -37,6 +37,16 @@ export interface RouteRequest {
   /** 1 to 1000 characters. */
   query: string;
   preferences?: Preferences;
+  /**
+   * Refs #85. Resolved against the catalogue (GET /api/places); unknown ids get a 422.
+   * Not yet routed through - gate structured itinerary submission on
+   * HealthResponse.capabilities.ordered_stops, not on this field existing.
+   */
+  destination_place_id?: string;
+  /** Refs #85. 0-5 ordered, unique stop ids visited before destination_place_id. */
+  via_place_ids?: string[];
+  /** Refs #85. 0-500 characters; may only influence preference reading, never facts. Not stored. */
+  comment?: string;
 }
 
 export interface Source {
