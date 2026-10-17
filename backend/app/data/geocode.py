@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[3]
 CACHE_PATH = ROOT / "data/local/geocode_cache.json"
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = "warsaw2076-hackathon-sonia/1.0 (contact: ms9600927@gmail.com)"
+USER_AGENT = "warsaw2076-hackathon/1.0 (+https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon)"
 MIN_INTERVAL_SECONDS = 1.1  # Nominatim policy: max 1 req/s; stay under it.
 RATE_LIMIT_ATTEMPTS = 4  # retries on 429/5xx before giving up on this query for this run
 RATE_LIMIT_BACKOFF_SECONDS = 5.0
