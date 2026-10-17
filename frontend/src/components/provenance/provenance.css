@@ -1,0 +1,20 @@
+/* Sources strip layout. Badges, source labels and the drawer use Moon utilities in their
+   components; layout.css places the strip in the bottom bar. */
+.sources-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rim-faint);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.sources-strip__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.8rem;
+}
+
+.sources-strip__meta { margin: 0; }

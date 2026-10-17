@@ -4,25 +4,34 @@ import type { ResponseMode, Source } from '../../api/contract';
 import { DataModeBadge } from './DataModeBadge';
 import { formatWarsawDate } from './formatDate';
 import { SourcesDrawer } from './SourcesDrawer';
+import './provenance.css';
 
 interface SourcesStripProps {
   sources: Source[];
   mode: ResponseMode;
   generatedAt?: string;
+  /** Optional control from outside, e.g. a "Sources" button in the top bar. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** "bar": one line for the bottom bar — short source names, no mode badge (the top bar shows it). */
+  variant?: 'panel' | 'bar';
 }
 
 /** Credits line for the sources on screen, with a toggle that opens the full Sources drawer. */
-export function SourcesStrip({ sources, mode, generatedAt }: SourcesStripProps) {
-  const [open, setOpen] = useState(false);
+export function SourcesStrip({ sources, mode, generatedAt, open: openProp, onOpenChange, variant = 'panel' }: SourcesStripProps) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
   const drawerId = useId();
-  const credits = [...new Set(sources.filter(source => source.mode !== 'simulated').map(source => source.attribution))];
+  const bar = variant === 'bar';
+  const credits = [...new Set(sources.filter(source => source.mode !== 'simulated').map(source => (bar ? source.name : source.attribution)))];
   const simulated = sources.filter(source => source.mode === 'simulated').length;
   const proxies = sources.filter(source => source.mode === 'proxy').length;
 
   return (
-    <div className="flex flex-col gap-2 pt-3 border-t border-beerus text-moon-12 text-trunks">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <DataModeBadge mode={mode} />
+    <div className={`sources-strip${bar ? ' sources-strip--bar' : ''}`}>
+      <div className="sources-strip__row">
+        {!bar && <DataModeBadge mode={mode} />}
         {credits.map(credit => <span key={credit}>{credit}</span>)}
         {proxies > 0 && <span>{proxies} estimated (proxy) {proxies === 1 ? 'input' : 'inputs'}</span>}
         {simulated > 0 && <span>{simulated} simulated {simulated === 1 ? 'input' : 'inputs'}</span>}
@@ -30,15 +39,15 @@ export function SourcesStrip({ sources, mode, generatedAt }: SourcesStripProps) 
           size="sm"
           isActive={open}
           // Moon's active/hover text is piccolo, too dark on the dark theme; keep it light.
-          className="text-moon-12 text-bulma hover:text-bulma ring-1 ring-inset ring-beerus aria-expanded:ring-bulma"
+          className="sources-strip__toggle text-moon-12 text-bulma hover:text-bulma ring-1 ring-inset ring-beerus aria-expanded:ring-bulma"
           aria-expanded={open}
           aria-controls={drawerId}
-          onClick={() => setOpen(value => !value)}
+          onClick={() => setOpen(!open)}
         >
           {open ? 'Hide sources' : 'Sources ⓘ'}
         </Chip>
       </div>
-      {generatedAt && <p>Generated {formatWarsawDate(generatedAt)} · we don’t store your requests or location.</p>}
+      {generatedAt && <p className="sources-strip__meta">Generated {formatWarsawDate(generatedAt)} · we don’t store your requests or location.</p>}
       <SourcesDrawer sources={sources} id={drawerId} hidden={!open} />
     </div>
   );

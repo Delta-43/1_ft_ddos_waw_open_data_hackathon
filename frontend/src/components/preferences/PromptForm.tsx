@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Hint, Textarea } from '@heathmont/moon-core-tw';
+import { Hint, Textarea } from '@heathmont/moon-core-tw';
 
 const MAX_LENGTH = 1000; // contracts/README.md: query is 1-1000 characters
 
@@ -10,16 +10,22 @@ type Props = {
   onSubmit: (prompt: string) => void;
   /** Compact = first prompt in the small panel; otherwise the input under the chat history. */
   compact: boolean;
+  /** A search is running: the button spins faster and further sends wait. */
+  busy?: boolean;
 };
 
-export function PromptForm({ value, onChange, onSubmit, compact }: Props) {
+export function PromptForm({ value, onChange, onSubmit, compact, busy = false }: Props) {
   const [touched, setTouched] = useState(false);
   const trimmed = value.trim();
   const emptyError = touched && trimmed.length === 0;
 
   function submit() {
     setTouched(true);
-    if (trimmed.length > 0) onSubmit(trimmed);
+    if (trimmed.length > 0 && !busy) {
+      onSubmit(trimmed);
+      // The box is cleared after sending; don't greet the next message with an "empty" error.
+      setTouched(false);
+    }
   }
 
   return (
@@ -50,7 +56,8 @@ export function PromptForm({ value, onChange, onSubmit, compact }: Props) {
       {/* Not Moon's Hint: it has role="alert", which would announce the count on every keystroke. */}
       <p id="outing-hint" className="text-moon-12 text-trunks">{value.length}/{MAX_LENGTH} characters</p>
       {emptyError && <Hint error className="mt-0">Please describe your outing first.</Hint>}
-      <Button type="submit" size="md" fullWidth>{compact ? "Let's explore" : 'Send'}</Button>
+      {/* The page's one animated accent (layout.css), in Moon's piccolo/hit colours. */}
+      <button type="submit" className="gradient-ring-button text-moon-14" disabled={busy}>{busy ? 'Finding routes…' : 'Find routes'}</button>
     </form>
   );
 }

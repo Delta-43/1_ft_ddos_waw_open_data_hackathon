@@ -8,7 +8,7 @@ export const SOURCE_MODE_TEXT: Record<SourceMode, string> = {
   simulated: 'Simulated',
 };
 
-const BASE = 'self-start inline-block max-w-full px-2 py-0.5 rounded-full text-moon-10-caption uppercase break-words';
+const BASE = 'source-label self-start inline-block max-w-full px-2 py-0.5 rounded-full text-moon-10-caption uppercase break-words';
 
 /** Modes differ in text AND fill/stroke, never in hue alone. */
 const MODE_STYLE: Record<SourceMode, string> = {

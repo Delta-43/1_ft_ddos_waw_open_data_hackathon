@@ -6,7 +6,7 @@ import { SourceLabel } from './SourceLabel';
 export function SourcesDrawer({ sources, id, hidden }: { sources: Source[]; id?: string; hidden?: boolean }) {
   const credits = [...new Map(sources.map(source => [source.attribution, source])).values()];
   return (
-    <section className="flex flex-col gap-2 px-4 py-3 rounded-moon-s-md bg-gohan text-bulma ring-1 ring-inset ring-beerus [&[hidden]]:hidden" id={id} aria-label="Data sources" hidden={hidden}>
+    <section className="sources-drawer flex flex-col gap-2 px-4 py-3 rounded-moon-s-md bg-gohan text-bulma ring-1 ring-inset ring-beerus [&[hidden]]:hidden" id={id} aria-label="Data sources" hidden={hidden}>
       <h3 className="mt-1 text-moon-14 font-semibold">Where does this data come from?</h3>
       <ul className="grid gap-2">
         {sources.map(source => (

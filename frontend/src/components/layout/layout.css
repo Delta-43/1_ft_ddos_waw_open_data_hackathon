@@ -1,0 +1,311 @@
+/* Page chrome over the map: quiet until active, one motion system
+   (UI 0.3s ease-in-out; large moves 0.6s cubic-bezier(.6,0,.05,1)). No backdrop-filter:
+   it re-blurs on every map frame. */
+:root {
+  --ease-signature: cubic-bezier(0.6, 0, 0.05, 1);
+  --top-chrome-height: 5.25rem;
+  --sources-bar-height: 3rem;
+}
+
+/* ---------- Intro: black curtain, then the city ---------- */
+.intro-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+  transition: opacity 0.6s var(--ease-signature);
+}
+.intro-curtain--lifting { opacity: 0; pointer-events: none; }
+
+/* UI fades in last, 80 ms apart: top bar → panels → hints → sources → assistant. */
+.app-chrome > * {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+}
+.app-chrome--in > * { opacity: 1; pointer-events: auto; }
+.app-chrome--in > :nth-child(2) { transition-delay: 80ms; }
+.app-chrome--in > :nth-child(3) { transition-delay: 160ms; }
+.app-chrome--in > :nth-child(4) { transition-delay: 240ms; }
+.app-chrome--in > :nth-child(5) { transition-delay: 320ms; }
+
+/* ---------- Top bar + notice ---------- */
+.top-chrome {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 3.25rem;
+  padding: 0 1.5rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--rim-faint);
+}
+
+.top-bar__title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+.top-bar__spacer { flex: 1; }
+
+.top-bar__sources {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border-radius: 1.125rem;
+  border: 1px solid var(--rim-faint);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+.top-bar__sources:hover { border-color: var(--rim); color: var(--text); }
+
+.notice-banner {
+  margin: 0;
+  padding: 0.45rem 1.5rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+  background: var(--panel-raised);
+  border-bottom: 1px solid var(--rim-faint);
+}
+
+/* Map controls sit below the top chrome (doubled class beats maplibre-gl.css, which may load later). */
+.maplibregl-map .maplibregl-ctrl-top-right { top: calc(var(--top-chrome-height) + 0.5rem); }
+
+/* ---------- Hint pills on a blurred, slowly sliding gradient halo ---------- */
+.hint-stack {
+  position: fixed;
+  left: 50%;
+  top: calc(var(--top-chrome-height) + 1rem);
+  z-index: 15;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.hint-pill {
+  position: relative;
+  margin: 0;
+  isolation: isolate;
+}
+.hint-pill::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: 30px;
+  background: linear-gradient(90deg, rgb(var(--piccolo)), rgb(var(--hit)), rgb(var(--goten)), rgb(var(--hit)), rgb(var(--piccolo))) 0 0 / 300% 100%;
+  filter: blur(15px);
+  opacity: 0.6;
+  animation: halo-slide 8s ease-in-out infinite;
+}
+.hint-pill__text {
+  display: block;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  background: var(--panel);
+  border: 1px solid var(--rim-faint);
+  font-size: 0.875rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+@keyframes halo-slide { 50% { background-position: 100% 0; } }
+
+/* ---------- The one moving, colourful element: "Find routes" ---------- */
+.gradient-ring-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 24px !important;
+  padding: 0.6rem 1.3rem !important;
+  color: var(--text) !important;
+  font-weight: 600;
+  background: transparent !important;
+}
+.gradient-ring-button::before {
+  content: '';
+  position: absolute;
+  inset: -150%;
+  z-index: -2;
+  background: conic-gradient(rgb(var(--piccolo)), rgb(var(--hit)), rgb(var(--goten)), rgb(var(--hit)), rgb(var(--piccolo)));
+  opacity: 0.75;
+  animation: ring-spin 5s linear infinite;
+  transition: opacity 0.3s ease-in-out;
+}
+.gradient-ring-button::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 23px;
+  background: var(--panel);
+}
+.gradient-ring-button:hover::before { opacity: 1; }
+.gradient-ring-button:disabled::before { animation-duration: 1.4s; }
+.gradient-ring-button:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
+
+@keyframes ring-spin { to { transform: rotate(1turn); } }
+
+/* ---------- Sources bar (replaces the old bottom banner) ---------- */
+.sources-bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 20;
+  height: calc(var(--sources-bar-height) + env(safe-area-inset-bottom));
+  padding: 0 1.5rem env(safe-area-inset-bottom);
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border-top: 1px solid var(--rim-faint);
+}
+.sources-bar .sources-strip { position: relative; flex: 1; padding-top: 0; border-top: 0; }
+.sources-bar .sources-strip__meta { display: none; }
+.sources-bar .sources-drawer {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.75rem);
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: 60vh;
+  overflow-y: auto;
+  animation: drawer-in 0.6s var(--ease-signature);
+}
+.sources-bar__empty { margin: 0; font-size: 0.8rem; color: var(--muted); }
+
+@keyframes drawer-in { from { opacity: 0; transform: translateY(0.75rem); } }
+
+
+/* ---------- "You are here" ---------- */
+.you-are-here {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgb(var(--goten));
+  box-shadow: 0 0 4px rgb(var(--goten) / 0.82), 0 0 12px rgb(var(--piccolo) / 0.65), 0 0 0 2px var(--panel);
+}
+
+@media (max-width: 700px) {
+  :root { --top-chrome-height: 6.25rem; }
+  .top-bar { padding: 0 1rem; gap: 0.6rem; height: 3rem; }
+  .top-bar__title { font-size: 0.8rem; letter-spacing: 0.28em; }
+  .notice-banner { padding: 0.35rem 1rem; font-size: 0.75rem; }
+  .sources-bar { padding-inline: 1rem; }
+  .hint-pill__text { white-space: normal; text-align: center; max-width: calc(100vw - 3rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-curtain { transition-duration: 0.3s; }
+  .hint-pill::before, .gradient-ring-button::before, .sources-bar .sources-drawer { animation: none; }
+}
+
+.app-chrome--in > .hint-stack { pointer-events: none; }
+
+/* ---------- Understood preferences in the nav bar (Language Explorer's filter tabs) ---------- */
+.top-bar__middle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.preference-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.25rem 0;
+}
+.preference-chips[aria-busy='true'] { opacity: 0.6; }
+
+.preference-chip {
+  flex: none;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 1rem;
+  border: 1px solid var(--rim-faint);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  white-space: nowrap;
+  transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+button.preference-chip { cursor: pointer; }
+button.preference-chip:hover { color: var(--text); border-color: var(--rim-hover); }
+.preference-chip[aria-pressed='true'],
+.preference-chip--static { color: var(--text); font-weight: 700; border-color: var(--rim-hover); }
+.preference-chip[aria-pressed='false'] { text-decoration: line-through; }
+.preference-chip:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
+.preference-chips__by { flex: none; font-size: 0.75rem; color: var(--muted); white-space: nowrap; margin-left: 0.25rem; }
+
+/* ---------- Bottom bar: one line, map credit first ---------- */
+.sources-bar { gap: 1.25rem; flex-wrap: nowrap; overflow: visible; }
+.map-credits { flex: none; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.map-credits a { color: var(--text); text-decoration: none; }
+.map-credits a:hover { color: var(--text); text-decoration: underline; }
+.sources-strip--bar .sources-strip__row { flex-wrap: nowrap; min-width: 0; }
+.sources-strip--bar .sources-strip__row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sources-strip--bar .sources-strip__toggle { flex: none; margin-left: auto; }
+
+/* ---------- Assistant: its own column, never on top of the results ---------- */
+.app-chrome .assistant { right: 1rem; bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
+.app-chrome .assistant__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 7rem);
+  background: var(--panel);
+  backdrop-filter: none;
+  border-color: var(--rim-faint);
+}
+.app-chrome .assistant__panel[hidden] { display: none; }
+.app-chrome .chat-history { flex: 1; min-height: 0; overflow-y: auto; }
+.chat-message--pending { color: var(--muted); font-style: italic; }
+/* While the assistant is open it takes the right-hand column. */
+.app-chrome--assistant-open .results__panel--stops { display: none; }
+
+@media (max-width: 700px) {
+  .top-bar { flex-wrap: wrap; height: auto; min-height: 3rem; padding-block: 0.4rem; }
+  .top-bar__middle { order: 3; flex-basis: 100%; justify-content: flex-start; }
+  body:has(.preference-chips) { --top-chrome-height: 9rem; }
+  .notice-banner { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sources-bar { gap: 0.75rem; }
+  .sources-strip--bar .sources-strip__row > span { display: none; }
+  .map-credits { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* On a phone the assistant replaces the results sheet while it is open. */
+  .app-chrome--assistant-open .results { display: none; }
+  /* Beats results.css's raised position for when the sheet is showing. */
+  .app-chrome.app-chrome--assistant-open:has(.results) .assistant { bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
+  /* The bottom bar already has a Sources button. */
+  .top-bar__sources { display: none; }
+  .app-chrome .assistant__panel { width: calc(100vw - 2rem); max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6rem); }
+}
+.sources-bar .sources-strip { min-width: 0; }
+.sources-strip--bar .sources-strip__row { overflow: hidden; }
+
+/* Before the first result there is no notice line, so the chrome is just the bar. */
+body:not(:has(.notice-banner)) { --top-chrome-height: 3.25rem; }

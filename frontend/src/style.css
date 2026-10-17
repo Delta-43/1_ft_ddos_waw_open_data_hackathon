@@ -10,18 +10,25 @@
 @layer base {
   :root.theme-moon-dark {
     --dm-sans: 'DM Sans Variable';
-    --banner-height: 5.5rem;
     color-scheme: dark;
+    /* Bridge for the component stylesheets (layout, results, preferences, provenance): their
+       variable names, Moon's values. */
+    --bg: rgb(var(--popo));
+    --panel: rgb(var(--goku));
+    --panel-raised: rgb(var(--gohan));
+    --rim: rgb(var(--bulma));
+    --rim-faint: rgb(var(--beerus));
+    --rim-hover: rgb(var(--trunks));
+    --text: rgb(var(--bulma));
+    --muted: rgb(var(--trunks));
+    --accent: rgb(var(--piccolo));
+    --ink: rgb(var(--goku));
   }
 
   html, body, #root { height: 100%; }
 
   body {
     @apply bg-goku text-bulma font-dm-sans text-moon-14 antialiased overflow-hidden;
-  }
-
-  @media (max-width: 600px) {
-    :root.theme-moon-dark { --banner-height: 4.75rem; }
   }
 }
 
@@ -60,15 +67,6 @@
   .reset-view-button {
     @apply text-bulma text-moon-18 leading-none;
   }
-
-  /* Keep attribution visible and clear of the banner. */
-  .maplibregl-ctrl-bottom-right {
-    bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
-  }
-  .maplibregl-ctrl.maplibregl-ctrl-attrib {
-    @apply bg-goku/75 text-trunks text-moon-10;
-  }
-  .maplibregl-ctrl-attrib a { @apply text-bulma; }
 
   /* ---------- Pin popup (DOM built in src/markers/pins.ts) ---------- */
   .pin-popup .maplibregl-popup-content {
