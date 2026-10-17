@@ -1,7 +1,9 @@
+from app.data.geocode import Geocoder
 from app.data.warsaw_open_data import (
     normalise_aed,
     normalise_air_quality,
     normalise_events,
+    normalise_sports_fields,
     normalise_toilets,
 )
 
@@ -70,3 +72,38 @@ def test_normalise_events_drops_records_without_map_coordinates():
     assert len(places) == 1
     assert places[0]["name"] == "OCH-Teatr"
     assert places[0]["starts_at"] == "2027-01-29T19:00:00+01"
+
+
+SAMPLE_SPORTS_FIELD = {
+    "Dzielnica": "Zoliborz",
+    "Adres obiektu": "ul. Elblaska 51",
+    "Nazwa placowki oswiatowej": "LXIV Liceum",
+    "Typ obiektu": "boiska uniwersalne",
+    "Rodzaj nawierzchni": "poliuretan",
+}
+
+SAMPLE_SPORTS_FIELD_UNGEOCODABLE = {
+    "Dzielnica": "Nowhere",
+    "Adres obiektu": "not a real address",
+    "Nazwa placowki oswiatowej": "Nonexistent School",
+}
+
+
+def test_normalise_sports_fields_uses_geocoded_coordinates():
+    geocoder = Geocoder(cache={"ul. Elblaska 51, Zoliborz, Warszawa, Polska": {"longitude": 20.98, "latitude": 52.26}})
+
+    places = normalise_sports_fields([SAMPLE_SPORTS_FIELD], geocoder)
+
+    assert len(places) == 1
+    assert places[0]["id"] == "waw:sports-field/0"
+    assert places[0]["longitude"] == 20.98
+    assert places[0]["latitude"] == 52.26
+    assert places[0]["coordinate_source"] == "osm_nominatim"
+
+
+def test_normalise_sports_fields_drops_records_that_cannot_be_geocoded():
+    geocoder = Geocoder(cache={"not a real address, Nowhere, Warszawa, Polska": None})
+
+    places = normalise_sports_fields([SAMPLE_SPORTS_FIELD_UNGEOCODABLE], geocoder)
+
+    assert places == []

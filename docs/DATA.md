@@ -9,6 +9,7 @@ Sonia owns this catalogue; Delta approves service integrations.
 | Warsaw open data: AED locations | https://dane.um.warszawa.pl/api/action/get_scb_lokalizacja_defibrylatorow | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 710 defibrillators city-wide | real | Sonia |
 | Warsaw open data: public toilets | https://dane.um.warszawa.pl/api/action/get_m_toalety | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 695 facilities city-wide, source has no stable id (synthesised from array index) | real | Sonia |
 | Warsaw open data: events calendar | https://dane.um.warszawa.pl/api/action/get_bmm_kalendarz_wydarzen | CC-BY; Urząd m.st. Warszawy | 2026-10-17T13:57:14+0200 | 652 raw events, 352 kept with a resolvable map point (300 dropped: no coordinates, not guessed) | real | Sonia |
+| Warsaw open data: open sports fields | https://dane.um.warszawa.pl/api/action/get_be_otwarte_boiska + OSM Nominatim geocoding | CC-BY (city data) + ODbL (OSM geocoded coordinates) | Code ready; live geocoding blocked so far, see note below | 1227 raw records, 308 unique addresses to geocode | blocked | Sonia |
 
 For each import, retain source identifiers, normalise coordinates, and record missing fields.
 Do not commit personal calendars, habits, tokens, or a real user's location history.
@@ -28,7 +29,7 @@ Full catalogue, with the actual action endpoint and whether it was fetched for t
 | AED Locations | Health | `get_scb_lokalizacja_defibrylatorow` | daily | **Fetched** — safety amenity for place cards |
 | Database of toilets available to residents | Environment | `get_m_toalety` | weekly | **Fetched** — practical amenity for a walking outing |
 | Events Calendar | Events | `get_bmm_kalendarz_wydarzen` | 2 hours | **Fetched** — cultural events, relevant to a museum outing; records without a map point are dropped, not guessed |
-| Open sports fields | Sport | `get_be_otwarte_boiska` | weekly | Catalogued only — resource has **no coordinates**, only a street address; would need geocoding we have not built. Not a museum/park fit anyway |
+| Open sports fields | Sport | `get_be_otwarte_boiska` | weekly | **Geocoding built, live run blocked** — resource has no coordinates, only a street address (1227 records, 308 unique addresses). `backend/app/data/geocode.py` geocodes via OSM Nominatim (1 req/s, cached, single-threaded, per Nominatim's usage policy). See the geocoding note below |
 | Na żądanie (tourist routes) | Active residents | `get_sbt_trasy_turystyczne` | on request | Catalogued only — sounds relevant (tourist routes) but not inspected this pass; candidate for a follow-up issue |
 | Weather | Environment | `get_zom_pogoda` | 10 minutes | Catalogued only — context data, lower priority than air quality for the demo |
 | Public Transport Stop Locations | Public transport | `get_ztm_przystanki_komunikacji_miejskiej` | daily | Catalogued only — **Delta's routing/transit territory** (BE-01), not fetched here |
@@ -53,8 +54,15 @@ Normalisation code: `backend/app/data/warsaw_open_data.py`. Committed sample (8 
 Known limitations, recorded rather than hidden:
 - Toilets have no native id in the source; `waw:toilet/<index>` is a synthetic id tied to fetch order, not a stable upstream identifier — do not treat it as durable across refetches.
 - 300 of 652 events have no `map.features` entry (no coordinates); they are dropped by `normalise_events`, not placed at a guessed location.
-- Open sports fields has no coordinates at all in the resource and was not integrated for that reason.
 - Rate limits for this API are undocumented; `fetch_action` uses bounded retries (3 attempts, 3s backoff) and the script sleeps 1s between the four datasets as a courtesy, not a confirmed requirement.
+
+### Open sports fields: geocoding address → coordinates
+
+The sports-fields resource has street addresses (`Adres obiektu`, `Dzielnica`) but no coordinates, unlike every other dataset fetched here. `backend/app/data/geocode.py` adds a small, cache-backed `Geocoder` that calls OSM Nominatim (`https://nominatim.openstreetmap.org/search`), and `normalise_sports_fields()` in `warsaw_open_data.py` geocodes each of the 308 distinct (address, district) pairs once and shares the result across every record at that address (a school often hosts several pitch types).
+
+This follows Nominatim's usage policy (https://operations.osmfoundation.org/policies/nominatim/): single-threaded, max 1 request/second, a real identifying User-Agent, and mandatory result caching. It is excluded from `fetch_and_normalise_all()` by default (slow, ~5+ minutes for a full run) — call it explicitly or pass `--sports-fields` to the script.
+
+**Live status as of 2026-10-17T14:21+0200: blocked, not fetched.** Every request from this development sandbox's network got HTTP 429 from Nominatim, including a single isolated request tried 20+ seconds after the first — this is the shared/sandboxed egress IP already being over Nominatim's public rate limit from aggregate traffic, not something our 1 req/s client-side pacing controls. The first implementation of the geocoder had a real bug here: it treated a 429 as "address not found" and cached that as a permanent miss, which produced a dishonest 56/1227 "success" rate that silently mislabeled real addresses as nonexistent. That is fixed — `geocode()` now retries 429/5xx with backoff and raises `GeocodingUnavailable` (not a cached "not found") if Nominatim never gives a definitive answer; `normalise_sports_fields()` catches that, stops cleanly, and keeps whatever was already geocoded. Verified by the offline tests in `backend/tests/test_geocode.py` and `backend/tests/test_warsaw_open_data.py` (mocked HTTP, no real network). A real committed sample still needs a run from a network Nominatim doesn't throttle — not completed in this PR.
 
 ## Fresh event-time data
 
