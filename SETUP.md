@@ -22,11 +22,11 @@ On Windows outside WSL, use `py -3.12 --version`. If npm's global installation r
 
 ## Repository and issue
 
-Delta confirms OWNER/REPO and whether starter code is permitted. Replace placeholders before executing:
+The repository is `Delta-43/1_ft_ddos_waw_open_data_hackathon` (private). The organisers approved using the starter.
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
-cd REPO
+git clone https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon.git
+cd 1_ft_ddos_waw_open_data_hackathon
 git switch -c YOURNAME/ISSUE-short-task
 ```
 
@@ -35,8 +35,7 @@ No private filesystem paths, SSH access, or custom tools are needed. Create issu
 
 ## Saturday: fresh build
 
-Do not import earlier application code or snapshots. Confirm organiser rules with Delta first.
-The existing scaffold demonstrates file layout and a contract only. If a clean event repository is required, recreate the application there during the event.
+Build on the starter in this repository. Do not import earlier application code or snapshots.
 
 Backend pair: create `backend/app`, `backend/tests`, and a virtual environment; install FastAPI, Uvicorn, Pydantic, HTTPX, Pytest, jsonschema and Ruff.
 Record dependencies in backend/requirements.txt. Implement health and mocked route endpoints against the agreed contract before adding sources.
