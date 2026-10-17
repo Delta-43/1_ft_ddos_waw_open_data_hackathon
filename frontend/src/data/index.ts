@@ -3,7 +3,7 @@ import type { PinProvider } from './types';
 import { warsawOpenDataProvider } from './warsawOpenData';
 
 /** Register new providers here; they are loaded by `loadPins`. */
-export const providers: PinProvider[] = [warsawOpenDataProvider];
+const providers: PinProvider[] = [warsawOpenDataProvider];
 
 /**
  * Fetches pins from every provider. A failing provider is logged and skipped,

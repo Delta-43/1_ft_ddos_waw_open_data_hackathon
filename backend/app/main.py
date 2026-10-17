@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import FastAPI, HTTPException, Query
 
 from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest
+from app.data.catalogue import places_response as load_places_response
 from app.services import planner
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,8 +37,7 @@ def places(
     ] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ):
-    # Fixture-backed until BE-02 replaces it with imported data.
-    data = load_fixture("places-response.json")
+    data = load_places_response()
     items = data["places"]
     if category:
         items = [p for p in items if p["category"] == category]

@@ -27,7 +27,7 @@ The starter fixture is not a museum catalogue or navigable street route.
 - 26 named places preserved: 12 parks, 6 museums, 3 galleries, 5 named gardens. Each keeps its OSM id (`osm:<type>/<id>`), name, longitude/latitude (node coordinates, or way centroid via Overpass `out center`), category, `opening_hours` (left `null` when the tag is absent — unknown stays unknown), and `website` when tagged.
 - Committed sample: `data/fixtures/osm-places-sample.json` (26 records, ~10 KB). Full raw response is cached at `data/local/osm_places_raw.json` (gitignored, event-time only, not committed).
 - Attribution required on any display: "© OpenStreetMap contributors" with a link to https://www.openstreetmap.org/copyright, per ODbL.
-- Not yet integrated into `/api/routes` or a places endpoint — that is BE-02, which depends on this catalogue entry.
+- Integrated into `GET /api/places` (BE-02): `backend/app/data/catalogue.py` maps these 26 places to the contract's `Place` shape. OSM's `museum` category maps to the contract's `museum`; `park`/`garden` both map to `park`; `gallery` maps to `generic` (the contract's `PlaceCategory` enum is only museum/landmark/park/generic, and a gallery isn't a clean fit for museum or landmark without the contract owners agreeing to widen the enum). `address` is `null` for every place — the OSM query this sample used didn't request `addr:*` tags. Response `mode` is `cached` (a real fetch stored at event time, not live per-request and not a mock). Not yet integrated into `/api/routes`, which is BE-01.
 
 ## Warsaw open data portal catalogue (DATA-04)
 
