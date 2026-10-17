@@ -109,7 +109,7 @@
 .preferences-form .summary { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
 .preferences-form .summary li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.45rem 0.75rem; border: 1px solid var(--rim-faint); background: rgba(127, 180, 230, 0.1); font-size: 0.95rem; }
 .preferences-form .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.preferences-form .summary li.is-off > span { opacity: 0.5; text-decoration: line-through; }
+.preferences-form .summary li.is-off > span { opacity: 0.5; }
 
 /* Toggle switch: a button with role="switch". The knob slides right when on. */
 .preferences-form button.switch {
