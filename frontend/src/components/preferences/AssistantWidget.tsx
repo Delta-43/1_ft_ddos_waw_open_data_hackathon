@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { requestRoutes, type RouteResponse } from '../../api/routes';
 import { PlaceCardList } from '../places/PlaceCardList';
 import { DataModeBadge } from '../provenance/DataModeBadge';
+import { SourcesStrip } from '../provenance/SourcesStrip';
 import { PreferencesForm, type RequestStatus } from './PreferencesForm';
 import './preferences.css';
 
@@ -47,7 +48,8 @@ export function AssistantWidget() {
         {result && route && (
           <div className="assistant__results">
             <p className="assistant__notice"><DataModeBadge mode={result.mode} /> {result.notice}</p>
-            <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} />
+            <PlaceCardList places={route.places} mode={result.mode} routeName={route.name} sources={result.sources} stops={route.stops} />
+            <SourcesStrip sources={result.sources} mode={result.mode} generatedAt={result.generated_at} />
           </div>
         )}
       </section>
