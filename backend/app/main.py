@@ -5,9 +5,11 @@ from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
 
+from app.adapters.env import load_env
 from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest
 from app.services import planner
 
+load_env()
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "data/fixtures"
 app = FastAPI(title="Warsaw 2076")
