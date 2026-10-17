@@ -1,0 +1,56 @@
+/* Uses the shared theme variables when present, with fallbacks for the starter page. */
+.place-card-list__heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted, #8aa4c4);
+}
+
+.place-card-list__items {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-card-list__empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted, #8aa4c4);
+}
+
+.place-card {
+  padding: 0.75rem 1rem;
+  background: var(--panel, rgba(11, 18, 32, 0.82));
+  border: 1px solid var(--rim-faint, rgba(127, 180, 230, 0.35));
+  border-radius: 2px;
+  color: var(--text, #dce8f5);
+}
+
+.place-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.place-card__name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.place-card__details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+}
+
+.place-card__details dt { color: var(--muted, #8aa4c4); }
+.place-card__details dd { margin: 0; font-variant-numeric: tabular-nums; }

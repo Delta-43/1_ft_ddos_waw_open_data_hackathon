@@ -2,14 +2,14 @@
 
 Start here with AGENTS.md, SETUP.md, PLAN.md, and your team/<name>/PROMPT.md.
 These instructions work with any coding agent or a normal editor. No personal skills, paid agent subscription, private server, or owner's tool bundle is required.
-Build code and fetch data from scratch on Saturday. Existing starter files are reference material, not work to claim as built during the event.
+The organisers approved building on this starter (17 October). Fetch data fresh during the event. Do not claim starter files as event work, and do not import earlier projects.
 
 ## Agreed stack
 
 | Layer | Choice | Responsibility / status |
 | --- | --- | --- |
 | UI | React, TypeScript, Vite | Alban + Ola + Aryna; starter reference exists |
-| Map | MapLibre GL JS | Alban adds during the event; not installed in starter |
+| Map | MapLibre GL JS 6.11.2, OpenFreeMap tiles | Alban; added in PR #4. Tiles need network access |
 | Styling | Plain CSS initially; Tailwind only if Alban chooses it | Avoid adding tooling before the core flow |
 | API | Python 3.12, FastAPI, Pydantic, Uvicorn | Delta + Sonia |
 | Storage | SQLite through Python sqlite3 | Backend-local file; no database server or network port; not implemented in starter |
@@ -37,6 +37,8 @@ For a small place catalogue, structured tags and filters come before embeddings/
 
 No teammate needs access to Delta's home directory, SSH keys, service users, private servers, account-specific skills, or admin tools.
 Never share agent or GitHub credentials. Keep provider API keys on the backend; never put secrets in VITE_ variables.
+
+Privacy: User data stays on the user's device. The backend keeps no user profiles, preferences or trip history; route requests are stateless. A future version sends personal context only per request, with a short-lived scoped token. See IDEA.md, Privacy and security.
 
 ## Data sources: priority and readiness
 
