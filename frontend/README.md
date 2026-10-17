@@ -82,7 +82,7 @@ The map shows pins from the backend, all over Warsaw:
 | Air quality stations, defibrillators (AED), public toilets, cultural events | `GET /api/layers/{air_quality,aed,toilets,events}` (GeoJSON) | Warsaw open data, dane.um.warszawa.pl (CC BY) |
 
 - `src/data/places.ts` and `src/data/cityLayers.ts` request the whole Warsaw bounding box at each endpoint's maximum limit (100 places, 500 per layer), through the relative `/api` path that Vite proxies to the backend. More data in the backend's store (e.g. the full Warsaw cache in `data/local`) appears without frontend changes.
-- Every popup shows the data mode as a badge ("Real data, fetched at event time", "Cached open data · sample subset"; "sample subset" when the source's `method` says so), plus the source name and retrieval time. The map's attribution line credits each source; the API's credit text is escaped before MapLibre renders it as HTML.
+- Every popup shows the data mode as a badge ("Real data, fetched at event time", "Cached open data · sample subset"; "sample subset" when the source's `method` says so), plus the source name and retrieval time. The bottom bar's credit line names each pin source (see Attribution).
 - Air-quality popups say how current the reading is, using the backend's `properties.freshness` verdict (30-minute rule, `backend/app/services/freshness.py`): "Cached reading, last updated 13:00" or "Live reading, updated HH:MM". The map never calls a reading live on its own; without a verdict it only shows "Last updated …".
 - If the backend is unreachable, the map still works without pins; each failed provider is logged.
 - Today the backend holds the committed samples: 26 OSM places around Łazienki/Ujazdów and 8 features per city layer.
@@ -107,4 +107,9 @@ In development, the map instance is exposed as `window.warsawMap` for the browse
 
 ## Attribution
 
-The credits "OpenFreeMap © OpenMapTiles Data from OpenStreetMap" come from the tile source, and the map always shows them, uncollapsed. Keep them visible: OSM data is under the ODbL.
+The bottom bar (`components/provenance/MapCredits.tsx`) always shows the credits, whole, on desktop and mobile:
+
+- Basemap: "OpenFreeMap © OpenMapTiles Data from OpenStreetMap" (OSM data is under the ODbL). This also covers the OpenStreetMap-based place pins.
+- Every other pin source: its API `attribution`, shortened to a linked name plus licence, e.g. "Urząd m.st. Warszawy (CC BY)" for Warsaw open data. `markers/pins.ts` publishes the credits of the pins on the map (`markers/credits.ts`); MapCredits subscribes to them.
+
+The map has no MapLibre attribution control, so keep this line visible and unclipped.
