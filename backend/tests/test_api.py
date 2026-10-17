@@ -85,10 +85,13 @@ def test_places_match_contract_and_filter():
 
 
 def test_places_bbox_filter():
-    bbox = "21.02,52.23,21.03,52.24"
+    # Must overlap the real OSM demo-area sample (DATA-01), which covers
+    # roughly lon 21.022-21.046, lat 52.207-52.225 - see docs/DATA.md.
+    bbox = "21.02,52.21,21.03,52.22"
     data = client.get("/api/places", params={"bbox": bbox}).json()
     assert data["places"]
     assert all(21.02 <= p["longitude"] <= 21.03 for p in data["places"])
+    assert all(52.21 <= p["latitude"] <= 52.22 for p in data["places"])
 
 
 @pytest.mark.parametrize(
