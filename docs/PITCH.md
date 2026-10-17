@@ -20,6 +20,7 @@ Feature work stops at submission minus five hours. See PLAN.md for the absolute 
 6. State what works, what is mocked, and the next step.
 7. Privacy: personal data stays on the user's device and is shared per request with a scoped token. Present this as the planned design; the demo stores no user data.
 8. Optional: milestones and achievements as the engagement roadmap, only as a labelled mock-up.
+9. Optional roadmap: "then and now" cultural layer (curated, labelled), simulated social walking, and the accessibility and cool-route modes. Present them as next steps, not working features. Cite trends as direction only and verify every figure first (IDEA.md, Research evidence).
 
 The submission deadline is confirmed (11:00 Sunday). Confirm pitch duration and format with organisers. Rehearse to that limit.
 Save editable slides, exported presentation, demo recording, and screenshots under an agreed team location.

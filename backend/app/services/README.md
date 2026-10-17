@@ -47,3 +47,14 @@ MCP_URL=http://<tailscale-ip>:8001/mcp python scripts/mcp_client_demo.py "a quie
 Endpoint `http://<tailscale-ip>:8001/mcp`, header `Authorization: Bearer <MCP_TOKEN>`. Bind to the Tailscale address only;
 never expose it publicly. Add other Host names (for example the MagicDNS name) with `MCP_ALLOWED_HOSTS`.
 Requests are stateless and nothing about the caller is stored.
+
+## Opening hours (opening_hours.py)
+
+`opening_hours.status(text, when)` evaluates raw OSM text to `open`, `closed` or `unknown`. It supports weekday lists and ranges,
+`HH:MM-HH:MM` ranges, `off`/`closed`, `24/7` and `;` rules (later rules override earlier ones). Anything else (public holidays,
+months, sunrise, a bare day list) is `unknown`: we do not guess.
+
+The planner uses it in two places, with Warsaw time from `planner.clock()` (tests freeze it): museums that are `closed` 30 minutes
+after departure are left out of the candidate pool (unknown hours stay; if none would remain, all stay), and each route's
+explanation gets a sentence for museums `closed` at their estimated arrival or with unknown hours. Known limit: only the first
+arrival is used to filter the pool, so a later stop can still be flagged closed. No contract field was added.

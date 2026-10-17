@@ -1,0 +1,51 @@
+# Backend stack: REST API (8000) and, with the `mcp` profile, the MCP server (8001).
+#
+#   docker compose up -d --build                  start the API
+#   docker compose --profile mcp up -d --build    start the API and MCP
+#   docker compose ps | logs -f | down            inspect, follow, stop (data volume is kept)
+#   docker compose down -v                        stop and delete the data volume
+#
+# Ports are published only on BIND_ADDR (default: this machine). On a server, set BIND_ADDR in
+# .env to its Tailscale address (`tailscale ip -4`); never to 0.0.0.0 or a public address.
+x-backend: &backend
+  build: .
+  image: warsaw2076-backend:local
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    ROUTING_SOURCE: ${ROUTING_SOURCE:-live}
+  volumes:
+    - city-data:/app/data/local
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *backend
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:8000:8000"
+
+  mcp:
+    <<: *backend
+    profiles: [mcp]
+    # Refuses to start without MCP_TOKEN (set it in .env). Hosts: the bind address plus any
+    # extra names in MCP_ALLOWED_HOSTS, for example the MagicDNS name with :8001.
+    command: ["python", "-m", "app.adapters.mcp_server", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      ROUTING_SOURCE: ${ROUTING_SOURCE:-live}
+      MCP_ALLOWED_HOSTS: ${BIND_ADDR:-127.0.0.1}:8001,${MCP_ALLOWED_HOSTS:-}
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8001), 3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  city-data:
