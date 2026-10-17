@@ -9,7 +9,9 @@
 | 2026-10-17 | Organisers approved building on the starter | Delta | Confirmed at kickoff |
 | 2026-10-17 | GitHub bootstrap done: private repo, five collaborators, branch protection (PR, 1 approval, both checks), squash-only, CODEOWNERS, labels, issues #3 and #5–#29 | Delta | BOOT-01 |
 | 2026-10-17 | Merge rule kept as GitHub allows: Delta may override the approval requirement as owner; everyone else, including Alban, needs one approval | Delta | Personal repositories cannot exempt named collaborators |
+| 2026-10-17 | Merged PR #4 (FE-01 map groundwork) with Delta's override; MapLibre dependency and OpenFreeMap tiles approved | Delta | Unblock frontend work; CI green |
 | 2026-10-17 | Optional 10-minute git autosync script (`scripts/git-autosync.sh`); fast-forwards `main` only | Delta | Keep checkouts current without touching feature branches |
+| 2026-10-17 (UTC+02:00) | Basemap: MapLibre GL JS 6.11.2 with OpenFreeMap vector tiles (OpenMapTiles schema), custom dark style; no key or account | Alban | Free, keyless, real building heights; attribution (OpenFreeMap, OpenMapTiles, OpenStreetMap/ODbL) always visible. Online tiles: keep a recording fallback |
 
 Record contract changes, provider choice, scope cuts, and any grace-period authorisation here.
 

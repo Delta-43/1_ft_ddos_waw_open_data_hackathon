@@ -9,7 +9,7 @@ The organisers approved building on this starter (17 October). Fetch data fresh 
 | Layer | Choice | Responsibility / status |
 | --- | --- | --- |
 | UI | React, TypeScript, Vite | Alban + Ola + Aryna; starter reference exists |
-| Map | MapLibre GL JS | Alban adds during the event; not installed in starter |
+| Map | MapLibre GL JS 6.11.2, OpenFreeMap tiles | Alban; added in PR #4. Tiles need network access |
 | Styling | Plain CSS initially; Tailwind only if Alban chooses it | Avoid adding tooling before the core flow |
 | API | Python 3.12, FastAPI, Pydantic, Uvicorn | Delta + Sonia |
 | Storage | SQLite through Python sqlite3 | Backend-local file; no database server or network port; not implemented in starter |

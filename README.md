@@ -31,4 +31,4 @@ Privacy: User data stays on the user's device. The backend keeps no user profile
 | `team/` | Agent prompts and short handover notes |
 | `.github/` | CI and contribution templates |
 
-The starter proves connectivity using an explicitly mocked route. It does not implement a map, street routing, AI, SQLite persistence, or MCP yet.
+The starter proves connectivity using an explicitly mocked route. The map (MapLibre with OpenFreeMap tiles) is in place; street routing, AI, SQLite persistence and MCP are not implemented yet.
