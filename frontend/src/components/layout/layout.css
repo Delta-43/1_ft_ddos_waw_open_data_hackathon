@@ -258,6 +258,10 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 
 /* ---------- Assistant: its own column, never on top of the results ---------- */
 .app-chrome .assistant { right: 1rem; bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
+/* The wrapper is as wide as the panel plus its inset: let clicks through to the map controls, keep them on the panel and buttons (#45). */
+.app-chrome--in > .assistant { pointer-events: none; }
+.app-chrome--in > .assistant .assistant__panel,
+.app-chrome--in > .assistant .assistant__row > * { pointer-events: auto; }
 .app-chrome .assistant__panel {
   display: flex;
   flex-direction: column;
@@ -281,7 +285,9 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
   .app-chrome--assistant-open .results { display: none; }
   /* Beats results.css's raised position for when the sheet is showing. */
   .app-chrome.app-chrome--assistant-open:has(.results) .assistant { bottom: calc(var(--sources-bar-height) + 0.75rem + env(safe-area-inset-bottom)); }
-  .app-chrome .assistant__panel { width: calc(100vw - 2rem); max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6rem); }
+  /* Leave the right edge to the map controls (zoom, compass, reset, history): MapLibre's 29 px column
+     sits 10 px from the edge, so the panel stops 3.25 rem short of it (#45). */
+  .app-chrome .assistant__panel { width: calc(100vw - 4.25rem); margin-right: 2.25rem; max-height: calc(100dvh - var(--top-chrome-height) - var(--sources-bar-height) - 6rem); }
 }
 
 

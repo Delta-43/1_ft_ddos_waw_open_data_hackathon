@@ -1,11 +1,11 @@
 # Handover
 
-- Current issue: D0 of #91 (delegated to me): the overlay UI goes back to my dark design
-- Branch / PR: #89 (`aryna/revert-moon-restyle`): reverts only #82 (Moon), keeps #74, #88 and #92; the Sources drawer is opaque at every size; DECISIONS.md 23:45 row; Start_Here note
-- Last verified result: `npm run build` passes. Headless Chrome on desktop 1440×900 and mobile 390×844: dark UI, one Sources button, the drawer opens and is opaque, floating credits readable, no horizontal scroll, no console errors
-- Blocker: none. Needs Ola's or Delta's review (Alban is on a break)
-- Next action: #45 (attribution hidden by the assistant panel); the Sources entry for estimated building heights once D4's data source exists
-- Open items: the route-focus corridor (D4) belongs to Delta and his agent; my abandoned local commit e0b7417 was not pushed
-- Updated at (include timezone): 2026-10-17 23:35 +0200 (Europe/Warsaw)
+- Current issue: #45 (attribution and zoom visible with the assistant open), from my part of #91. #89 merged at 23:41: the dark design is on main
+- Branch / PR: `aryna/45-attribution-zoom-visible`: on phones the assistant panel leaves the right edge to the map controls; the assistant wrapper lets clicks through; dead `assistant__panel--wide` CSS removed. #94 (route focus, Delta-style) is open for Delta to decide (conflicts with D4)
+- Last verified result: `pnpm run check` and `pnpm run build` pass. Headless Chrome 1440×900, 1024×768, 390×844, 360×740 with the assistant open before and after a search: zoom, compass and every credit link are on top and clickable; assistant controls still clickable
+- Blocker: none. Ola owns #45 on paper, so Ola and Delta review
+- Next action: next #91 item for me (panels, route comparison, place cards with the three skills); Sources entry for estimated building heights once D4's data source exists
+- Open items: #94 needs Delta's decision; it was built on Moon, so after #89 it needs a small `places.css` update
+- Updated at (include timezone): 2026-10-18 00:45 +0200 (Europe/Warsaw)
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
