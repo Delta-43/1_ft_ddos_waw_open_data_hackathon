@@ -112,7 +112,7 @@ function contains({ polygons, boxes }: Item, [x, y]: [number, number]): boolean 
 
 const cellKey = (x: number, y: number) => `${Math.floor(x / CELL)}:${Math.floor(y / CELL)}`;
 
-export interface OutlineEvidence {
+interface OutlineEvidence {
   height: number;
   /** Footprint area (square degrees), from its largest tile piece. */
   area: number;
@@ -190,32 +190,9 @@ function* outlineEvidenceSteps(
   return evidence;
 }
 
-/** Per ground-based building: what sits inside it, among the loaded features. */
-export function collectOutlineEvidence(
-  features: GeoJSONFeature[],
-  skip: ReadonlySet<string | number> = new Set(),
-): globalThis.Map<string | number, OutlineEvidence> {
-  const steps = outlineEvidenceSteps(features, skip);
-  let step = steps.next();
-  while (!step.done) step = steps.next();
-  return step.value;
-}
-
 function isUnflaggedOutline({ height, area, covered, tallest, raised }: OutlineEvidence): boolean {
   const reachesTop = Math.abs(tallest - height) <= TOLERANCE_M;
   return raised > 0 && reachesTop && covered >= MIN_PART_COVER * area;
-}
-
-/** Returns ids of unflagged outlines among the loaded features; ids in `skip` are not re-checked. */
-export function findUnflaggedOutlines(
-  features: GeoJSONFeature[],
-  skip: ReadonlySet<string | number> = new Set(),
-): Set<string | number> {
-  const outlines = new Set<string | number>();
-  for (const [id, evidence] of collectOutlineEvidence(features, skip)) {
-    if (isUnflaggedOutline(evidence)) outlines.add(id);
-  }
-  return outlines;
 }
 
 /** Main-thread time per slice; well under one 60 fps frame (16.7 ms). */
