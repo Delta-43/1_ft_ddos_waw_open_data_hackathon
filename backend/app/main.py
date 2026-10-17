@@ -1,4 +1,4 @@
-"""API starter for contract 1.0. Responses are labelled fixtures, not navigable routes."""
+"""API for contract 1.0. Routes come from app.services.planner; places are still a fixture (BE-02)."""
 import json
 from pathlib import Path
 from typing import Annotated
@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import FastAPI, HTTPException, Query
 
 from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest
+from app.services import planner
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "data/fixtures"
@@ -23,9 +24,8 @@ def health():
 
 @app.post("/api/routes")
 def routes(request: RouteRequest):
-    # Replace with shared services (BE-01); MCP must call those same services.
-    # The request is not stored or logged.
-    return load_fixture("route-response.json")
+    # Shared with MCP: both call planner.plan. The request is not stored or logged.
+    return planner.plan(request)
 
 
 @app.get("/api/places")
