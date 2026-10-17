@@ -119,3 +119,4 @@
 .sources-drawer__meta { margin: 0; font-size: 0.75rem; color: var(--muted, #9aa0a6); font-variant-numeric: tabular-nums; }
 .sources-drawer a { color: var(--rim, #8ab4f8); }
 .sources-drawer a:hover { color: #ffffff; }
+.sources-drawer__notice { margin: 0; font-size: 0.8rem; line-height: 1.45; color: var(--text, #e8eaed); padding-bottom: 0.5rem; border-bottom: 1px solid var(--rim-faint, #3c4043); }

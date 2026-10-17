@@ -132,3 +132,15 @@
   /* Keep the assistant button above the sheet. */
   .app-chrome:has(.results) .assistant { bottom: calc(44dvh + var(--sources-bar-height) + 0.75rem); }
 }
+
+/* The response notice: quiet, but always visible with the routes. */
+.route-comparison__notice {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--rim-faint);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+}

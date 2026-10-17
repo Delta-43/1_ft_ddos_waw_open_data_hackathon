@@ -14,10 +14,12 @@ interface SourcesStripProps {
   onOpenChange?: (open: boolean) => void;
   /** "bar": one line for the bottom bar: a count of sources, no mode badge (the top bar shows it). */
   variant?: 'panel' | 'bar';
+  /** The response notice, repeated at the top of the drawer. */
+  notice?: string;
 }
 
 /** Credits line for the sources on screen, with a toggle that opens the full Sources drawer. */
-export function SourcesStrip({ sources, mode, generatedAt, open: openProp, onOpenChange, variant = 'panel' }: SourcesStripProps) {
+export function SourcesStrip({ sources, mode, generatedAt, open: openProp, onOpenChange, variant = 'panel', notice }: SourcesStripProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
@@ -58,7 +60,7 @@ export function SourcesStrip({ sources, mode, generatedAt, open: openProp, onOpe
         </button>
       </div>
       {generatedAt && <p className="sources-strip__meta">Generated {formatWarsawDate(generatedAt)} · we don’t store your requests or location.</p>}
-      <SourcesDrawer sources={sources} id={drawerId} hidden={!open} />
+      <SourcesDrawer sources={sources} id={drawerId} hidden={!open} notice={notice} />
     </div>
   );
 }

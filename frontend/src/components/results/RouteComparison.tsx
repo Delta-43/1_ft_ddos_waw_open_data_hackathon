@@ -10,16 +10,19 @@ interface RouteComparisonProps {
   onSelect: (id: string) => void;
   /** True when the explanation text was written by a model rather than rules or the fixture. */
   explainedByModel: boolean;
+  /** The response notice (what is real, estimated or simulated); shown under the heading. */
+  notice?: string;
 }
 
 const score = (metric: Metric) => (metric.value == null ? 'Unknown' : metric.value.toFixed(2));
 
 /** One card per candidate route, ranked; every metric carries its own source label. */
-export function RouteComparison({ routes, sources, selectedId, onSelect, explainedByModel }: RouteComparisonProps) {
+export function RouteComparison({ routes, sources, selectedId, onSelect, explainedByModel, notice }: RouteComparisonProps) {
   const ranked = [...routes].sort((a, b) => a.rank - b.rank);
   return (
     <section className="route-comparison" aria-label="Route comparison">
       <h2 className="results__heading">{ranked.length} {ranked.length === 1 ? 'route' : 'routes'} · ranked</h2>
+      {notice && <p className="route-comparison__notice" role="note">{notice}</p>}
       <ul className="route-comparison__list">
         {ranked.map(route => {
           const selected = route.id === selectedId;

@@ -3,7 +3,8 @@
    it re-blurs on every map frame. */
 :root {
   --ease-signature: cubic-bezier(0.6, 0, 0.05, 1);
-  --top-chrome-height: 5.25rem;
+  /* Just the slim bar; the notice moved into the routes panel. */
+  --top-chrome-height: 3.25rem;
   --sources-bar-height: 3rem;
 }
 
@@ -69,15 +70,6 @@
 }
 .top-bar__sources:hover { border-color: var(--rim); color: #fff; }
 
-.notice-banner {
-  margin: 0;
-  padding: 0.45rem 1.5rem;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: var(--muted);
-  background: rgba(22, 23, 23, 0.85);
-  border-bottom: 1px solid #3c4043;
-}
 
 /* Map controls sit below the top chrome (doubled class beats maplibre-gl.css, which may load later). */
 .maplibregl-map .maplibregl-ctrl-top-right { top: calc(var(--top-chrome-height) + 0.5rem); }
@@ -199,10 +191,9 @@
 }
 
 @media (max-width: 700px) {
-  :root { --top-chrome-height: 6.25rem; }
+  :root { --top-chrome-height: 3rem; }
   .top-bar { padding: 0 1rem; gap: 0.6rem; height: 3rem; }
   .top-bar__title { font-size: 0.8rem; letter-spacing: 0.28em; }
-  .notice-banner { padding: 0.35rem 1rem; font-size: 0.75rem; }
   .sources-bar { padding-inline: 1rem; }
   .hint-pill__text { white-space: normal; text-align: center; max-width: calc(100vw - 3rem); }
 }
@@ -282,8 +273,6 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 
 @media (max-width: 700px) {
   .top-bar { flex-wrap: wrap; height: auto; min-height: 3rem; padding-block: 0.4rem; }
-  /* Clamp to 2 lines; the bottom spacing is a border so no sliver of a third line shows in it. */
-  .notice-banner { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: 0; border-bottom: 0.35rem solid rgba(22, 23, 23, 0.85); }
   .sources-bar { gap: 0.75rem; }
   /* Licence credit must stay whole: on a phone it may wrap to two lines inside the 48 px bar. */
   .map-credits { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; }
@@ -298,8 +287,6 @@ button.preference-chip:hover { color: #fff; border-color: #5f6368; }
 .sources-bar .sources-strip { min-width: 0; }
 .sources-strip--bar .sources-strip__row { overflow: hidden; }
 
-/* Before the first result there is no notice line, so the chrome is just the bar. */
-body:not(:has(.notice-banner)) { --top-chrome-height: 3.25rem; }
 
 /* ---------- Preferences icon + panel in the nav bar ---------- */
 .preferences-menu { position: relative; flex: none; }

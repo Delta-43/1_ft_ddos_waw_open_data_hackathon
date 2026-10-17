@@ -76,7 +76,6 @@ export function App() {
       <div className={chromeClass}>
         <TopBar
           mode={result?.mode}
-          notice={result?.notice}
           onOpenSources={result ? () => setSourcesOpen(open => !open) : undefined}
         >
           {result && <PreferenceChips understood={result.preferences} busy={status.state === 'loading'} onChange={outing.refine} />}
@@ -91,6 +90,7 @@ export function App() {
           {result ? (
             <SourcesStrip
               variant="bar"
+              notice={result.notice}
               sources={result.sources}
               mode={result.mode}
               generatedAt={result.generated_at}
