@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: #7 (API-01, route contract with Alban)
-- Branch / PR: BOOT-01 (#5) closed. Docs update PR open.
-- Last verified result: CI green on main; issues #3 and #5–#29 created with owners and labels
-- Blocker: None; the project board needs the GitHub CLI `project` scope or the website
-- Next action: Agree the route contract with Alban, then run the source gate with Sonia (#8)
-- Updated at (include timezone): 2026-10-17 12:55 +02:00
+- Current issue: #12 (BE-01 candidate routes); also covers #23 (DATA-06) and #26 (DATA-07)
+- Branch / PR: `delta/12-candidate-routes` → PR #40, stacked on contract PR #32 (approved by Ola, waiting for Alban)
+- Last verified result: `ruff check backend` pass; `pytest backend/tests` 36 passed (offline). Live OSRM and cache-only runs return schema-valid street routes
+- Blocker: #32 needs Alban's review before #40 can land; Overpass mirrors were returning 502/504 on 2026-10-17 16:00
+- Next action: AI-01 (#15) model interpretation and grounded explanation over `planner.plan`, then MCP-01 (#16) over the same service
+- Updated at (include timezone): 2026-10-17 16:40 +02:00
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
