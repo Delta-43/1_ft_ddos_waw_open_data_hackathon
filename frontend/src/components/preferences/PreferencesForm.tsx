@@ -35,12 +35,12 @@ export function PreferencesForm({ status, onSubmit }: Props) {
       <section className="preferences-form" aria-label="Your preferences">
         <h2>Your preferences</h2>
         <blockquote className="prompt-echo">{trimmed}</blockquote>
-        <dl className="summary">
-          {interpretation.preferences.map(({ label, value }) => (
-            <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+        <ul className="summary">
+          {interpretation.preferences.map(({ emoji, name }) => (
+            <li key={name}><span aria-hidden="true">{emoji}</span> {name}</li>
           ))}
-        </dl>
-        <p className="hint">Mock summary from keywords — not yet interpreted by the AI agent.</p>
+        </ul>
+        <p className="hint">Mock preferences — fixed example, not yet interpreted by the AI agent.</p>
         <div className="actions">
           <button type="button" disabled={loading} onClick={() => setInterpretation(null)}>Edit prompt</button>
           <button type="button" disabled={loading} onClick={() => onSubmit(trimmed)}>{loading ? 'Loading…' : 'Find routes'}</button>
