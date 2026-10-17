@@ -75,6 +75,38 @@ def test_invalid_route_requests_are_rejected(body):
     assert client.post("/api/routes", json=body).status_code == 422
 
 
+MAUZOLEUM = "osm:node/343292162"
+MUZEUM_LOWIECTWA = "osm:node/4141608192"
+
+
+def test_route_request_accepts_real_destination_and_via_stops():
+    body = {"query": "A quiet museum outing", "destination_place_id": MAUZOLEUM,
+            "via_place_ids": [MUZEUM_LOWIECTWA], "comment": "Wolią Mauzoleum na koniec, proszę"}
+    response = client.post("/api/routes", json=body)
+    assert response.status_code == 200
+    validator("RouteResponse").validate(response.json())
+
+
+def test_route_request_rejects_unknown_place_ids():
+    body = {"query": "ok", "destination_place_id": "osm:node/does-not-exist"}
+    response = client.post("/api/routes", json=body)
+    assert response.status_code == 422
+    assert "does-not-exist" in response.json()["detail"]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"query": "ok", "via_place_ids": [MAUZOLEUM, MAUZOLEUM]},
+        {"query": "ok", "destination_place_id": MAUZOLEUM, "via_place_ids": [MAUZOLEUM]},
+        {"query": "ok", "via_place_ids": [f"osm:node/{i}" for i in range(6)]},
+        {"query": "ok", "comment": "x" * 501},
+    ],
+)
+def test_invalid_itinerary_shapes_are_rejected(body):
+    assert client.post("/api/routes", json=body).status_code == 422
+
+
 def test_places_match_contract_and_filter():
     response = client.get("/api/places", params={"category": "museum", "limit": 2})
     assert response.status_code == 200

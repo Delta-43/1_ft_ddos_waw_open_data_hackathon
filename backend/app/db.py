@@ -186,6 +186,17 @@ def query_layer(layer: str, bbox, limit: int) -> tuple[list[dict], list[dict]]:
         return feats, _sources(conn, {f"warsaw-open-data-{layer}"})
 
 
+def places_by_ids(ids: set[str]) -> dict[str, dict]:
+    """Resolve catalogue places by id, e.g. for #85's destination/via stops. Missing ids are
+    simply absent from the result; callers decide whether that is an error."""
+    if not ids:
+        return {}
+    marks = ",".join("?" * len(ids))
+    with connect() as conn:
+        rows = conn.execute(f"SELECT * FROM places WHERE id IN ({marks})", list(ids)).fetchall()
+        return {r["id"]: dict(r) for r in rows}
+
+
 def layer_counts() -> dict[str, int]:
     with connect() as conn:
         return {r["layer"]: r["n"] for r in conn.execute("SELECT layer, COUNT(*) n FROM features GROUP BY layer")}

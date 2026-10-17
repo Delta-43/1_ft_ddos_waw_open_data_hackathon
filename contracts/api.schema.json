@@ -55,13 +55,30 @@
         "start": { "$ref": "#/$defs/Point" }
       }
     },
+    "PlaceId": { "type": "string", "minLength": 1, "maxLength": 200 },
     "RouteRequest": {
       "type": "object",
       "additionalProperties": false,
       "required": ["query"],
       "properties": {
         "query": { "type": "string", "minLength": 1, "maxLength": 1000 },
-        "preferences": { "$ref": "#/$defs/Preferences" }
+        "preferences": { "$ref": "#/$defs/Preferences" },
+        "destination_place_id": {
+          "$ref": "#/$defs/PlaceId",
+          "description": "Refs #85. Resolved against the catalogue (GET /api/places); unknown ids return 422. Not yet routed through - see GET /api/health capabilities.ordered_stops."
+        },
+        "via_place_ids": {
+          "type": "array",
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/PlaceId" },
+          "description": "Refs #85. Ordered stops visited before destination_place_id; must not repeat it."
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Refs #85. May only influence preference reading; never invents geometry, hours or facts. Not stored."
+        }
       }
     },
     "Source": {

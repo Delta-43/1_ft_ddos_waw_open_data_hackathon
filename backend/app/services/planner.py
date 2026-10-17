@@ -13,6 +13,7 @@ from functools import cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from app import db
 from app.contract import CONTRACT_VERSION, RouteRequest
 from app.services import ai, opening_hours, osm_context, routing, scoring
 
@@ -32,6 +33,25 @@ QUIET_WORDS = ("quiet", "calm", "peace", "cisz", "spokoj")
 GREEN_WORDS = ("green", "park", "garden", "nature", "tree", "ziel")
 BIKE_WORDS = ("bike", "cycl", "rower")
 ART_WORDS = ("art", "gallery", "contemporary", "sztuk")
+
+
+class InvalidItinerary(ValueError):
+    """destination_place_id/via_place_ids (#85) don't resolve to real catalogue places."""
+
+
+def _validate_itinerary(destination_place_id: str | None, via_place_ids: list[str] | None) -> None:
+    """Resolve requested stop ids against the city catalogue; raise on any unknown id.
+    Step 1 of #85: validation only. The route itself does not yet visit these stops
+    (that's #85 step 2) - capabilities.ordered_stops in GET /api/health stays false
+    until it does, so the frontend never assumes more than what actually ships."""
+    ids = set(via_place_ids or [])
+    if destination_place_id:
+        ids.add(destination_place_id)
+    if not ids:
+        return
+    missing = ids - db.places_by_ids(ids).keys()
+    if missing:
+        raise InvalidItinerary(f"Unknown place id(s): {', '.join(sorted(missing))}")
 
 
 @dataclass
@@ -274,6 +294,7 @@ def _sources(origins: set[str]) -> list[dict]:
 
 
 def plan(request: RouteRequest) -> dict:
+    _validate_itinerary(request.destination_place_id, request.via_place_ids)
     prefs = interpret(request)
     departure = clock()
     start_pt = request.preferences.start if request.preferences and request.preferences.start else None
