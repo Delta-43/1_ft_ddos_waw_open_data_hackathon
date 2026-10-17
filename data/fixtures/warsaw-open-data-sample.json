@@ -1,0 +1,632 @@
+{
+  "source_url": "https://dane.um.warszawa.pl/api/action",
+  "fetched_at": "2026-10-17T13:57:14+0200",
+  "licence": "Creative Commons Attribution",
+  "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)",
+  "note": "Truncated sample for the repo; full counts are in docs/DATA.md and the gitignored data/local cache.",
+  "datasets": {
+    "air_quality": {
+      "endpoint": "get_bopipk_monitoring_jakosci_powietrza",
+      "raw_record_count": 141,
+      "normalised_count": 141,
+      "sample_places": [
+        {
+          "id": "waw:air-quality/ul. Grochowska",
+          "name": "Warszawa-Grochowska",
+          "longitude": 21.080555,
+          "latitude": 52.245703,
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "PM10",
+              "value": 9.67083,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM25",
+              "value": 8.53654,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "NO2",
+              "value": 15.3815,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "CO",
+              "value": 0.283952,
+              "unit": "mg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/al. Solidarności",
+          "name": "Warszawa-Solidarności",
+          "longitude": 20.999843,
+          "latitude": 52.243775,
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "PM10",
+              "value": 11.0317,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM25",
+              "value": 7.22139,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "NO2",
+              "value": 34.578,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/Al. Niepodległości 227/233",
+          "name": "Warszawa, Al. Niepodległości",
+          "longitude": "21.004724",
+          "latitude": "52.219298",
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "C6H6",
+              "value": 0.9,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "CO",
+              "value": 317.0,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "NO2",
+              "value": 19.9,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM10",
+              "value": 11.0,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM2.5",
+              "value": 7.4,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/ul. Wokalna 1",
+          "name": "Warszawa, ul. Wokalna",
+          "longitude": "21.033819",
+          "latitude": "52.160772",
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "NO2",
+              "value": 6.0,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "O3",
+              "value": 23.6,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM10",
+              "value": 13.8,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM2.5",
+              "value": 12.8,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/ul. Kondratowicza 8",
+          "name": "Warszawa, ul. Kondratowicza",
+          "longitude": "21.042458",
+          "latitude": "52.290864",
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "NO2",
+              "value": 14.2,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "O3",
+              "value": 44.4,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/ul. Chrościckiego 16/18",
+          "name": "Warszawa, ul. Chrościckiego",
+          "longitude": "20.906073",
+          "latitude": "52.207742",
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "PM10",
+              "value": 8.7,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM2.5",
+              "value": 7.7,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "NO2",
+              "value": 17.4,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "O3",
+              "value": 44.7,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "SO2",
+              "value": 2.9,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/ul. Bajkowa 17/21",
+          "name": "Warszawa, ul. Bajkowa",
+          "longitude": "21.176233",
+          "latitude": "52.188474",
+          "category": "air_quality_station",
+          "overall_index": "Dobry",
+          "measurements": [
+            {
+              "param": "PM2.5",
+              "value": 17.6,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            },
+            {
+              "param": "PM10",
+              "value": 20.0,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:00:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:air-quality/Szkoła Podstawowa Nr 1 w Milanówku",
+          "name": "Milanówek-263141",
+          "longitude": 20.68047,
+          "latitude": 52.12158,
+          "category": "air_quality_station",
+          "overall_index": "Bardzo dobry",
+          "measurements": [
+            {
+              "param": "PM10",
+              "value": 12.83,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "PM2.5",
+              "value": 9.64,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "PM1",
+              "value": 9.0,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "NO2",
+              "value": 1.97,
+              "unit": "µg/m3",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "T",
+              "value": 12.06,
+              "unit": "C",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "P",
+              "value": 1007.01,
+              "unit": "hPa",
+              "time": "2026-10-17 13:50:00"
+            },
+            {
+              "param": "H",
+              "value": 68.6,
+              "unit": "%",
+              "time": "2026-10-17 13:50:00"
+            }
+          ],
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        }
+      ]
+    },
+    "aed": {
+      "endpoint": "get_scb_lokalizacja_defibrylatorow",
+      "raw_record_count": 710,
+      "normalised_count": 710,
+      "sample_places": [
+        {
+          "id": "waw:aed/622",
+          "name": "Urząd Dzielnicy Mokotów m.st. Warszawy",
+          "longitude": 21.0148748892902,
+          "latitude": 52.2086170695684,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "Poniedziałek: godz. 8:00-18:00; Wtorek-Piątek: godz. 8:00-16:00",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/661",
+          "name": "Kompleks Sportowy",
+          "longitude": 21.0081388070459,
+          "latitude": 52.1737101485397,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "poniedziałek-piątek w godzinach 6.00-22.00, sobota-niedziela w godzinach 8.00-20.00",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/623",
+          "name": "Zespół Szkół Architektoniczno-Budowlanych i Licealnych im. Stanisława Noakowskiego",
+          "longitude": 21.0078522561602,
+          "latitude": 52.2551276320303,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "Poniedziałek - piątek, godziny 6:00 - 21:00",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/662",
+          "name": "Urząd Dzielnicy Ochota m.st. Warszawy",
+          "longitude": 20.9864603364814,
+          "latitude": 52.2216772347502,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "Poniedziałki 8.00-18.00, wtorki - piątki 8.00-16.00.",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/628",
+          "name": "Urząd Dzielnicy Rembertów m.st. Warszawy",
+          "longitude": 21.1617495395711,
+          "latitude": 52.2589389131916,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "Poniedziałek-Wtorek 8:00-19:00, Środa 8:00-20:00, Czwartek-Piątek 8:00-19:00",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/663",
+          "name": "Urząd Dzielnicy Ursus m.st. Warszawy",
+          "longitude": 20.8936221980006,
+          "latitude": 52.200694707635,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "W poniedziałki od 8.00 do 18.00; od wtorku do piątku od 8.00 do 16.00.",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/664",
+          "name": "OSiR Targówek",
+          "longitude": 21.0333789906945,
+          "latitude": 52.298871813598,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "6.15-22.00 Codziennie",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:aed/665",
+          "name": "OSiR Targówek",
+          "longitude": 21.0336355387526,
+          "latitude": 52.2983104557712,
+          "category": "aed",
+          "access": "Publiczny",
+          "access_hours": "07.00-22.30 Codziennie",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        }
+      ]
+    },
+    "toilets": {
+      "endpoint": "get_m_toalety",
+      "raw_record_count": 695,
+      "normalised_count": 695,
+      "sample_places": [
+        {
+          "id": "waw:toilet/0",
+          "name": "Inwalidów 3, Biblioteka Publiczna, Czytelnia Naukowa Nr XVI",
+          "longitude": 20.9895859993675,
+          "latitude": 52.2634839987203,
+          "category": "toilet",
+          "district": "Żoliborz",
+          "opening_hours": "Poniedziałek: 09:00 - 19:00; Wtorek: 09:00 - 19:00; Środa: 09:00 - 19:00; Czwartek: 12:00 - 16:00; Piątek: 09:00 - 19:00; Sobota: 09:00 - 15:00; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/1",
+          "name": "ks. J. Chrościckiego 14, Artystyczny Dom Animacji",
+          "longitude": 20.9079090001375,
+          "latitude": 52.2073949986383,
+          "category": "toilet",
+          "district": "Włochy",
+          "opening_hours": "Poniedziałek: 08:00 - 20:00; Wtorek: 08:00 - 20:00; Środa: 08:00 - 20:00; Czwartek: 08:00 - 20:00; Piątek: 08:00 - 20:00; Sobota: 10:00 - 20:00; Niedziela: 07:00 - 20:00",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/2",
+          "name": "Mirowski, Hale Mirowskie",
+          "longitude": 20.9989139996769,
+          "latitude": 52.2387509992657,
+          "category": "toilet",
+          "district": "Śródmieście",
+          "opening_hours": "Poniedziałek: 07:00 - 19:00; Wtorek: 07:00 - 19:00; Środa: 07:00 - 19:00; Czwartek: 07:00 - 19:00; Piątek: 07:00 - 19:00; Sobota: nieczynne; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/3",
+          "name": "Świętojańska 5/2, Czytelnia Naukowa Nr VII",
+          "longitude": 21.0134559997226,
+          "latitude": 52.2482089986878,
+          "category": "toilet",
+          "district": "Śródmieście",
+          "opening_hours": "Poniedziałek: 10:00 - 19:00; Wtorek: 10:00 - 19:00; Środa: 10:00 - 19:00; Czwartek: 10:00 - 19:00; Piątek: 10:00 - 19:00; Sobota: nieczynne; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/4",
+          "name": "Grójecka 75, Ośrodek Kultury Ochoty ”OKO”",
+          "longitude": 20.978319900001,
+          "latitude": 52.2126045985144,
+          "category": "toilet",
+          "district": "Ochota",
+          "opening_hours": "Poniedziałek: 08:00 - 18:00; Wtorek: 08:00 - 16:00; Środa: 08:00 - 16:00; Czwartek: 08:00 - 16:00; Piątek: 08:00 - 16:00; Sobota: nieczynne; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/5",
+          "name": "Trocka 6, Targowisko",
+          "longitude": 21.0583089997598,
+          "latitude": 52.2751779986302,
+          "category": "toilet",
+          "district": "Targówek",
+          "opening_hours": "Poniedziałek: 06:30 - 18:30; Wtorek: 06:30 - 18:30; Środa: 06:30 - 18:30; Czwartek: 06:30 - 18:30; Piątek: 06:30 - 18:30; Sobota: 06:00 - 15:00; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/6",
+          "name": "K. Gierdziejewskiego 20, Targowisko",
+          "longitude": 20.8752720006987,
+          "latitude": 52.1997809992591,
+          "category": "toilet",
+          "district": "Ursus",
+          "opening_hours": "Poniedziałek: 07:00 - 15:00; Wtorek: 07:00 - 15:00; Środa: 07:00 - 15:00; Czwartek: 07:00 - 15:00; Piątek: 07:00 - 15:00; Sobota: 07:00 - 15:00; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:toilet/7",
+          "name": "św. Wincentego 88/90A, Targowisko \"Hala kwiatowa\"",
+          "longitude": 21.0450080000627,
+          "latitude": 52.278693999091,
+          "category": "toilet",
+          "district": "Targówek",
+          "opening_hours": "Poniedziałek: 08:00 - 17:00; Wtorek: 08:00 - 17:00; Środa: 08:00 - 17:00; Czwartek: 08:00 - 17:00; Piątek: 08:00 - 17:00; Sobota: 08:00 - 17:00; Niedziela: nieczynne",
+          "free": true,
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        }
+      ]
+    },
+    "events": {
+      "endpoint": "get_bmm_kalendarz_wydarzen",
+      "raw_record_count": 652,
+      "normalised_count": 352,
+      "sample_places": [
+        {
+          "id": "waw:event/0",
+          "name": "OCH-Teatr",
+          "longitude": 20.9799983868717,
+          "latitude": 52.2141938100175,
+          "category": "event",
+          "event_category": [
+            "Kultura"
+          ],
+          "starts_at": "2027-01-29T19:00:00+01",
+          "ends_at": "2027-01-29T21:00:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/1",
+          "name": "OCH-Teatr",
+          "longitude": 20.9799983868717,
+          "latitude": 52.2141938100175,
+          "category": "event",
+          "event_category": [
+            "Kultura"
+          ],
+          "starts_at": "2027-01-28T19:00:00+01",
+          "ends_at": "2027-01-28T21:00:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/2",
+          "name": "Plac Czerwca 1976 roku",
+          "longitude": 20.8941954845309,
+          "latitude": 52.1999348114248,
+          "category": "event",
+          "event_category": [
+            "Historia",
+            "Dla młodzieży i dorosłych",
+            "Dla seniorów"
+          ],
+          "starts_at": "2026-12-14T00:00:00+01",
+          "ends_at": "2026-12-14T23:59:59+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/3",
+          "name": "Acherówka",
+          "longitude": 20.8955315615585,
+          "latitude": 52.1957351992295,
+          "category": "event",
+          "event_category": [
+            "Dla dzieci",
+            "Dla młodzieży i dorosłych",
+            "Święta",
+            "Czas wolny"
+          ],
+          "starts_at": "2026-12-12T12:30:00+01",
+          "ends_at": "2026-12-12T13:30:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/6",
+          "name": "Teatr Dramatyczny",
+          "longitude": 21.006775298267,
+          "latitude": 52.23191519622,
+          "category": "event",
+          "event_category": [
+            "Kultura"
+          ],
+          "starts_at": "2026-12-05T19:00:00+01",
+          "ends_at": "2026-12-05T21:00:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/7",
+          "name": "Park Czechowicki",
+          "longitude": 20.8848914003328,
+          "latitude": 52.1921344988064,
+          "category": "event",
+          "event_category": [
+            "Dla dzieci",
+            "Społeczeństwo",
+            "Dla młodzieży i dorosłych",
+            "Dla seniorów",
+            "Święta",
+            "Czas wolny"
+          ],
+          "starts_at": "2026-12-05T11:00:00+01",
+          "ends_at": "2026-12-06T20:30:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/8",
+          "name": "Acherówka",
+          "longitude": 20.8953429622632,
+          "latitude": 52.1953022308949,
+          "category": "event",
+          "event_category": [
+            "Dla dzieci",
+            "Czas wolny"
+          ],
+          "starts_at": "2026-12-05T10:00:00+01",
+          "ends_at": "2026-12-05T11:00:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        },
+        {
+          "id": "waw:event/9",
+          "name": "Teatr Dramatyczny",
+          "longitude": 21.006775298267,
+          "latitude": 52.23191519622,
+          "category": "event",
+          "event_category": [
+            "Kultura"
+          ],
+          "starts_at": "2026-12-04T19:00:00+01",
+          "ends_at": "2026-12-04T21:00:00+01",
+          "source": "warsaw_open_data",
+          "attribution": "Urząd m.st. Warszawy, https://dane.um.warszawa.pl/ (Creative Commons Attribution)"
+        }
+      ]
+    }
+  }
+}

@@ -6,6 +6,11 @@ Delta and Alban jointly approve changes here before either pair implements them.
 - Fixtures: `../data/fixtures/route-response.json` and `../data/fixtures/places-response.json`. Both are labelled `mock`.
 - TypeScript types: `../frontend/src/api/contract.ts`.
 - Units: GeoJSON order is longitude, latitude (WGS84). Distances in metres, durations in seconds, timestamps ISO 8601 with an offset.
+- `GET /api/health` → `{ "status": "ok", "mode": "fixture" }` in the starter.
+- `POST /api/routes` accepts `{ "query": "A quiet museum outing" }`; query is 1–1000 characters. Invalid requests return HTTP 422 using FastAPI's standard `detail` validation response.
+- Frontend must handle non-2xx responses and unreachable backend.
+- Keep fixtures and backend checks updated in the same PR as contract changes.
+- Privacy: requests carry no user identifiers or stored-profile references, and the backend does not persist request bodies. Any future personal context is sent per request with a scoped token and is never stored.
 
 ## Endpoints
 

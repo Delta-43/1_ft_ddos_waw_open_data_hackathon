@@ -2,14 +2,14 @@
 
 Start here with AGENTS.md, SETUP.md, PLAN.md, and your team/<name>/PROMPT.md.
 These instructions work with any coding agent or a normal editor. No personal skills, paid agent subscription, private server, or owner's tool bundle is required.
-Build code and fetch data from scratch on Saturday. Existing starter files are reference material, not work to claim as built during the event.
+The organisers approved building on this starter (17 October). Fetch data fresh during the event. Do not claim starter files as event work, and do not import earlier projects.
 
 ## Agreed stack
 
 | Layer | Choice | Responsibility / status |
 | --- | --- | --- |
 | UI | React, TypeScript, Vite | Alban + Ola + Aryna; starter reference exists |
-| Map | MapLibre GL JS | Alban adds during the event; not installed in starter |
+| Map | MapLibre GL JS 6.11.2, OpenFreeMap tiles | Alban; added in PR #4. Tiles need network access |
 | Styling | Plain CSS initially; Tailwind only if Alban chooses it | Avoid adding tooling before the core flow |
 | API | Python 3.12, FastAPI, Pydantic, Uvicorn | Delta + Sonia |
 | Storage | SQLite through Python sqlite3 | Backend-local file; no database server or network port; not implemented in starter |
@@ -38,6 +38,8 @@ For a small place catalogue, structured tags and filters come before embeddings/
 No teammate needs access to Delta's home directory, SSH keys, service users, private servers, account-specific skills, or admin tools.
 Never share agent or GitHub credentials. Keep provider API keys on the backend; never put secrets in VITE_ variables.
 
+Privacy: User data stays on the user's device. The backend keeps no user profiles, preferences or trip history; route requests are stateless. A future version sends personal context only per request, with a short-lived scoped token. See IDEA.md, Privacy and security.
+
 ## Data sources: priority and readiness
 
 “Previously worked” means an earlier project retrieved it. It is not a guarantee of current uptime or permission for this event.
@@ -46,7 +48,7 @@ Check a small fresh sample during Saturday's 30-minute source gate. No old snaps
 | Source / entry point | Useful input | Access and verification | Initial decision |
 | --- | --- | --- | --- |
 | OpenStreetMap / https://overpass-api.de/api/interpreter | Places, parks, museums/historic tags, cafes/pubs | No account normally needed; previous retrieval succeeded. Fresh query untested. Use a small area, identified client, caching and bounded retries. Preserve OSM IDs and attribution; ODbL applies. Coverage/opening hours can be incomplete. | First real-data candidate |
-| Warsaw portal / https://dane.um.warszawa.pl/ | Official sports grounds, AEDs, stops; candidates for events/roadworks | Catalogue discovery first. Previous client used POST /api/action/<endpoint> with raw Authorization header; obtain a new project token via /key-api. Verify current docs and dataset terms. Never assume legacy API keys are interchangeable. | Verify one useful official dataset early |
+| Warsaw portal / https://dane.um.warszawa.pl/ | Official sports grounds, AEDs, public transportation schedule and localisation; candidates for events/roadworks | Catalogue discovery first. The endpoint is  https://dane.um.warszawa.pl/api/action/<endpoint> with raw Authorization header using the token DANE_WWA_API_KEY; Verify current docs and dataset terms. Never assume legacy API keys are interchangeable. | Verify one useful official dataset early |
 | GTFS / https://mkuran.pl/gtfs/ | Warsaw schedules/stops; optional alerts/positions | Index listed Warsaw during research. No fresh archive tested. Check service dates, calendar_dates, frequencies and attributions.txt. Static schedule is not a trip planner; vehicle IDs can differ from static trips. | Optional; simulate transfers initially |
 | GIOŚ / https://api.gios.gov.pl/pjp-api/v1/rest/ | Station air observations | No key documented in old research; fresh response unverified. Archive documented at two requests/minute. Historic district interpolation is not live route exposure. Attribute GIOŚ. | Simulate route air score; fresh station context is stretch |
 | Warsaw WMS / https://wms.um.warszawa.pl/serwis | Strategic modelled noise bands, 2022 | Old retrieval succeeded; fresh GetMap and reuse terms not checked. WMS colours are not exact live dB measurements. | Simulate preference score; modelled layer is stretch |

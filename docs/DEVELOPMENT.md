@@ -1,6 +1,6 @@
 # Local development and shared testing
 
-Read SETUP.md for installation, Windows alternatives, and fresh Saturday scaffolding. Commands below assume the agreed reference layout.
+Read SETUP.md for installation and Windows alternatives. The organisers approved the starter. Commands below assume the agreed reference layout.
 
 ## Prerequisites
 

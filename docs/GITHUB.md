@@ -1,6 +1,6 @@
 # GitHub setup and PR pipeline
 
-Delta owns bootstrap. Do this before feature work. No remote repository, invitation, or ruleset has been created by this starter.
+Delta owns bootstrap. **Status (17 October):** done. The private repository https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon exists, all five members have Write access, CI is green, `main` is protected, CODEOWNERS is set, labels exist, and every TODO.md row is an issue. Still open: the project board.
 
 ## Bootstrap
 
@@ -18,7 +18,8 @@ Delta owns bootstrap. Do this before feature work. No remote repository, invitat
 
 Require a pull request, one approving review from someone other than the author, and the latest branch to pass `backend-checks` and `frontend-checks`.
 Select the actual check names shown by the first successful Actions run. Require resolved conversations and disallow force pushes/deletion.
-Use squash merging and delete merged branches. Do not require a merge queue for this small team.
+Use squash merging and delete merged branches (both configured).
+Current settings: one approval is required. Delta, as repository owner, can override it; Alban needs an approval from any teammate. A personal-account repository cannot exempt other named users. Do not require a merge queue for this small team.
 If a merge queue is enabled later, add `merge_group` to CI triggers first.
 If the account plan cannot enforce protection, document that limitation and enforce the same review/check procedure manually; do not claim protection is enabled.
 
@@ -28,7 +29,7 @@ CODEOWNERS lists eligible reviewers; listing Delta and Alban does not require bo
 ## Issues and board
 
 Create labels: `backend`, `frontend`, `data`, `contract`, `integration`, `pitch`, `blocked`, and `stretch`.
-Create a project board with Ready → In progress → Review → Done. Limit each person to one active implementation issue.
+Create a project board with Ready → In progress → Review → Done (not created yet). Limit each person to one active implementation issue.
 Turn each TODO.md row into an issue. Assign the owner, request the reviewer, copy acceptance criteria, and link dependencies.
 Example: `gh issue create --title "DATA-01: Import one Warsaw dataset" --body-file path/to/reviewed-issue.md --assignee VERIFIED_HANDLE`.
 Use the Task issue template for new work. Link created issues back in TODO.md once, then track live state in GitHub.
