@@ -26,7 +26,7 @@ OVERPASS_ENDPOINTS = [
     "https://overpass.kumi.systems/api/interpreter",
 ]
 
-USER_AGENT = "warsaw2076-hackathon-sonia/1.0 (contact: ms9600927@gmail.com)"
+USER_AGENT = "warsaw2076-hackathon/1.0 (+https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon)"
 
 ATTRIBUTION = "© OpenStreetMap contributors, https://www.openstreetmap.org/copyright (ODbL)"
 
