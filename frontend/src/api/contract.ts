@@ -12,6 +12,20 @@ export type TravelMode = 'walk' | 'bike';
 /** Matches the map pin icons. */
 export type PlaceCategory = 'museum' | 'landmark' | 'park' | 'generic';
 
+/** Refs #85 step 4. Gate a feature's UI on the matching flag here, not on a request
+ * field merely being accepted - a flag is only true once that feature actually ships. */
+export interface HealthResponse {
+  status: 'ok';
+  mode: 'fixture';
+  contract_version: typeof CONTRACT_VERSION;
+  capabilities: {
+    /** POST /api/routes honours destination_place_id/via_place_ids (#85). */
+    ordered_stops: boolean;
+    /** GET /api/places?q= search (#84/#87). */
+    place_search: boolean;
+  };
+}
+
 export interface Point {
   longitude: number;
   latitude: number;
@@ -139,6 +153,12 @@ export interface RouteResponse {
   /** 1 to 3 candidates. */
   routes: Route[];
   sources: Source[];
+  /**
+   * Refs #85 step 4. Null for a museum-outing response. Set when destination_place_id/
+   * via_place_ids were honoured, so the UI can confirm what the backend actually used -
+   * always exactly the request's own ids, never substituted.
+   */
+  applied_itinerary: { destination_place_id: string; via_place_ids: string[] } | null;
 }
 
 export interface PlacesResponse {

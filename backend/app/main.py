@@ -23,7 +23,17 @@ def load_fixture(name: str) -> dict:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "mode": "fixture", "contract_version": CONTRACT_VERSION}
+    return {
+        "status": "ok",
+        "mode": "fixture",
+        "contract_version": CONTRACT_VERSION,
+        # Refs #85 step 4: only true once the matching feature has actually shipped,
+        # so the frontend can gate structured itinerary submission or catalogue search
+        # on this rather than guessing from whether a request field merely exists.
+        # ordered_stops: POST /api/routes honours destination_place_id/via_place_ids
+        # (#85). place_search: GET /api/places?q= (#84, merged in #87).
+        "capabilities": {"ordered_stops": True, "place_search": True},
+    }
 
 
 @app.post("/api/routes")
