@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 import type { Route } from '../api/contract';
 import { loadPins } from '../data';
 import { addPins } from '../markers/pins';
-import { samplePins } from '../markers/samplePins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, growBuildingsWithZoom, locateVisitor, markVisitor, playIntro } from './intro';
@@ -37,7 +36,6 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
     const abort = new AbortController();
     const location = locateVisitor();
-    addPins(map, samplePins);
     loadPins(undefined, abort.signal)
       .then(pins => !abort.signal.aborted && addPins(map, pins))
       .catch(error => console.warn('Loading pins failed', error));

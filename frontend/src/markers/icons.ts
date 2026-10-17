@@ -11,6 +11,10 @@ const ACCENT: Record<PinCategory, string> = {
   museum: '#9ecbff',
   park: '#7fd1a8',
   generic: '#c8d6e8',
+  air: '#6fd3ff',
+  aed: '#ff6b6b',
+  toilet: '#b9a2ff',
+  event: '#ffb74d',
 };
 
 export const iconId = (category: PinCategory) => `pin-hex-${category}`;
@@ -53,6 +57,49 @@ const GLYPHS: Record<PinCategory, (ctx: CanvasRenderingContext2D) => void> = {
     ctx.arc(32, 32, 6, 0, Math.PI * 2);
     ctx.fill();
   },
+  air(ctx) {
+    // Three wind lines of different lengths.
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = ctx.fillStyle;
+    for (const [y, x2] of [[24, 42], [32, 46], [40, 38]]) {
+      ctx.beginPath();
+      ctx.moveTo(19, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+  },
+  aed(ctx) {
+    // Heart with a medical cross cut out of it.
+    ctx.beginPath();
+    ctx.moveTo(32, 45);
+    ctx.bezierCurveTo(14, 33, 18, 17, 32, 25);
+    ctx.bezierCurveTo(46, 17, 50, 33, 32, 45);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(11, 18, 32, 0.92)';
+    ctx.fillRect(30, 26, 4, 12);
+    ctx.fillRect(26, 30, 12, 4);
+  },
+  toilet(ctx) {
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('WC', 32, 33);
+  },
+  event(ctx) {
+    // Five-pointed star.
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 6.5 : 14;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      const x = 32 + r * Math.cos(a);
+      const y = 33 + r * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  },
 };
 
 /** Traces a pointy-top hexagon centred in the icon. */
@@ -68,10 +115,23 @@ function hexagonPath(ctx: CanvasRenderingContext2D, radius: number) {
   ctx.closePath();
 }
 
+/**
+ * One CPU-backed canvas for every icon. `willReadFrequently` keeps it off the GPU, so each
+ * `getImageData` readback is a memory copy instead of a GPU flush: icon registration went
+ * from ~300 ms to a few ms at startup (headless Chrome), where it stalled the intro flight.
+ */
+let iconCanvas: CanvasRenderingContext2D | undefined;
+
 function drawIcon(category: PinCategory): ImageData {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = SIZE;
-  const ctx = canvas.getContext('2d')!;
+  if (!iconCanvas) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SIZE;
+    iconCanvas = canvas.getContext('2d', { willReadFrequently: true })!;
+  }
+  const ctx = iconCanvas;
+  // save/restore keeps one glyph's state (line caps, fonts) out of the next icon.
+  ctx.save();
+  ctx.clearRect(0, 0, SIZE, SIZE);
   const accent = ACCENT[category];
 
   // Dark body with a soft outer glow and an accent rim.
@@ -87,7 +147,9 @@ function drawIcon(category: PinCategory): ImageData {
 
   ctx.fillStyle = accent;
   GLYPHS[category](ctx);
-  return ctx.getImageData(0, 0, SIZE, SIZE);
+  const image = ctx.getImageData(0, 0, SIZE, SIZE);
+  ctx.restore();
+  return image;
 }
 
 /** Registers one hexagon icon per category with the map (idempotent). */
