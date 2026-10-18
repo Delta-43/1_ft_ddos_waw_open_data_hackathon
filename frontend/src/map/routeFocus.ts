@@ -6,7 +6,7 @@ import { BUILDING_MINZOOM, BUILDING_SOURCE } from './style';
 /**
  * Route focus, after Delta's mockup (mockups/warsaw-2076): while a route is selected, only the
  * buildings in a corridor around it stay 3D, tinted in the route's colour; every other building
- * sinks to a pale flat footprint and a veil mutes the rest of the map.
+ * sinks to a dark flat footprint and a veil mutes the rest of the map.
  * Buildings are marked with feature-state in short slices when the map settles, so panning
  * never stalls. (A `distance` layer filter is not used: MapLibre ignores it when drawing.)
  */
@@ -20,10 +20,10 @@ const HEIGHT_PROPERTIES = [
   ['building-roof', 'fill-extrusion-base'],
 ] as const;
 const COLOUR_LAYERS = ['building-3d', 'building-roof'] as const;
-const FADED = '#e6e9e3'; // far buildings: close to the veil, so they fade into the ground
+const FADED = '#151618'; // far buildings: close to the veil, so they sink into the dark ground
 const VEIL_SOURCE = 'focus-veil'; // not 'route-…': historicalOverlay.ts inserts below the first 'route-' layer
 const VEIL_LAYER = 'focus-veil';
-const VEIL_OPACITY = 0.62;
+const VEIL_OPACITY = 0.55;
 
 type Paint = ExpressionSpecification | string | number;
 type Segment = [number, number, number, number];
@@ -76,7 +76,7 @@ function applyPaint(map: Map, state: FocusState, colour: RouteColour | undefined
     const original = state.originals.get(`${layer}|${property}`);
     if (original === undefined || !map.getLayer(layer)) continue;
     const value = colour ? (['case', isNear, original, 0] as ExpressionSpecification) : original;
-    const [from, to] = colour ? [13.2, 14] : [13.5, 14.8];
+    const [from, to] = colour ? [13, 13.5] : [13.5, 14.8];
     map.setPaintProperty(layer, property, ['interpolate', ['linear'], ['zoom'], from, 0, to, value]);
   }
   for (const layer of COLOUR_LAYERS) {
@@ -136,14 +136,14 @@ export function initRouteFocus(map: Map): void {
   for (const layer of COLOUR_LAYERS) remember(layer, 'fill-extrusion-color');
   remember('building-outline', 'line-opacity');
 
-  // A pale veil over the ground, roads and labels, drawn under the buildings and the route.
+  // A dark veil over the ground, roads and labels, drawn under the buildings and the route.
   map.addSource(VEIL_SOURCE, {
     type: 'geojson',
     data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[19, 51], [23, 51], [23, 53.5], [19, 53.5], [19, 51]]] } },
   });
   const firstBuilding = ['building-outline', 'building-3d'].find(layer => map.getLayer(layer));
   map.addLayer(
-    { id: VEIL_LAYER, type: 'fill', source: VEIL_SOURCE, paint: { 'fill-color': '#f2f4ef', 'fill-opacity': 0, 'fill-opacity-transition': { duration: 600 } } },
+    { id: VEIL_LAYER, type: 'fill', source: VEIL_SOURCE, paint: { 'fill-color': '#0a0a0b', 'fill-opacity': 0, 'fill-opacity-transition': { duration: 600 } } },
     firstBuilding,
   );
 

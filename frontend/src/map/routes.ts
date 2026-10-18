@@ -3,9 +3,9 @@ import type { Route } from '../api/contract';
 import { routeColour, routeLetter } from './routeColours';
 
 /**
- * Candidate routes in the style of Delta's mockup (mockups/warsaw-2076): the selected route is a
- * thick dashed line in its own colour on a white casing; the others are thin and muted; stops are
- * numbered circles on a stem with a soft halo.
+ * Candidate routes as light on the dark map: the selected route is a bright core in its own
+ * colour inside a wide soft glow, with white dashes that travel briefly after selection; the
+ * others are thin and dim. Stops are numbered circles on a stem with a soft halo.
  */
 const ROUTE_SOURCE = 'candidate-routes';
 
@@ -14,14 +14,19 @@ type Feature = { type: 'Feature'; properties: Record<string, unknown>; geometry:
 type Collection = { type: 'FeatureCollection'; features: Feature[] };
 const empty = (): Collection => ({ type: 'FeatureCollection', features: [] });
 
+/** The selected route takes the mood accent when there is one; the others keep their rank colour. */
+function lineColour(routes: Route[], id: string | undefined, selectedId: string | undefined, accent?: string): string {
+  return accent && id === selectedId ? accent : routeColour(routes, id).line;
+}
+
 /** Line features for every candidate; the selected one draws last. */
-function routeFeatures(routes: Route[], selectedId: string | undefined): Collection {
+function routeFeatures(routes: Route[], selectedId: string | undefined, accent?: string): Collection {
   const sorted = [...routes].sort((a, b) => Number(a.id === selectedId) - Number(b.id === selectedId));
   return {
     type: 'FeatureCollection',
     features: sorted.map((route): Feature => ({
       type: 'Feature',
-      properties: { id: route.id, selected: route.id === selectedId, colour: routeColour(routes, route.id).line },
+      properties: { id: route.id, selected: route.id === selectedId, colour: lineColour(routes, route.id, selectedId, accent) },
       geometry: route.geometry,
     })),
   };
@@ -47,15 +52,23 @@ function ensureLayers(map: Map): void {
     source: ROUTE_SOURCE,
     filter: notSelected,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#8f9a94', 'line-width': 3, 'line-opacity': 0.7 },
+    paint: { 'line-color': ['get', 'colour'], 'line-width': 2.5, 'line-opacity': 0.4 },
   });
   map.addLayer({
-    id: 'route-casing',
+    id: 'route-glow',
     type: 'line',
     source: ROUTE_SOURCE,
     filter: isSelected,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.9 },
+    paint: { 'line-color': ['get', 'colour'], 'line-width': 22, 'line-blur': 14, 'line-opacity': 0.55 },
+  });
+  map.addLayer({
+    id: 'route-core',
+    type: 'line',
+    source: ROUTE_SOURCE,
+    filter: isSelected,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'colour'], 'line-width': 5 },
   });
   map.addLayer({
     id: 'route-dash',
@@ -63,7 +76,7 @@ function ensureLayers(map: Map): void {
     source: ROUTE_SOURCE,
     filter: isSelected,
     layout: { 'line-cap': 'butt', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'colour'], 'line-width': 6, 'line-dasharray': DASH_REST },
+    paint: { 'line-color': '#fff8ee', 'line-width': 1.6, 'line-opacity': 0.85, 'line-dasharray': DASH_REST },
   });
 }
 
@@ -157,14 +170,14 @@ function halfway(coordinates: [number, number][]): [number, number] | undefined 
   return coordinates[0];
 }
 
-function showLetters(map: Map, routes: Route[], selectedId: string | undefined): void {
+function showLetters(map: Map, routes: Route[], selectedId: string | undefined, accent?: string): void {
   for (const marker of letterMarkers.get(map) ?? []) marker.remove();
   const markers = routes.flatMap(route => {
     const point = halfway(route.geometry.coordinates);
     if (!point) return [];
     const badge = document.createElement('span');
     badge.className = `route-letter${route.id === selectedId ? ' route-letter--selected' : ''}`;
-    badge.style.setProperty('--route', routeColour(routes, route.id).line);
+    badge.style.setProperty('--route', lineColour(routes, route.id, selectedId, accent));
     badge.setAttribute('aria-hidden', 'true'); // the route switch names the routes for screen readers
     badge.textContent = routeLetter(routes, route.id);
     return [new Marker({ element: badge }).setLngLat(point).addTo(map)];
@@ -173,16 +186,17 @@ function showLetters(map: Map, routes: Route[], selectedId: string | undefined):
 }
 
 /** Draws the candidates and highlights `selectedId`. Safe to call before the style loads. */
-export function showRoutes(map: Map, routes: Route[], selectedId: string | undefined): void {
+export function showRoutes(map: Map, routes: Route[], selectedId: string | undefined, accent?: string): void {
   const apply = () => {
     ensureLayers(map);
-    (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
-    showLetters(map, routes, selectedId);
+    (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId, accent));
+    // A single candidate needs no letter.
+    showLetters(map, routes.length > 1 ? routes : [], selectedId, accent);
     const selected = routes.find(route => route.id === selectedId);
-    const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
+    const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}|${accent ?? ''}` : '';
     if (animatedKeys.get(map) !== key) {
       animatedKeys.set(map, key);
-      showStops(map, selected, routeColour(routes, selectedId).line);
+      showStops(map, selected, lineColour(routes, selectedId, selectedId, accent));
       animateSelected(map, key !== '');
     }
   };
@@ -194,7 +208,9 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
 }
 
 /** Closest overview for a selected route, so its 3D corridor is visible (route focus). */
-const MIN_FOCUS_ZOOM = 14.4;
+const MIN_FOCUS_ZOOM = 13.6;
+/** Extra zoom after fitting a flat map, so the tilted route fills the open area. */
+const TILT_ZOOM = 0.55;
 
 /** Moves the camera so the route fits between the floating panels, but never so far out that the corridor disappears. */
 export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void {
@@ -205,5 +221,10 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void 
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
   const camera = map.cameraForBounds(bounds, { padding, bearing: -20, maxZoom: 16 });
   if (!camera) return;
-  map.easeTo({ ...camera, zoom: Math.max(camera.zoom ?? MIN_FOCUS_ZOOM, MIN_FOCUS_ZOOM), pitch: 55, bearing: -20, duration: 600 });
+  // The camera already accounts for `padding`; clear any padding left on the map (the home view
+  // sets one) so the offset is not applied twice.
+  const none = { top: 0, bottom: 0, left: 0, right: 0 };
+  // The fit is computed for a flat map; tilted, the route looks smaller, so move a little closer.
+  const zoom = Math.min(16, Math.max((camera.zoom ?? MIN_FOCUS_ZOOM) + TILT_ZOOM, MIN_FOCUS_ZOOM));
+  map.easeTo({ ...camera, padding: none, zoom, pitch: 55, bearing: -20, duration: 1200 });
 }

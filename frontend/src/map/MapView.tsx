@@ -6,7 +6,7 @@ import { addPins } from '../markers/pins';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
-import { routeColour } from './routeColours';
+import { accentColour, routeColour } from './routeColours';
 import { focusRoute, initRouteFocus } from './routeFocus';
 import { fitRoute, onStopClick, showRoutes } from './routes';
 
@@ -23,13 +23,17 @@ interface MapViewProps {
   onMapReady?: (map: Map | null) => void;
   /** A numbered stop marker was clicked. */
   onStopClick?: (placeId: string) => void;
+  /** Ask for the visitor's location and fly there. Off when the home view is composed around a fixed spot. */
+  locate?: boolean;
+  /** Mood colour for the selected route's glow and corridor; rank colours otherwise. */
+  accent?: string;
 }
 
 // Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
@@ -43,7 +47,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     // Dev-only handle for the browser console and automated checks.
     if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
     const abort = new AbortController();
-    const location = locateVisitor();
+    const location = locate ? locateVisitor() : Promise.resolve(null);
     loadPins(undefined, abort.signal)
       .then(pins => !abort.signal.aborted && addPins(map, pins))
       .catch(error => console.warn('Loading pins failed', error));
@@ -78,16 +82,18 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    showRoutes(map, routes, selectedRouteId);
+    showRoutes(map, routes, selectedRouteId, accent);
     const selected = routes.find(route => route.id === selectedRouteId);
-    focusRoute(map, selected, selected && routeColour(routes, selected.id));
-  }, [routes, selectedRouteId]);
+    focusRoute(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
+  }, [routes, selectedRouteId, accent]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
   useEffect(() => {
     const map = mapRef.current;
     const route = routes.find(candidate => candidate.id === selectedRouteId);
     if (map && route && padding) fitRoute(map, route, padding);
+    // Back home: return to the opening view (padding keeps it composed around the spotlight).
+    else if (map && routes.length === 0 && map.loaded()) map.easeTo({ ...INITIAL_VIEW, ...(padding && { padding }), duration: 900 });
     // padding is recomputed each render on purpose: only routes or selection move the camera.
   }, [routes, selectedRouteId]);
 
