@@ -1,9 +1,9 @@
 # Module ownership
 
-Ola owns forms and UI states. Aryna owns place cards and data-source labels. Alban reviews both.
+The shell (`shell/`) is the app's layout since the "Find YOUR way" rebuild: title bar, the guide (orb, prompt, trip panel), reports. Map modules live in `src/map/`.
 
 Agreed folders, so names do not collide:
 
-- `places/` (Aryna): `PlaceCard`, `PlaceCardList`.
+- `shell/`: `TitleBar`, `Agent` (orb, prompt and trip panel), `Orb`, `Reports`, moods.
+- `places/` (Aryna): `PlaceCard`, `PlacePopup`.
 - `provenance/` (Aryna): `DataModeBadge`, `SourceLabel`, `SourcesStrip`, `SourcesDrawer` (DATA-08). Use `SourceLabel` with `sourceFor(sources, id)` from `src/api/contract.ts` to label any metric or place.
-- `preferences/` and `status/` (Ola): the preferences form, plus loading, error and empty states.

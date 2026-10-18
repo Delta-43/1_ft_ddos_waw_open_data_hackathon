@@ -3,8 +3,6 @@ import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 import { runTrack, type TrackResponse } from './api/tracks';
 
-/** Kept for the previous assistant widget (components/preferences), which the shell no longer mounts. */
-export type ChatMessage = { role: 'user' | 'assistant'; text: string };
 export type RequestStatus = { state: 'idle' } | { state: 'loading' } | { state: 'error'; message: string } | { state: 'success' };
 
 function messageFor(error: unknown): string {
