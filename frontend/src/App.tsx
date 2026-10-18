@@ -4,6 +4,7 @@ import { PlacePopup } from './components/places/PlacePopup';
 import { MapCredits } from './components/provenance/MapCredits';
 import { Agent, type AgentPhase } from './components/shell/Agent';
 import { moodForTrack } from './components/shell/moods';
+import { Reports } from './components/shell/Reports';
 import { TitleBar } from './components/shell/TitleBar';
 import { INITIAL_VIEW } from './map/config';
 import { MapView } from './map/MapView';
@@ -188,6 +189,7 @@ export function App() {
         accent={result ? accent : undefined}
         locate={false}
         fitKey={parked ? 'parked' : 'trip'}
+        explore={!!result && !parked}
         onIntroStart={() => setCurtain('lifting')}
         onIntroDone={() => setIntroDone(true)}
         onMapReady={setMap}
@@ -227,6 +229,7 @@ export function App() {
         onToggleSources={() => setSourcesOpen(open => !open)}
         onReset={park}
       />
+      <Reports map={map} explore={!!result && !parked} />
       <p className="credits">
         <MapCredits />
         {result && (

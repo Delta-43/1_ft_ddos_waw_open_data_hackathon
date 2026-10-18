@@ -251,9 +251,9 @@ const MIN_FOCUS_ZOOM = 13.6;
 const TILT_ZOOM = 0.55;
 
 /** Moves the camera so the route fits between the floating panels, but never so far out that the corridor disappears. */
-export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void {
+export function fitRoute(map: Map, route: Route, padding: PaddingOptions): number | undefined {
   const coordinates = route.geometry.coordinates;
-  if (coordinates.length === 0) return;
+  if (coordinates.length === 0) return undefined;
   const lngs = coordinates.map(([lng]) => lng);
   const lats = coordinates.map(([, lat]) => lat);
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
@@ -261,7 +261,7 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void 
   const x = ((padding.left ?? 0) + (padding.right ?? 0)) / 2;
   const y = ((padding.top ?? 0) + (padding.bottom ?? 0)) / 2;
   const camera = map.cameraForBounds(bounds, { padding: { top: y, bottom: y, left: x, right: x }, bearing: -20, maxZoom: 16 });
-  if (!camera) return;
+  if (!camera) return undefined;
   // The fit is computed for a flat map; tilted, the route looks smaller, so move a little closer.
   // A short open area (a phone above its bottom sheet) has no room to spare for that.
   const open = map.getContainer().clientHeight - 2 * y;
@@ -270,4 +270,38 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void 
   // correct when tilted (a flat-map offset grows towards the horizon and misses on phones).
   const center: [number, number] = [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
   map.easeTo({ center, zoom, padding, pitch: 55, bearing: -20, duration: 1200 });
+  return zoom;
+}
+
+/** How far a visitor may zoom out past the fitted route, in zoom levels. */
+const ZOOM_OUT_ALLOWANCE = 0.7;
+/** How far the centre may wander from the route's box before it glides back, in metres. */
+const WANDER_M = 900;
+
+/**
+ * Keeps the camera on `route` once it has been fitted at `zoom`: no zooming out much past the
+ * whole route (fewer tiles, a steadier frame rate) and a gentle return if the centre wanders far
+ * away. Returns a function that lifts both limits.
+ */
+export function holdOnRoute(map: Map, route: Route, zoom: number, defaultMinZoom: number): () => void {
+  const lngs = route.geometry.coordinates.map(([lng]) => lng);
+  const lats = route.geometry.coordinates.map(([, lat]) => lat);
+  const dLng = WANDER_M / (111_320 * Math.cos((52.22 * Math.PI) / 180));
+  const dLat = WANDER_M / 110_540;
+  const [west, east, south, north] = [Math.min(...lngs) - dLng, Math.max(...lngs) + dLng, Math.min(...lats) - dLat, Math.max(...lats) + dLat];
+  const lock = () => map.setMinZoom(Math.max(defaultMinZoom, zoom - ZOOM_OUT_ALLOWANCE));
+  const keepNear = (event: { originalEvent?: unknown }) => {
+    if (!event.originalEvent) return; // only after the visitor's own moves
+    const { lng, lat } = map.getCenter();
+    const clamped: [number, number] = [Math.min(east, Math.max(west, lng)), Math.min(north, Math.max(south, lat))];
+    if (clamped[0] !== lng || clamped[1] !== lat) map.easeTo({ center: clamped, duration: 700 });
+  };
+  // Limit only after the fitting flight lands, so it can still zoom out to the route first.
+  map.once('moveend', lock);
+  map.on('moveend', keepNear);
+  return () => {
+    map.off('moveend', lock);
+    map.off('moveend', keepNear);
+    map.setMinZoom(defaultMinZoom);
+  };
 }

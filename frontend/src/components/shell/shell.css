@@ -716,6 +716,162 @@
 .trip-pill__text { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .trip-pill__meta { font-size: 13px; color: var(--fg-3); white-space: nowrap; }
 
+/* ---------- Blue message flags: events, offers, tickets ---------- */
+.city-flag { position: relative; display: flex; flex-direction: column; align-items: center; }
+.city-flag__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 170px;
+  padding: 3px 8px 3px 6px;
+  border: 1px solid rgba(120, 180, 255, 0.55);
+  border-radius: 8px 8px 8px 2px;
+  background: linear-gradient(180deg, #2f7fe8, #1f63c4);
+  color: #fff;
+  font: 600 11px/1.3 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(20, 90, 200, 0.45), 0 0 0 3px rgba(60, 140, 255, 0.12);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+  animation: flag-in 0.6s var(--ease-out) both;
+}
+.city-flag__pill span { overflow: hidden; text-overflow: ellipsis; }
+.city-flag__pill svg { flex: none; width: 13px; height: 13px; }
+.city-flag__pill:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20, 90, 200, 0.55), 0 0 0 3px rgba(60, 140, 255, 0.2); }
+.city-flag--real .city-flag__pill { background: linear-gradient(180deg, #3f8cff, #2b6fd6); border-color: #cfe2ff; }
+.city-flag__stem { width: 1.5px; height: 14px; background: linear-gradient(#4b95f5, transparent); }
+.city-flag__card {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  width: 220px;
+  padding: 10px 12px;
+  border: 1px solid rgba(120, 180, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(14, 22, 38, 0.97);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  color: var(--fg);
+  font: 12px/1.4 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  transform: translateX(-50%);
+  animation: bubble-in 0.3s var(--ease-out) both;
+}
+.city-flag__card[hidden] { display: none; }
+.city-flag--below .city-flag__card { bottom: auto; top: calc(100% + 6px); }
+.city-flag__card p { margin: 0; }
+.city-flag__kind { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8fbfff; }
+.city-flag__title { margin-top: 3px !important; font-size: 13.5px; font-weight: 600; }
+.city-flag__place { color: var(--fg-2); }
+.city-flag__when { margin-top: 4px !important; color: var(--fg); }
+.city-flag__detail { margin-top: 4px !important; color: var(--fg-2); }
+.city-flag__source { margin-top: 8px !important; padding-top: 6px; border-top: 1px solid var(--hair); font-size: 10.5px; color: var(--fg-3); }
+@keyframes flag-in { from { opacity: 0; transform: translateY(6px) scale(0.9); } }
+/* Placed flags sit above tucked ones; an open card above everything. !important: MapLibre
+   sets z-index on markers itself. */
+.maplibregl-marker.city-flag { z-index: 1 !important; }
+.maplibregl-marker.city-flag--tucked { z-index: 0 !important; }
+.maplibregl-marker.city-flag--open { z-index: 3 !important; }
+/* Tucked: overlapping flags shrink to their icon; a click opens the card with the full text. */
+.city-flag--tucked .city-flag__pill { padding: 4px; border-radius: 50%; }
+.city-flag--tucked .city-flag__pill span { display: none; }
+
+/* ---------- Reports: yellow warning, bottom left ---------- */
+.reports { position: fixed; left: 20px; bottom: calc(52px + env(safe-area-inset-bottom)); z-index: 11; }
+.reports__button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 201, 60, 0.35);
+  border-radius: 14px;
+  background: rgba(22, 19, 10, 0.92);
+  color: #ffc93c;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 190, 40, 0.18);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+}
+.reports__button svg { width: 22px; height: 22px; filter: drop-shadow(0 0 6px rgba(255, 190, 40, 0.5)); }
+.reports__button:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 190, 40, 0.3); }
+.reports--open .reports__button { border-color: rgba(255, 201, 60, 0.7); }
+.reports__count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ffc93c;
+  color: #1d1503;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 18px;
+}
+.reports__panel {
+  position: absolute;
+  left: 0;
+  bottom: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(360px, calc(100vw - 40px));
+  max-height: min(560px, calc(100dvh - 200px));
+  padding: 16px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border: 1px solid var(--hair);
+  border-radius: 22px;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  transform-origin: 0 100%;
+  animation: bubble-in 0.4s var(--ease-out) both;
+}
+.reports__panel::-webkit-scrollbar { display: none; }
+.reports__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.reports__title { margin: 0; font-size: 16px; font-weight: 600; }
+.reports__sub { margin: 2px 0 0; font-size: 12.5px; color: var(--fg-3); }
+.reports__list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.report { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; padding: 10px; border: 1px solid transparent; border-radius: 14px; background: rgba(255, 255, 255, 0.025); transition: border-color 0.2s, background 0.2s; }
+.report--active { border-color: rgba(255, 201, 60, 0.45); background: rgba(255, 201, 60, 0.06); }
+.report__main { display: flex; flex-direction: column; gap: 3px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.report__kind { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #ffc93c; }
+.report__kind--issue { color: #ff9f5a; }
+.report__text { font-size: 13px; line-height: 1.4; color: var(--fg); }
+.report__meta { font-size: 11px; color: var(--fg-3); }
+.report__action { padding: 4px 9px; border: 1px solid var(--hair); border-radius: 999px; background: none; color: var(--fg-2); font: inherit; font-size: 11.5px; white-space: nowrap; cursor: pointer; }
+.report__action:hover { color: var(--fg); border-color: var(--hair-strong); }
+.report__action--on { border-color: rgba(255, 201, 60, 0.6); color: #ffd770; }
+.reports__add { align-self: flex-start; padding: 8px 14px; border: 1px dashed rgba(255, 201, 60, 0.45); border-radius: 999px; background: none; color: #ffd770; font: inherit; font-size: 13px; cursor: pointer; }
+.reports__add:hover { background: rgba(255, 201, 60, 0.07); }
+.reports__form { display: grid; gap: 8px; }
+.reports__kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.report-kind { padding: 6px 11px; border: 1px solid var(--hair); border-radius: 999px; background: none; color: var(--fg-2); font: inherit; font-size: 12px; cursor: pointer; }
+.report-kind--on { border-color: rgba(255, 201, 60, 0.6); background: rgba(255, 201, 60, 0.1); color: #ffe39a; }
+.reports__input { width: 100%; resize: none; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 14px; background: rgba(255, 255, 255, 0.035); color: var(--fg); font: inherit; font-size: 13.5px; }
+.reports__input:focus { outline: none; border-color: rgba(255, 201, 60, 0.5); }
+.reports__form-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reports__save { padding: 7px 16px; border: 0; border-radius: 999px; background: #ffc93c; color: #1d1503; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.reports__save:disabled { opacity: 0.35; cursor: default; }
+.reports__fine { margin: 0; font-size: 11px; line-height: 1.45; color: var(--fg-3); }
+
+.report-marker {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffc93c;
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px rgba(255, 190, 40, 0.65)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+  transition: transform 0.25s var(--ease-out);
+  animation: flag-in 0.4s var(--ease-out) both;
+}
+.report-marker svg { width: 20px; height: 20px; }
+.report-marker:hover,
+.report-marker--active { transform: scale(1.35); }
+
 /* ---------- Credits: always visible ---------- */
 .credits {
   position: fixed;
@@ -737,7 +893,7 @@
 .shell--trip .maplibregl-ctrl-top-right { right: calc(var(--dock) + 32px); }
 .shell .maplibregl-ctrl-group { border: 1px solid var(--hair); border-radius: 12px; background: rgba(16, 16, 19, 0.92); overflow: hidden; }
 .shell--home .stop-marker { pointer-events: none; }
-.shell .historical-attribution { bottom: calc(40px + env(safe-area-inset-bottom)); left: 20px; }
+.shell .historical-attribution { bottom: calc(60px + env(safe-area-inset-bottom)); left: 76px; }
 
 /* Stops on the map are lit circles without numbers; the panel lists them in order. */
 .shell .stop-marker__badge {
@@ -800,6 +956,10 @@
   .credits { left: 16px; max-width: calc(100vw - 32px); font-size: 10px; }
   /* A trip panel fills the bottom, so the credits move under the title bar. */
   .shell--trip .credits { top: calc(56px + env(safe-area-inset-top)); bottom: auto; }
+  /* Phones: the guide owns the bottom, so the warning sits top left under the title. */
+  .reports { top: calc(112px + env(safe-area-inset-top)); bottom: auto; left: 16px; }
+  .reports__button { width: 40px; height: 40px; border-radius: 12px; }
+  .reports__panel { top: 50px; bottom: auto; width: calc(100vw - 32px); max-height: calc(100dvh - 190px); transform-origin: 0 0; }
   .shell--trip .maplibregl-ctrl-top-right { right: 0; top: 96px; }
 }
 
