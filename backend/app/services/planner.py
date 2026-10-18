@@ -363,9 +363,9 @@ def _sources(origins: set[str], is_itinerary: bool = False) -> list[dict]:
     return sources
 
 
-def plan(request: RouteRequest) -> dict:
+def plan(request: RouteRequest, use_model: bool = True) -> dict:
     _validate_itinerary(request.destination_place_id, request.via_place_ids)
-    prefs = interpret(request)
+    prefs = interpret(request, use_model=use_model)
     departure = clock()
     start_pt = request.preferences.start if request.preferences and request.preferences.start else None
     start = (start_pt.longitude, start_pt.latitude) if start_pt else DEFAULT_START
@@ -392,7 +392,7 @@ def plan(request: RouteRequest) -> dict:
         route["explanation"] = (
             _explain_itinerary(route, prefs) if is_itinerary else _explain(route["name"], route, prefs, baseline)
         )
-    worded = ai.model_explanations(request.query, routes)
+    worded = ai.model_explanations(request.query, routes) if use_model else {}
     for route in routes:
         route["explanation"] = worded.get(route["id"], route["explanation"])
         route["explanation"] += _hours_note(route, departure, categories=None if is_itinerary else {"museum"})
