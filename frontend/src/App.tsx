@@ -12,6 +12,7 @@ import { startParallax } from './map/parallax';
 import { startRouteLight } from './map/routeLight';
 import { useT } from './i18n/useT';
 import { useOuting } from './useOuting';
+import './fonts.css';
 import './components/shell/shell.css';
 
 const MOBILE_QUERY = '(max-width: 700px)';
