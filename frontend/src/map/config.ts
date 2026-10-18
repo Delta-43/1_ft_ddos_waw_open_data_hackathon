@@ -2,11 +2,12 @@ import type { LngLatBoundsLike, LngLatLike } from 'maplibre-gl';
 
 /** Camera the map opens on and the "reset view" button returns to. */
 export const INITIAL_VIEW = {
-  // Between the Palace of Culture and the Old Town. GeoJSON order: [lng, lat].
-  center: [21.0122, 52.2297] as LngLatLike,
-  zoom: 15,
+  // The Mermaid (Syrena) on the Vistula boulevards at Powiśle, looking east across the river.
+  // OSM via Nominatim, 2026-10-18. GeoJSON order: [lng, lat].
+  center: [21.03208, 52.24026] as LngLatLike,
+  zoom: 15.4,
   pitch: 60,
-  bearing: -20,
+  bearing: 60,
 };
 
 /** Camera limits: panning is restricted to the Warsaw metropolitan area. */

@@ -3,12 +3,16 @@ import { useEffect, useRef } from 'react';
 import type { Route } from '../api/contract';
 import { loadPins } from '../data';
 import { addPins } from '../markers/pins';
-import { INITIAL_VIEW } from './config';
+import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
-import { routeColour } from './routeColours';
-import { focusRoute, initRouteFocus } from './routeFocus';
-import { fitRoute, onStopClick, showRoutes } from './routes';
+import { accentColour, routeColour } from './routeColours';
+import { initCorridor, showCorridor } from './corridor';
+import { initRouteFocus } from './routeFocus';
+import { initTransit, showTransit } from './transit';
+import { fitRoute, holdOnRoute, onStopClick, showRoutes } from './routes';
+import { showFlags } from './flags';
+import { useLang } from '../i18n/useT';
 
 interface MapViewProps {
   routes?: Route[];
@@ -23,13 +27,22 @@ interface MapViewProps {
   onMapReady?: (map: Map | null) => void;
   /** A numbered stop marker was clicked. */
   onStopClick?: (placeId: string) => void;
+  /** Ask for the visitor's location and fly there. Off when the home view is composed around a fixed spot. */
+  locate?: boolean;
+  /** Mood colour for the selected route's glow and corridor; rank colours otherwise. */
+  accent?: string;
+  /** Changing it refits the selected route with the current padding (e.g. trip ⇄ parked on home). */
+  fitKey?: string;
+  /** The trip view: the camera stays on the route, and offers and events show along it. */
+  explore?: boolean;
 }
 
 // Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent, fitKey, explore = false }: MapViewProps) {
+  const lang = useLang();
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
@@ -43,13 +56,15 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     // Dev-only handle for the browser console and automated checks.
     if (import.meta.env.DEV) Object.assign(window, { warsawMap: map });
     const abort = new AbortController();
-    const location = locateVisitor();
+    const location = locate ? locateVisitor() : Promise.resolve(null);
     loadPins(undefined, abort.signal)
       .then(pins => !abort.signal.aborted && addPins(map, pins))
       .catch(error => console.warn('Loading pins failed', error));
     map.once('load', () => {
       // Buildings rise with zoom during the intro, and later sink away from the selected route.
       initRouteFocus(map);
+      initCorridor(map);
+      initTransit(map);
       // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
       let landed = false;
       let located = false;
@@ -78,18 +93,31 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    showRoutes(map, routes, selectedRouteId);
+    showRoutes(map, routes, selectedRouteId, accent);
     const selected = routes.find(route => route.id === selectedRouteId);
-    focusRoute(map, selected, selected && routeColour(routes, selected.id));
-  }, [routes, selectedRouteId]);
+    showCorridor(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
+    showTransit(map, selected);
+  }, [routes, selectedRouteId, accent]);
+
+  // Offer and event flags along the route, rebuilt in the current language.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    showFlags(map, explore ? routes.find(route => route.id === selectedRouteId) : undefined);
+  }, [routes, selectedRouteId, explore, lang]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
   useEffect(() => {
     const map = mapRef.current;
     const route = routes.find(candidate => candidate.id === selectedRouteId);
-    if (map && route && padding) fitRoute(map, route, padding);
-    // padding is recomputed each render on purpose: only routes or selection move the camera.
-  }, [routes, selectedRouteId]);
+    if (map && route && padding) {
+      const zoom = fitRoute(map, route, padding);
+      if (explore && zoom !== undefined) return holdOnRoute(map, route, zoom, CAMERA_LIMITS.minZoom);
+    }
+    // Back home: return to the opening view (padding keeps it composed around the spotlight).
+    else if (map && routes.length === 0 && map.loaded()) map.easeTo({ ...INITIAL_VIEW, ...(padding && { padding }), duration: 900 });
+    // padding is recomputed each render on purpose: only routes, selection or fitKey move the camera.
+  }, [routes, selectedRouteId, fitKey, explore]);
 
   return <div ref={container} className="map" />;
 }

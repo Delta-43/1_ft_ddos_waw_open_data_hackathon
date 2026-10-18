@@ -2,39 +2,36 @@ import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl';
 import { TILES } from './config';
 
 /**
- * Every colour used by the map: a bright, game-map palette. The ground follows the GTA V
- * map (cyan water, soft green parks, light urban ground, white roads, district outlines);
- * the 3D buildings follow the Assassin's Creed Unity map (pale steel-blue walls, light roofs).
+ * Every colour used by the map: Delta's dark reference (docs/design-review/map-reference-dark.png).
+ * Flat dark-grey ground and water, dark-grey blocks lit softly from above, and streets as thin
+ * amber lines with a glow. The glow runs well below the reference so a selected route leads.
  * Tweak these to restyle the whole map; the layers below only reference the palette.
  */
 export const palette = {
-  background: '#e4e9ee',
-  residential: '#dde3e9',
-  park: '#b5d893',
-  wood: '#9cc879',
-  water: '#4fc3e6',
-  waterway: '#62cbea',
-  roadCasing: '#b9c4cf',
-  roadMinor: '#f7f9fb',
-  roadMajor: '#ffffff',
-  roadMotorway: '#ffffff',
-  rail: '#a9b4bf',
-  district: '#2f5d3a',
-  neighbourhood: '#6f8f78',
-  buildingLow: '#8ea6c0',
-  buildingHigh: '#adc1d6',
-  // Light, not white: a near-white roof slab glares against the bright ground.
-  buildingRoof: '#d6e1ec',
-  buildingRim: '#5f8fc0',
-  // Near-white: MapLibre adds (1 - light colour) as ambient, so a saturated light would
-  // tint shadowed walls with its complement. The blue comes from the building colours.
-  light: '#ffffff',
-  label: '#1d2b3a',
-  labelWater: '#0d5f7a',
-  labelHalo: '#ffffff',
-  sky: '#9fd6f2',
-  horizon: '#e8f4fa',
-  fog: '#e3ecf2',
+  background: '#1b1c1f',
+  residential: '#1d1e21',
+  park: '#1c221e',
+  wood: '#1b211d',
+  water: '#111214',
+  waterway: '#131416',
+  street: '#ff9d42',
+  streetGlow: '#ff7a1a',
+  rail: '#4a4640',
+  district: '#3a3b40',
+  neighbourhood: '#2c2d31',
+  buildingLow: '#1d1e22',
+  buildingHigh: '#2c2e34',
+  // Slightly lighter roof slab: the "soft top light" of the reference.
+  buildingRoof: '#3b3d45',
+  buildingRim: '#0b0b0c',
+  // Warm, near-white: MapLibre adds (1 - light colour) as ambient light.
+  light: '#fff4e8',
+  label: '#7d7a74',
+  labelWater: '#5f5d59',
+  labelHalo: '#121315',
+  sky: '#060607',
+  horizon: '#1a130d',
+  fog: '#0c0c0d',
 };
 
 type Palette = typeof palette;
@@ -77,7 +74,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
   const buildingColour: ExpressionSpecification = ['interpolate', ['linear'], height, 0, p.buildingLow, 120, p.buildingHigh];
   return {
     version: 8,
-    name: 'Warsaw bright game map',
+    name: 'Warsaw dark glow map',
     glyphs: TILES.glyphs,
     sources: {
       [source]: { type: 'vector', url: TILES.tileJson },
@@ -85,7 +82,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
     // Lit faces get up to 1.0 × colour, faces turned away (1 − intensity). A lower sun (55° from
     // vertical instead of 35°) keeps roofs from catching full light and shows more light/shade
     // contrast on walls; intensity 0.5 darkens the shaded sides.
-    light: { anchor: 'viewport', color: p.light, intensity: 0.5, position: [1.5, 210, 55] },
+    light: { anchor: 'viewport', color: p.light, intensity: 0.42, position: [1.5, 200, 40] },
     // Sky and fog become visible when the camera is pitched towards the horizon.
     sky: {
       'sky-color': p.sky,
@@ -145,21 +142,18 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         paint: { 'fill-color': p.water },
       },
       {
-        // White roads with a grey casing, as on the GTA V map (casing only for main roads).
-        id: 'road-casing',
+        // Soft amber glow under main streets; kept faint so the selected route leads (#91 D3).
+        id: 'road-glow',
         type: 'line',
         source,
         'source-layer': 'transportation',
-        filter: ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary'], true, false],
+        filter: ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary'], true, false],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': p.roadCasing,
-          // Zoom curve outside, class inside: only one zoom expression is allowed per property.
-          'line-width': [
-            'interpolate', ['exponential', 1.5], ['zoom'],
-            10, ['match', ['get', 'class'], ['motorway', 'trunk'], 2.4, 1.6],
-            18, ['match', ['get', 'class'], ['motorway', 'trunk'], 24, 19],
-          ],
+          'line-color': p.streetGlow,
+          'line-width': roadWidth([[10, 3], [18, 26]]),
+          'line-blur': roadWidth([[10, 3], [18, 18]]),
+          'line-opacity': 0.24,
         },
       },
       {
@@ -170,7 +164,11 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         minzoom: 13,
         filter: ['match', ['get', 'class'], ['minor', 'service', 'track', 'path'], true, false],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': p.roadMinor, 'line-width': roadWidth([[13, 0.5], [18, 8]]) },
+        paint: {
+          'line-color': p.street,
+          'line-width': roadWidth([[13, 0.3], [18, 1.6]]),
+          'line-opacity': ['match', ['get', 'class'], ['track', 'path'], 0.2, 0.45],
+        },
       },
       {
         id: 'rail',
@@ -180,7 +178,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         filter: ['match', ['get', 'class'], ['rail', 'transit'], true, false],
         paint: {
           'line-color': p.rail,
-          'line-width': roadWidth([[12, 0.8], [18, 3]]),
+          'line-width': roadWidth([[12, 0.6], [18, 2]]),
           'line-dasharray': [2, 2],
         },
       },
@@ -191,7 +189,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         'source-layer': 'transportation',
         filter: ['match', ['get', 'class'], ['primary', 'secondary', 'tertiary'], true, false],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': p.roadMajor, 'line-width': roadWidth([[10, 0.8], [18, 16]]) },
+        paint: { 'line-color': p.street, 'line-width': roadWidth([[10, 0.5], [18, 2.6]]), 'line-opacity': 0.85 },
       },
       {
         id: 'road-motorway',
@@ -200,16 +198,16 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         'source-layer': 'transportation',
         filter: ['match', ['get', 'class'], ['motorway', 'trunk'], true, false],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': p.roadMotorway, 'line-width': roadWidth([[10, 1.2], [18, 20]]) },
+        paint: { 'line-color': p.street, 'line-width': roadWidth([[10, 0.8], [18, 3.4]]), 'line-opacity': 0.95 },
       },
       {
-        // Blue footprint rim where buildings meet the street.
+        // Dark footprint rim where buildings meet the street.
         id: 'building-outline',
         type: 'line',
         source,
         'source-layer': 'building',
         minzoom: DETAIL_MINZOOM,
-        paint: { 'line-color': p.buildingRim, 'line-opacity': 0.45, 'line-width': 0.8 },
+        paint: { 'line-color': p.buildingRim, 'line-opacity': 0.6, 'line-width': 0.8 },
       },
       {
         id: 'building-3d',
@@ -261,7 +259,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
         'source-layer': 'boundary',
         filter: ['==', ['get', 'admin_level'], 9],
         layout: { 'line-join': 'round' },
-        paint: { 'line-color': p.district, 'line-width': roadWidth([[11, 1.2], [16, 2.5]]), 'line-opacity': 0.85 },
+        paint: { 'line-color': p.district, 'line-width': roadWidth([[11, 0.8], [16, 1.4]]), 'line-opacity': 0.6 },
       },
       {
         id: 'water-label',
@@ -290,7 +288,7 @@ export function buildStyle(p: Palette = palette): StyleSpecification {
           'text-transform': 'uppercase',
           'text-letter-spacing': 0.15,
         },
-        paint: { 'text-color': p.label, 'text-halo-color': p.labelHalo, 'text-halo-width': 1.5 },
+        paint: { 'text-color': p.label, 'text-halo-color': p.labelHalo, 'text-halo-width': 1, 'text-opacity': 0.8 },
       },
     ],
   };

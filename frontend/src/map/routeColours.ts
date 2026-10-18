@@ -1,14 +1,13 @@
 import type { Route } from '../api/contract';
 
 /**
- * One colour per candidate route, after Delta's mockup (mockups/warsaw-2076): green, blue, brown.
- * `tint` is the pale version used for the 3D buildings in the route's corridor. `casing` and
- * `fill` draw the selected route on the map: a darker edge around a lighter centre.
+ * One glow colour per candidate route on the dark map: warm gold (brighter than the amber
+ * streets), teal, violet. `tint` and `roof` light the 3D buildings in the route's corridor.
  */
 const PALETTE = [
-  { line: '#3d6b50', casing: '#1f4630', fill: '#7cc499', tint: '#cfdccf', roof: '#e3ebe2' }, // green
-  { line: '#5b6f94', casing: '#2c3f66', fill: '#94aee6', tint: '#cbd3e2', roof: '#e0e5ee' }, // blue
-  { line: '#94603f', casing: '#5e351c', fill: '#dba17a', tint: '#e6d3c5', roof: '#f1e5dc' }, // brown
+  { line: '#ffc56b', tint: '#4b443c', roof: '#6f6355' }, // gold
+  { line: '#5fe0cf', tint: '#3a4747', roof: '#53706c' }, // teal
+  { line: '#b9a2ff', tint: '#433f55', roof: '#62597f' }, // violet
 ];
 
 export type RouteColour = (typeof PALETTE)[number];
@@ -26,4 +25,19 @@ export function routeColour(routes: Route[], routeId: string | undefined): Route
 /** Letter for `routeId` by rank (rank 1 = A), the same on the map and in the route switch. */
 export function routeLetter(routes: Route[], routeId: string | undefined): string {
   return String.fromCharCode(65 + rankIndex(routes, routeId));
+}
+
+const CORRIDOR_BUILDING = '#2f3136';
+const CORRIDOR_ROOF = '#4a4c54';
+
+/** Blends two #rrggbb colours; `t` is the share of `b`. */
+function mix(a: string, b: string, t: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const blended = [0, 1, 2].map(i => Math.round(channel(a, i) * (1 - t) + channel(b, i) * t));
+  return `#${blended.map(value => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** A route colour from a mood accent: the route glows in the accent, corridor buildings take a faint tint of it. */
+export function accentColour(accent: string): RouteColour {
+  return { line: accent, tint: mix(accent, CORRIDOR_BUILDING, 0.85), roof: mix(accent, CORRIDOR_ROOF, 0.72) };
 }
