@@ -2,6 +2,7 @@ import { Marker, type Map } from 'maplibre-gl';
 import type { Route } from '../api/contract';
 import { CITY_FLAGS, type CityFlag, type FlagKind } from '../data/cityNotes';
 import { getLang } from '../i18n/language';
+import { localise, type Localised } from '../i18n/localised';
 import { translate, type Key } from '../i18n/translations';
 
 /**
@@ -23,6 +24,7 @@ const ICONS: Record<FlagKind, string> = {
 };
 const KIND_TEXT: Record<FlagKind, Key> = { event: 'flagEvent', offer: 'flagOffer', tickets: 'flagTickets' };
 const t = (key: Key) => translate(getLang(), key);
+const local = (text: Localised) => localise(text, getLang());
 
 function distanceToRoute(flag: CityFlag, route: Route): number {
   const x = flag.longitude * M_PER_DEG_LNG;
@@ -47,10 +49,10 @@ function element(flag: CityFlag, onOpen: (el: HTMLElement) => void): HTMLElement
   button.type = 'button';
   button.className = 'city-flag__pill';
   button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-label', `${t(KIND_TEXT[flag.kind])}: ${flag.title}${flag.mode === 'mock' ? ` (${t('flagDemoAria')})` : ''}`);
+  button.setAttribute('aria-label', `${t(KIND_TEXT[flag.kind])}: ${local(flag.title)}${flag.mode === 'mock' ? ` (${t('flagDemoAria')})` : ''}`);
   button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[flag.kind]}</svg><span class="city-flag__kind"></span><span class="city-flag__text"></span>`;
   button.querySelector('.city-flag__kind')!.textContent = t(KIND_TEXT[flag.kind]);
-  button.querySelector('.city-flag__text')!.textContent = flag.short;
+  button.querySelector('.city-flag__text')!.textContent = local(flag.short);
 
   const card = document.createElement('div');
   card.className = 'city-flag__card';
@@ -58,16 +60,16 @@ function element(flag: CityFlag, onOpen: (el: HTMLElement) => void): HTMLElement
   // The title carries its Real/Demo badge, so the label is never cut off below the fold.
   const title = document.createElement('p');
   title.className = 'city-flag__title';
-  title.textContent = flag.title;
+  title.textContent = local(flag.title);
   const badge = document.createElement('span');
   badge.className = `city-flag__badge city-flag__badge--${flag.mode}`;
   badge.textContent = `${t(KIND_TEXT[flag.kind])} · ${t(flag.mode === 'real' ? 'flagReal' : 'flagDemo')}`;
   title.append(' ', badge);
   card.append(title);
-  for (const [className, text] of [['city-flag__place', flag.place], ['city-flag__when', flag.when], ['city-flag__detail', flag.detail], ['city-flag__source', flag.source]]) {
+  for (const [className, text] of [['city-flag__place', flag.place], ['city-flag__when', flag.when], ['city-flag__detail', flag.detail], ['city-flag__source', flag.source]] as const) {
     const p = document.createElement('p');
     p.className = className;
-    p.textContent = text;
+    p.textContent = local(text);
     card.append(p);
   }
   button.addEventListener('click', event => {

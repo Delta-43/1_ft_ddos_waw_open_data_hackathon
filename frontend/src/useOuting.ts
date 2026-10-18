@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 import { runTrack, type TrackResponse } from './api/tracks';
 import { isTransitExample, transitExample } from './api/transitExamples';
 import { getLang } from './i18n/language';
 import { translate } from './i18n/translations';
+import { useLang } from './i18n/useT';
 
 export type RequestStatus = { state: 'idle' } | { state: 'loading' } | { state: 'error'; message: string } | { state: 'success' };
 
@@ -30,6 +31,17 @@ export function useOuting() {
   const inFlight = useRef<AbortController | null>(null);
   /** The last real outing, so a car-free example can head for the same destination. */
   const lastTrack = useRef<{ id?: string; end?: [number, number] }>({});
+  /** Rebuilds the current answer when it was made in the browser (mock, car-free example); backend answers stay as sent. */
+  const rebuild = useRef<(() => Promise<TrackResponse | null>) | null>(null);
+  const lang = useLang();
+
+  useEffect(() => {
+    const again = rebuild.current;
+    if (!again) return;
+    void again().then(response => {
+      if (response && rebuild.current === again) setResult(response);
+    });
+  }, [lang]);
 
   async function fetchFor(text: string, trackId: string | undefined, signal: AbortSignal): Promise<TrackResponse> {
     if (MOCK_ROUTES_ENABLED) return mockRoutes(signal);
@@ -46,11 +58,13 @@ export function useOuting() {
     inFlight.current?.abort();
     const abort = new AbortController();
     inFlight.current = abort;
+    rebuild.current = null;
     setStatus({ state: 'loading' });
     try {
       const response = await fetchFor(text, trackId, abort.signal);
       if (abort.signal.aborted) return;
       setResult(response);
+      if (MOCK_ROUTES_ENABLED) rebuild.current = () => mockRoutes();
       const coordinates = response.routes[0]?.geometry.coordinates;
       lastTrack.current = { id: response.track?.id, end: coordinates?.[coordinates.length - 1] };
       if (!trackId) setAiTrackId(response.track?.id);
@@ -78,9 +92,13 @@ export function useOuting() {
         return;
       }
       inFlight.current?.abort();
+      rebuild.current = null;
       setStatus({ state: 'loading' });
-      void transitExample(lastTrack.current.id, lastTrack.current.end).then(example => {
+      const { id, end } = lastTrack.current;
+      const again = () => transitExample(id, end);
+      void again().then(example => {
         if (example) {
+          rebuild.current = again;
           setResult(example);
           setStatus({ state: 'success' });
         } else setStatus({ state: 'error', message: translate(getLang(), 'shellErrorReach') });
@@ -89,6 +107,7 @@ export function useOuting() {
     /** Back to the opening view. */
     reset() {
       inFlight.current?.abort();
+      rebuild.current = null;
       setResult(null);
       setQuery('');
       setAiTrackId(undefined);
