@@ -66,13 +66,18 @@
   transition: --cx 0.9s var(--ease-signature), --cy 0.9s var(--ease-signature), --rx 0.9s var(--ease-signature), --ry 0.9s var(--ease-signature),
     --clear 0.9s, --mid 0.9s, --outer 0.9s;
 }
-/* Around a route the lit area is wider and clear; following the camera needs a short glide only. */
-.spotlight--route {
-  --clear: 34%;
-  --mid: 62%;
-  --outer: 96%;
-  transition: --cx 0.25s ease-out, --cy 0.25s ease-out, --rx 0.25s ease-out, --ry 0.25s ease-out, --clear 0.9s, --mid 0.9s, --outer 0.9s;
+/* With a route, map/routeLight.ts lights the route's own shape; the round spotlight steps aside. */
+.spotlight { transition-property: --cx, --cy, --rx, --ry, opacity; }
+.spotlight--route { opacity: 0; transition: opacity 0.9s var(--ease-out); }
+.route-light {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  animation: light-in 0.9s var(--ease-out) both;
 }
+@keyframes light-in { from { opacity: 0; } }
 
 /* ---------- Title bar: transparent, mark and name only ---------- */
 .title-bar {
@@ -599,6 +604,38 @@
 .legend__swatch--route { height: 3px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 .legend__swatch--culture { background: #8d74f0; }
 .legend__swatch--green { background: #3f8f58; border-radius: 50%; }
+.legend__swatch--stop { width: 7px; height: 7px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 6px #ff3b30; }
+
+/* Transit stop pop-up */
+.transit-popup .maplibregl-popup-content {
+  padding: 12px 14px 10px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 14px;
+  background: rgba(16, 16, 19, 0.96);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+  font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.transit-popup .maplibregl-popup-tip { border-top-color: rgba(16, 16, 19, 0.96) !important; border-bottom-color: rgba(16, 16, 19, 0.96) !important; }
+.transit-popup .maplibregl-popup-close-button { color: var(--fg-3); font-size: 16px; padding: 2px 6px; }
+.transit-popup__title { margin: 0 18px 8px 0; font-size: 13.5px; font-weight: 600; }
+.transit-popup ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--fg-2); }
+.transit-popup li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.transit-popup__line {
+  min-width: 30px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #ff7a6b;
+  color: #1a0705;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.transit-popup__line[data-mode='tram'] { background: #ffcf5c; }
+.transit-popup__to { display: flex; flex-direction: column; min-width: 0; color: var(--fg); }
+.transit-popup__to small { font-size: 11px; color: var(--fg-3); }
+.transit-popup__in { color: var(--fg); font-variant-numeric: tabular-nums; }
+.transit-popup__note { margin: 8px 0 0; font-size: 11px; color: var(--fg-3); }
 
 .tweak {
   display: flex;
@@ -702,12 +739,29 @@
 .shell--home .stop-marker { pointer-events: none; }
 .shell .historical-attribution { bottom: calc(40px + env(safe-area-inset-bottom)); left: 20px; }
 
+/* Stops on the map are lit circles without numbers; the panel lists them in order. */
 .shell .stop-marker__badge {
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--route);
-  background: #121215;
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--route) 16%, transparent), 0 0 22px color-mix(in srgb, var(--route) 55%, transparent);
+  background: color-mix(in srgb, var(--route) 30%, #101012);
+  font-size: 0;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--route) 14%, transparent), 0 0 18px color-mix(in srgb, var(--route) 70%, transparent);
+  transition: transform 0.25s var(--ease-out);
 }
-.shell .stop-marker__stem { background: linear-gradient(var(--route), transparent); }
+.shell .stop-marker:hover .stop-marker__badge { transform: scale(1.25); }
+.shell .stop-marker--end .stop-marker__badge { width: 18px; height: 18px; background: var(--route); }
+.shell .stop-marker--end .stop-marker__badge::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--route);
+  animation: stop-ping 2.4s var(--ease-out) infinite;
+}
+@keyframes stop-ping { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.6); opacity: 0; } }
+.shell .stop-marker__badge { position: relative; }
+.shell .stop-marker__stem { height: 1.1rem; width: 1.5px; background: linear-gradient(var(--route), transparent); }
 .shell .route-letter { border-color: #121215; color: #121215; }
 .place-popup .maplibregl-popup-tip { border-top-color: var(--hair-strong) !important; }
 .shell .place-card { border-radius: 16px; }
@@ -724,7 +778,7 @@
     transform: none;
     gap: 16px;
   }
-  .shell--home .agent { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .shell--home .agent { bottom: calc(84px + env(safe-area-inset-bottom)); }
   .agent .orb { --orb: 58px; }
   .agent--compose { flex-direction: column; gap: 14px; }
   .agent--compose .orb { --orb: 40px; }

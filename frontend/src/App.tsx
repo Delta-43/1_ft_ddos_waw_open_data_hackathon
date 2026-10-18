@@ -8,6 +8,7 @@ import { TitleBar } from './components/shell/TitleBar';
 import { INITIAL_VIEW } from './map/config';
 import { MapView } from './map/MapView';
 import { startParallax } from './map/parallax';
+import { startRouteLight } from './map/routeLight';
 import { useOuting } from './useOuting';
 import './components/shell/shell.css';
 
@@ -137,39 +138,15 @@ export function App() {
 
   const selectedRoute = result?.routes.find(route => route.id === selectedId);
 
-  // The spotlight follows the selected route: lit around it, dark everywhere else (also under the panel).
+  // With a route, light follows the route's shape instead of the round spotlight, so the corridor
+  // stays lit wherever the camera goes and everything else (also under the panel) stays dim.
   useEffect(() => {
-    const element = spotlight;
-    const vars = ['--cx', '--cy', '--rx', '--ry'];
-    if (!map || !element || !selectedRoute) {
-      element?.classList.remove('spotlight--route');
-      for (const name of vars) element?.style.removeProperty(name);
+    if (!map || !spotlight || !selectedRoute) {
+      spotlight?.classList.remove('spotlight--route');
       return;
     }
-    element.classList.add('spotlight--route');
-    const coordinates = selectedRoute.geometry.coordinates;
-    const step = Math.max(1, Math.floor(coordinates.length / 80));
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
-      for (let i = 0; i < coordinates.length; i += step) {
-        const { x, y } = map.project(coordinates[i]);
-        [minX, minY, maxX, maxY] = [Math.min(minX, x), Math.min(minY, y), Math.max(maxX, x), Math.max(maxY, y)];
-      }
-      const margin = 260;
-      element.style.setProperty('--cx', `${Math.round((minX + maxX) / 2)}px`);
-      element.style.setProperty('--cy', `${Math.round((minY + maxY) / 2)}px`);
-      element.style.setProperty('--rx', `${Math.round(Math.max(340, (maxX - minX) / 2 + margin))}px`);
-      element.style.setProperty('--ry', `${Math.round(Math.max(300, (maxY - minY) / 2 + margin))}px`);
-    };
-    const onMove = () => { if (!frame) frame = requestAnimationFrame(update); };
-    update();
-    map.on('move', onMove);
-    return () => {
-      map.off('move', onMove);
-      cancelAnimationFrame(frame);
-    };
+    spotlight.classList.add('spotlight--route');
+    return startRouteLight(map, spotlight, selectedRoute);
   }, [map, selectedRoute, spotlight]);
 
   function selectRoute(id: string) {
@@ -251,7 +228,16 @@ export function App() {
         onReset={park}
       />
       <p className="credits">
-        <MapCredits /> · We don’t store your requests or location.
+        <MapCredits />
+        {result && (
+          <>
+            {' · Timetable '}
+            <a href="https://ztm.waw.pl" target="_blank" rel="noreferrer">ZTM Warszawa</a>
+            {', GTFS by '}
+            <a href="https://mkuran.pl/gtfs/" target="_blank" rel="noreferrer">Mikołaj Kuranowski</a>
+          </>
+        )}
+        {' · We don’t store your requests or location.'}
       </p>
     </div>
   );

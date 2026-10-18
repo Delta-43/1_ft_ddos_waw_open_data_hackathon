@@ -409,7 +409,9 @@ function TripDetails({ route, sources }: { route: Route; sources: Source[] }) {
         <li><span className="legend__swatch legend__swatch--route" aria-hidden="true" />Your way</li>
         <li><span className="legend__swatch legend__swatch--culture" aria-hidden="true" />Culture and history</li>
         <li><span className="legend__swatch legend__swatch--green" aria-hidden="true" />Parks and trees</li>
+        <li><span className="legend__swatch legend__swatch--stop" aria-hidden="true" />Stops, buses and trams your way</li>
       </ul>
+      <p className="trip__fine">Buses and trams move by the ZTM timetable: scheduled positions, not live GPS. Tap a stop for its next departures.</p>
       <p className="trip__fine">3D only along your way. Buildings and trees from OpenStreetMap; most heights are estimated from floor counts.</p>
     </div>
   );

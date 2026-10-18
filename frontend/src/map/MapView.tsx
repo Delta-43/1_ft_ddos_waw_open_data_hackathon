@@ -9,6 +9,7 @@ import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } fro
 import { accentColour, routeColour } from './routeColours';
 import { initCorridor, showCorridor } from './corridor';
 import { initRouteFocus } from './routeFocus';
+import { initTransit, showTransit } from './transit';
 import { fitRoute, onStopClick, showRoutes } from './routes';
 
 interface MapViewProps {
@@ -58,6 +59,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
       // Buildings rise with zoom during the intro, and later sink away from the selected route.
       initRouteFocus(map);
       initCorridor(map);
+      initTransit(map);
       // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
       let landed = false;
       let located = false;
@@ -89,6 +91,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     showRoutes(map, routes, selectedRouteId, accent);
     const selected = routes.find(route => route.id === selectedRouteId);
     showCorridor(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
+    showTransit(map, selected);
   }, [routes, selectedRouteId, accent]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.

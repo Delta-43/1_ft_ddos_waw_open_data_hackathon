@@ -174,7 +174,8 @@ function showStops(map: Map, route: Route | undefined, colour: string): void {
     button.dataset.placeId = place.id;
     const badge = document.createElement('span');
     badge.className = 'stop-marker__badge';
-    badge.textContent = String(stop.order);
+    // No number on the map: the order is in the button's label and in the panel's list.
+    if (stop.order === route.stops.length) button.classList.add('stop-marker--end');
     const stem = document.createElement('span');
     stem.className = 'stop-marker__stem';
     button.append(badge, stem);

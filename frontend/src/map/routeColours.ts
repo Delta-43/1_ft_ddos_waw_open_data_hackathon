@@ -27,8 +27,8 @@ export function routeLetter(routes: Route[], routeId: string | undefined): strin
   return String.fromCharCode(65 + rankIndex(routes, routeId));
 }
 
-const CORRIDOR_BUILDING = '#3a3c43';
-const CORRIDOR_ROOF = '#5c5e66';
+const CORRIDOR_BUILDING = '#2f3136';
+const CORRIDOR_ROOF = '#4a4c54';
 
 /** Blends two #rrggbb colours; `t` is the share of `b`. */
 function mix(a: string, b: string, t: number): string {
