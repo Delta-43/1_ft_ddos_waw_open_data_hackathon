@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useT } from '../../i18n/useT';
 import { pinCredits } from '../../markers/credits';
 import './provenance.css';
 
@@ -25,6 +26,7 @@ function parseCredit(text: string): Credit {
  * pin sources are already covered by the basemap's OpenStreetMap credit.
  */
 export function MapCredits() {
+  const t = useT();
   const credits = useSyncExternalStore(pinCredits.subscribe, pinCredits.getSnapshot)
     .map(parseCredit)
     .filter(credit => !credit.url?.includes('openstreetmap.org'));
@@ -32,7 +34,7 @@ export function MapCredits() {
     <span className="map-credits">
       <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>{' '}
       <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a>{' '}
-      Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
+      {t('dataFrom')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
       {credits.map(credit => (
         <span key={credit.name}>
           {' · '}

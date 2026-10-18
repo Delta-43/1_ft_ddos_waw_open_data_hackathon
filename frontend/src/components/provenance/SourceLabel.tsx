@@ -1,20 +1,22 @@
 import type { Source, SourceMode } from '../../api/contract';
+import { useT } from '../../i18n/useT';
+import type { Key } from '../../i18n/translations';
 import { formatWarsawDate } from './formatDate';
 import './provenance.css';
 
-export const SOURCE_MODE_TEXT: Record<SourceMode, string> = {
-  real: 'Real',
-  historical: 'Historical',
-  proxy: 'Proxy',
-  simulated: 'Simulated',
+export const SOURCE_MODE_KEY: Record<SourceMode, Key> = {
+  real: 'sourceReal',
+  historical: 'sourceHistorical',
+  proxy: 'sourceProxy',
+  simulated: 'sourceSimulated',
 };
 
 /** Why each mode matters to a visitor; shown as the label's tooltip. */
-const MODE_MEANING: Record<SourceMode, string> = {
-  real: 'Fetched from a real source.',
-  historical: 'Real data, but from the past, not current.',
-  proxy: 'An estimate calculated from other data, not a measurement.',
-  simulated: 'Invented for the demo.',
+const MODE_MEANING_KEY: Record<SourceMode, Key> = {
+  real: 'modeMeaningReal',
+  historical: 'modeMeaningHistorical',
+  proxy: 'modeMeaningProxy',
+  simulated: 'modeMeaningSimulated',
 };
 
 /**
@@ -22,14 +24,15 @@ const MODE_MEANING: Record<SourceMode, string> = {
  * Modes differ in text and lightness, never colour alone. Unknown sources say so.
  */
 export function SourceLabel({ source, compact = false }: { source: Source | undefined; compact?: boolean }) {
+  const t = useT();
   if (!source) {
-    return <span className="source-label source-label--unknown">Source unknown</span>;
+    return <span className="source-label source-label--unknown">{t('sourceUnknownLabel')}</span>;
   }
-  const fetched = source.retrieved_at ? ` Fetched ${formatWarsawDate(source.retrieved_at)}.` : '';
-  const title = `${MODE_MEANING[source.mode]} ${source.attribution}.${fetched}${source.method ? ` ${source.method}` : ''}`;
+  const fetched = source.retrieved_at ? ` ${t('fetchedOn', { date: formatWarsawDate(source.retrieved_at) })}` : '';
+  const title = `${t(MODE_MEANING_KEY[source.mode])} ${source.attribution}.${fetched}${source.method ? ` ${source.method}` : ''}`;
   return (
     <span className={`source-label source-label--${source.mode}`} title={title}>
-      {SOURCE_MODE_TEXT[source.mode]}
+      {t(SOURCE_MODE_KEY[source.mode])}
       {!compact && <span className="source-label__name"> · {source.name}</span>}
     </span>
   );

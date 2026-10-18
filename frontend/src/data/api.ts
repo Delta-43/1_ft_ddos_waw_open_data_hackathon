@@ -1,3 +1,5 @@
+import { getLang } from '../i18n/language';
+import { translate, type Key } from '../i18n/translations';
 import { CAMERA_LIMITS } from '../map/config';
 
 /** Source metadata as returned in the API's `sources[]` (contracts/README.md). */
@@ -21,25 +23,27 @@ export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T>
   return response.json() as Promise<T>;
 }
 
-const MODE_LABEL: Record<string, string> = {
-  real: 'Real data, fetched at event time',
-  cached: 'Cached open data',
-  mock: 'Mock data',
-  simulated: 'Simulated data',
+const MODE_KEY: Record<string, Key> = {
+  real: 'pinModeReal',
+  cached: 'pinModeCached',
+  mock: 'pinModeMock',
+  simulated: 'pinModeSimulated',
 };
 
 /** Data-mode badge for a pin, e.g. "Cached open data · sample subset". */
 export function modeBadge(source: ApiSource | undefined): string {
-  if (!source) return 'Unknown source';
-  const label = MODE_LABEL[source.mode] ?? `${source.mode} data`;
-  return /sample/i.test(source.method ?? '') ? `${label} · sample subset` : label;
+  const lang = getLang();
+  if (!source) return translate(lang, 'unknownSourceText');
+  const label = MODE_KEY[source.mode] ? translate(lang, MODE_KEY[source.mode]) : translate(lang, 'pinModeOther', { mode: source.mode });
+  return /sample/i.test(source.method ?? '') ? `${label}${translate(lang, 'pinModeSampleSuffix')}` : label;
 }
 
 /** Popup rows naming the source and when it was retrieved. */
 export function sourceRows(source: ApiSource | undefined): Record<string, string> {
   if (!source) return {};
-  const rows: Record<string, string> = { Source: source.name };
-  if (source.retrieved_at) rows.Retrieved = source.retrieved_at.slice(0, 16).replace('T', ' ');
+  const lang = getLang();
+  const rows: Record<string, string> = { [translate(lang, 'rowSource')]: source.name };
+  if (source.retrieved_at) rows[translate(lang, 'rowRetrieved')] = source.retrieved_at.slice(0, 16).replace('T', ' ');
   return rows;
 }
 

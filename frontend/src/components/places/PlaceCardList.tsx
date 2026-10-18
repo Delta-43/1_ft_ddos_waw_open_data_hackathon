@@ -1,4 +1,5 @@
 import { sourceFor, type ResponseMode, type Source } from '../../api/contract';
+import { useT } from '../../i18n/useT';
 import type { DataMode } from '../provenance/DataModeBadge';
 import { PlaceCard } from './PlaceCard';
 import type { Place, Stop } from './types';
@@ -20,7 +21,8 @@ interface PlaceCardListProps {
 
 /** Cards for one route's stops, in visit order when stops are known. */
 export function PlaceCardList({ places, routeName, sources = [], stops, selectedPlaceId, onShowOnMap }: PlaceCardListProps) {
-  const heading = routeName ? `Stops on ${routeName}` : 'Stops';
+  const t = useT();
+  const heading = routeName ? t('stopsOnRoute', { name: routeName }) : t('stops');
   const byId = new Map(places.map(place => [place.id, place]));
   const ordered = stops
     ? [...stops].sort((a, b) => a.order - b.order).flatMap(stop => {
@@ -33,7 +35,7 @@ export function PlaceCardList({ places, routeName, sources = [], stops, selected
     <section className="place-card-list" aria-label={heading}>
       <h2 className="place-card-list__heading">{heading}</h2>
       {ordered.length === 0 ? (
-        <p className="place-card-list__empty">This route has no stops yet.</p>
+        <p className="place-card-list__empty">{t('noStopsYet')}</p>
       ) : (
         <ol className="place-card-list__items">
           {ordered.map(({ place, stop }) => (

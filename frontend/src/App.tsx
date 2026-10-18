@@ -10,6 +10,7 @@ import { SourcesDrawer } from './components/provenance/SourcesDrawer';
 import { ResultsPanels } from './components/results/ResultsPanels';
 import { MapView } from './map/MapView';
 import { useOuting } from './useOuting';
+import { useT } from './i18n/useT';
 import './components/layout/layout.css';
 import './components/results/results.css';
 
@@ -33,6 +34,7 @@ const MOBILE_PADDING: PaddingOptions = { top: 150, bottom: 420, left: 32, right:
 type Curtain = 'down' | 'lifting' | 'up';
 
 export function App() {
+  const t = useT();
   const outing = useOuting();
   const { result, status } = outing;
   const [selectedId, setSelectedId] = useState<string>();
@@ -114,8 +116,8 @@ export function App() {
           />
         )}
         <div className="hint-stack">
-          {!result && !assistantOpen && <HintPill>Describe your outing to see routes</HintPill>}
-          {!result && located === false && <HintPill>Showing central Warsaw · location off</HintPill>}
+          {!result && !assistantOpen && <HintPill>{t('hintDescribe')}</HintPill>}
+          {!result && located === false && <HintPill>{t('hintLocationOff')}</HintPill>}
         </div>
         {result && (
           <div className="sources-popover">
@@ -125,7 +127,7 @@ export function App() {
         {/* Floating credit line over the map: licence credits and the privacy promise, no bar. */}
         <footer className="sources-bar">
           <p className="sources-bar__line">
-            <MapCredits /> · We don’t store your requests or location.
+            <MapCredits /> · {t('privacyLine')}
           </p>
         </footer>
         <AssistantWidget

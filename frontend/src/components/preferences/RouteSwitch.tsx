@@ -1,7 +1,10 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { sourceFor, type Route, type Source } from '../../api/contract';
+import { useT } from '../../i18n/useT';
+import type { Key } from '../../i18n/translations';
 import { routeColour, routeLetter } from '../../map/routeColours';
 import { formatDistance, formatDuration } from '../places/format';
+import { SOURCE_MODE_KEY } from '../provenance/SourceLabel';
 
 interface RouteSwitchProps {
   routes: Route[];
@@ -11,30 +14,30 @@ interface RouteSwitchProps {
 }
 
 /** What can make a route stand out; `better` says which of two values wins. */
-const TRAITS: { label: string; value: (route: Route) => number | null; better: (a: number, b: number) => boolean }[] = [
-  { label: 'Quietest', value: route => route.metrics.quiet_score.value, better: (a, b) => a > b },
-  { label: 'Greenest', value: route => route.metrics.green_score.value, better: (a, b) => a > b },
-  { label: 'Shortest', value: route => route.metrics.distance_m.value, better: (a, b) => a < b },
+const TRAITS: { labelKey: Key; value: (route: Route) => number | null; better: (a: number, b: number) => boolean }[] = [
+  { labelKey: 'traitQuietest', value: route => route.metrics.quiet_score.value, better: (a, b) => a > b },
+  { labelKey: 'traitGreenest', value: route => route.metrics.green_score.value, better: (a, b) => a > b },
+  { labelKey: 'traitShortest', value: route => route.metrics.distance_m.value, better: (a, b) => a < b },
 ];
 
 /**
  * The most distinctive trait per route, read from its own metrics: each trait goes to the one
  * route that is strictly best at it, at most one trait per route; the rest are "Balanced".
  */
-function distinctiveTraits(routes: Route[]): Map<string, string> {
-  const traits = new Map<string, string>();
+function distinctiveTraits(routes: Route[]): Map<string, Key> {
+  const traits = new Map<string, Key>();
   for (const trait of TRAITS) {
     const known = routes.filter(route => trait.value(route) != null);
     const best = known.find(route => known.every(other => other === route || trait.better(trait.value(route)!, trait.value(other)!)));
-    if (best && !traits.has(best.id)) traits.set(best.id, trait.label);
+    if (best && !traits.has(best.id)) traits.set(best.id, trait.labelKey);
   }
   return traits;
 }
 
 /** "Real" or "Proxy" for the route's quiet score, from its own source label. */
-function dataLabel(route: Route, sources: Source[]): string {
-  const mode = sourceFor(sources, route.metrics.quiet_score.source_id)?.mode ?? 'unknown';
-  return mode.charAt(0).toUpperCase() + mode.slice(1);
+function dataLabelKey(route: Route, sources: Source[]): Key {
+  const mode = sourceFor(sources, route.metrics.quiet_score.source_id)?.mode;
+  return mode ? SOURCE_MODE_KEY[mode] : 'unknown';
 }
 
 /**
@@ -42,6 +45,7 @@ function dataLabel(route: Route, sources: Source[]): string {
  * makes one the main route on the map.
  */
 export function RouteSwitch({ routes, sources, selectedId, onSelect }: RouteSwitchProps) {
+  const t = useT();
   const ranked = [...routes].sort((a, b) => a.rank - b.rank);
   const traits = distinctiveTraits(ranked);
 
@@ -56,11 +60,12 @@ export function RouteSwitch({ routes, sources, selectedId, onSelect }: RouteSwit
   }
 
   return (
-    <section className="route-switch" aria-label="Choose a route">
+    <section className="route-switch" aria-label={t('chooseRouteAriaLabel')}>
       <ul className="route-switch__list" onKeyDown={onKeyDown}>
         {ranked.map(route => {
           const selected = route.id === selectedId;
           const letter = routeLetter(ranked, route.id);
+          const traitKey = traits.get(route.id);
           return (
             <li key={route.id}>
               <button
@@ -73,14 +78,14 @@ export function RouteSwitch({ routes, sources, selectedId, onSelect }: RouteSwit
                 <span className="route-switch__letter" aria-hidden="true">{letter}</span>
                 <span className="route-switch__text">
                   <span className="route-switch__name">
-                    <span className="visually-hidden">Route {letter}: </span>{route.name}
+                    <span className="visually-hidden">{t('routeLetterPrefix', { letter })}</span>{route.name}
                   </span>
                   <span className="route-switch__summary">
-                    {traits.get(route.id) ?? 'Balanced'} · {formatDistance(route.metrics.distance_m.value)} · {formatDuration(route.metrics.duration_s.value)} · {dataLabel(route, sources)}
+                    {traitKey ? t(traitKey) : t('traitBalanced')} · {formatDistance(route.metrics.distance_m.value)} · {formatDuration(route.metrics.duration_s.value)} · {t(dataLabelKey(route, sources))}
                   </span>
                 </span>
                 {/* Part of the option's button, so clicking it or pressing Enter on the option selects the route. */}
-                <span className="route-switch__choose" aria-hidden="true">{selected ? 'Chosen' : 'Choose'}</span>
+                <span className="route-switch__choose" aria-hidden="true">{selected ? t('chosen') : t('choose')}</span>
               </button>
             </li>
           );

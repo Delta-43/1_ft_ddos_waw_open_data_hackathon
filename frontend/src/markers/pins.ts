@@ -1,4 +1,6 @@
 import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
+import { getLang } from '../i18n/language';
+import { translate, type Key } from '../i18n/translations';
 import { TILES } from '../map/config';
 import { setPinCredits } from './credits';
 import { iconId, registerPinIcons } from './icons';
@@ -11,15 +13,15 @@ const ROUTE_SOURCE = 'candidate-routes';
 /** Pin opacity while a route is shown: still findable, but the numbered stops lead. */
 const DIMMED_OPACITY = 0.3;
 
-const CATEGORY_LABEL: Record<PinCategory, string> = {
-  landmark: 'Landmark',
-  museum: 'Museum',
-  park: 'Park',
-  generic: 'Place',
-  air: 'Air quality station',
-  aed: 'Defibrillator (AED)',
-  toilet: 'Public toilet',
-  event: 'Cultural event',
+const CATEGORY_KEY: Record<PinCategory, Key> = {
+  landmark: 'categoryLandmark',
+  museum: 'categoryMuseum',
+  park: 'categoryPark',
+  generic: 'categoryGeneric',
+  air: 'categoryAir',
+  aed: 'categoryAed',
+  toilet: 'categoryToilet',
+  event: 'categoryEvent',
 };
 
 /**
@@ -143,7 +145,7 @@ function popupContent(pin: Pin): HTMLElement {
   const root = document.createElement('div');
   const category = document.createElement('div');
   category.className = 'pin-popup__category';
-  category.textContent = CATEGORY_LABEL[pin.category];
+  category.textContent = translate(getLang(), CATEGORY_KEY[pin.category]);
   const title = document.createElement('h3');
   title.className = 'pin-popup__title';
   title.textContent = pin.title;

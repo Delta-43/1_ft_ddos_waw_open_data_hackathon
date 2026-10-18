@@ -70,6 +70,25 @@
 }
 .top-bar__sources:hover { border-color: var(--rim); color: #fff; }
 
+.language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.25rem;
+  padding: 0 0.7rem;
+  border-radius: 1.125rem;
+  border: 1px solid var(--rim-faint);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+.language-toggle:hover { border-color: var(--rim); color: #fff; }
+.language-toggle__active { color: var(--text); font-weight: 600; }
+
 
 /* Map controls sit below the top chrome (doubled class beats maplibre-gl.css, which may load later). */
 .maplibregl-map .maplibregl-ctrl-top-right { top: calc(var(--top-chrome-height) + 0.5rem); }

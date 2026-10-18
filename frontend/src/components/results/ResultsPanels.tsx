@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { RouteResponse } from '../../api/contract';
+import { useT } from '../../i18n/useT';
 import { PlaceCardList } from '../places/PlaceCardList';
 import { RouteComparison } from './RouteComparison';
 import './results.css';
@@ -19,13 +20,14 @@ type Tab = 'routes' | 'stops';
  * Mobile: one frosted bottom sheet with Routes · Stops tabs (Sources lives in the bottom bar).
  */
 export function ResultsPanels({ result, selectedId, onSelect, selectedPlaceId, onShowPlace }: ResultsPanelsProps) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>('routes');
   const route = result.routes.find(candidate => candidate.id === selectedId) ?? result.routes[0];
-  const tabs: [Tab, string][] = [['routes', 'Routes'], ['stops', 'Stops']];
+  const tabs: [Tab, string][] = [['routes', t('tabRoutes')], ['stops', t('tabStops')]];
 
   return (
     <div className="results" data-tab={tab}>
-      <div className="results__tabs" role="tablist" aria-label="Results">
+      <div className="results__tabs" role="tablist" aria-label={t('resultsAriaLabel')}>
         {tabs.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className="results__tab" onClick={() => setTab(id)}>
             {label}

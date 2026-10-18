@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { InterpretedPreferences, Preferences } from '../../api/contract';
+import { useT } from '../../i18n/useT';
+import type { Key } from '../../i18n/translations';
 import './layout.css';
 
 interface PreferenceChipsProps {
@@ -8,10 +10,10 @@ interface PreferenceChipsProps {
   onChange: (preferences: Preferences) => void;
 }
 
-const INTERPRETER_TEXT: Record<InterpretedPreferences['interpreted_by'], string> = {
-  fixture: 'demo fixture',
-  rules: 'keyword rules',
-  model: 'AI model',
+const INTERPRETER_KEY: Record<InterpretedPreferences['interpreted_by'], Key> = {
+  fixture: 'interpretedFixture',
+  rules: 'interpretedRules',
+  model: 'interpretedModel',
 };
 
 const ON = 0.8;
@@ -21,6 +23,7 @@ const ON = 0.8;
  * as toggles; each change re-sends the same prompt with explicit preferences.
  */
 export function PreferenceChips({ understood, busy, onChange }: PreferenceChipsProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -58,10 +61,10 @@ export function PreferenceChips({ understood, busy, onChange }: PreferenceChipsP
       <button
         type="button"
         className="preferences-menu__button"
-        aria-label="Preferences"
+        aria-label={t('preferencesAriaLabel')}
         aria-expanded={open}
         aria-controls={panelId}
-        title={`Preferences (understood by ${INTERPRETER_TEXT[understood.interpreted_by]})`}
+        title={t('preferencesTitle', { by: t(INTERPRETER_KEY[understood.interpreted_by]) })}
         onClick={() => setOpen(value => !value)}
       >
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -70,8 +73,8 @@ export function PreferenceChips({ understood, busy, onChange }: PreferenceChipsP
           <circle cx="10" cy="17" r="2" />
         </svg>
       </button>
-      <div id={panelId} className="preferences-menu__panel" hidden={!open} role="group" aria-label="Your preferences" aria-busy={busy}>
-        <p className="preferences-menu__heading">Your preferences</p>
+      <div id={panelId} className="preferences-menu__panel" hidden={!open} role="group" aria-label={t('yourPreferences')} aria-busy={busy}>
+        <p className="preferences-menu__heading">{t('yourPreferences')}</p>
         <div className="preference-chips">
           {understood.interests.map(interest => (
             <span key={interest} className="preference-chip preference-chip--static">{interest}</span>
@@ -82,17 +85,17 @@ export function PreferenceChips({ understood, busy, onChange }: PreferenceChipsP
             aria-pressed={understood.travel_mode === 'walk'}
             disabled={busy}
             onClick={() => onChange({ ...explicit(), travel_mode: understood.travel_mode === 'walk' ? 'bike' : 'walk' })}
-            title="Switch between walking and cycling"
+            title={t('switchWalkBike')}
           >
-            {understood.travel_mode === 'walk' ? 'Walk' : 'Bike'}
+            {understood.travel_mode === 'walk' ? t('walk') : t('bike')}
           </button>
           <button type="button" className="preference-chip" aria-pressed={quiet} disabled={busy} onClick={() => toggle('quiet')}>
-            Quiet
+            {t('quiet')}
           </button>
           <button type="button" className="preference-chip" aria-pressed={green} disabled={busy} onClick={() => toggle('green')}>
-            Green
+            {t('green')}
           </button>
-          <span className="preference-chip preference-chip--static">{hours != null ? `≤ ${hours} h` : 'No time limit'}</span>
+          <span className="preference-chip preference-chip--static">{hours != null ? t('hoursLimit', { hours }) : t('noTimeLimit')}</span>
         </div>
       </div>
     </div>

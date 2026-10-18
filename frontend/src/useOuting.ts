@@ -2,22 +2,26 @@ import { useRef, useState } from 'react';
 import type { Preferences, RouteResponse } from './api/contract';
 import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
+import { getLang } from './i18n/language';
+import { translate } from './i18n/translations';
 
 export type ChatMessage = { role: 'user' | 'assistant'; text: string };
 export type RequestStatus = { state: 'idle' } | { state: 'loading' } | { state: 'error'; message: string } | { state: 'success' };
 
 function messageFor(error: unknown): string {
   const text = error instanceof Error ? error.message : '';
-  if (text.endsWith('422')) return 'That request was not valid. Describe your outing in 1–1000 characters.';
-  if (text.startsWith('Request failed')) return `The server returned an error (${text.replace(/\D+/g, '')}). Please try again.`;
-  return 'Could not reach the route service. Try again.';
+  const lang = getLang();
+  if (text.endsWith('422')) return translate(lang, 'errorInvalidRequest');
+  if (text.startsWith('Request failed')) return translate(lang, 'errorServer', { code: text.replace(/\D+/g, '') });
+  return translate(lang, 'errorUnreachable');
 }
 
 /** Short reply that introduces the route list; says so when nothing matched. */
 function replyFor(response: RouteResponse): string {
-  if (response.routes.length === 0) return 'No routes match. Try a longer time or fewer stops.';
+  const lang = getLang();
+  if (response.routes.length === 0) return translate(lang, 'noRoutesMatch');
   // The routes themselves are listed under the prompt bar (RouteSwitch).
-  return response.routes.length === 1 ? 'Recommended route' : 'Recommended routes';
+  return translate(lang, response.routes.length === 1 ? 'recommendedRoute' : 'recommendedRoutes');
 }
 
 /**

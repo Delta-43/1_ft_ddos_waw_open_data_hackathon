@@ -1,4 +1,6 @@
 import type { ErrorEvent, IControl, Map } from 'maplibre-gl';
+import { getLang, subscribe } from '../i18n/language';
+import { translate } from '../i18n/translations';
 import { attributionText, HISTORICAL_LAYERS, showHistoricalLayer } from './historicalOverlay';
 
 /** Floating attribution label, bottom-left (clear of the top-right toggle and
@@ -57,6 +59,7 @@ export class HistoricalOverlayControl implements IControl {
   private index = -1; // -1 = off
   private unavailable = new Set<string>(); // layer ids whose image failed to load
   private styleReady = false; // set once by the map's `load`; layers can only be added after it
+  private unsubscribe?: () => void;
 
   private label(): string {
     if (this.index === -1) return '🕰';
@@ -64,10 +67,12 @@ export class HistoricalOverlayControl implements IControl {
     return this.unavailable.has(layer.id) ? '⚠' : String(layer.year);
   }
 
+  // layer.title is dataset-authored (e.g. "1935 aerial photo"), not translated here -
+  // only the frontend's own chrome text around it is.
   private title(): string {
-    if (this.index === -1) return 'Show historical map overlay';
+    if (this.index === -1) return translate(getLang(), 'showHistoricalOverlay');
     const layer = HISTORICAL_LAYERS[this.index];
-    return this.unavailable.has(layer.id) ? `${layer.title} — unavailable right now` : layer.title;
+    return this.unavailable.has(layer.id) ? `${layer.title}${translate(getLang(), 'overlayUnavailable')}` : layer.title;
   }
 
   private applyIndex(map: Map): void {
@@ -89,10 +94,14 @@ export class HistoricalOverlayControl implements IControl {
     button.type = 'button';
     button.className = 'historical-overlay-button';
     button.title = this.title();
-    button.setAttribute('aria-label', 'Toggle historical map overlay');
+    button.setAttribute('aria-label', translate(getLang(), 'toggleHistoricalOverlay'));
     button.textContent = this.label();
     button.addEventListener('click', () => {
       this.index = this.index === HISTORICAL_LAYERS.length - 1 ? -1 : this.index + 1;
+      this.applyIndex(map);
+    });
+    this.unsubscribe = subscribe(() => {
+      button.setAttribute('aria-label', translate(getLang(), 'toggleHistoricalOverlay'));
       this.applyIndex(map);
     });
     container.append(button);
@@ -123,6 +132,8 @@ export class HistoricalOverlayControl implements IControl {
   }
 
   onRemove(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
     this.attribution?.remove();
     this.attribution = undefined;
     this.container?.remove();

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Route, Source } from '../../api/contract';
+import { useT } from '../../i18n/useT';
 import type { ChatMessage, RequestStatus } from '../../useOuting';
 import { PromptForm } from './PromptForm';
 import { RouteSwitch } from './RouteSwitch';
@@ -23,6 +24,7 @@ interface AssistantWidgetProps {
  * as chips in the top bar.
  */
 export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, routes, sources, selectedRouteId, onSelectRoute }: AssistantWidgetProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const started = messages.length > 0;
 
@@ -42,14 +44,14 @@ export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, r
   return (
     <div className="assistant">
       {/* Always mounted, only hidden, so the conversation survives closing the panel. */}
-      <section className="assistant__panel" aria-label="Outing assistant" hidden={!open}>
-        <button type="button" className="assistant__close" aria-label="Close assistant" onClick={() => onOpenChange(false)}>×</button>
+      <section className="assistant__panel" aria-label={t('outingAssistantAriaLabel')} hidden={!open}>
+        <button type="button" className="assistant__close" aria-label={t('closeAssistant')} onClick={() => onOpenChange(false)}>×</button>
         {started && (
-          <ol className="chat-history" aria-label="Conversation" aria-live="polite">
+          <ol className="chat-history" aria-label={t('conversationAriaLabel')} aria-live="polite">
             {messages.map((message, index) => (
               <li key={index} className={`chat-message chat-message--${message.role}`}>{message.text}</li>
             ))}
-            {status.state === 'loading' && <li className="chat-message chat-message--assistant chat-message--pending">Looking for routes…</li>}
+            {status.state === 'loading' && <li className="chat-message chat-message--assistant chat-message--pending">{t('lookingForRoutes')}</li>}
           </ol>
         )}
         {routes && routes.length > 0 && (
@@ -60,13 +62,13 @@ export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, r
       <div className="assistant__row">
         {!open && !started && (
           <button type="button" className="assistant__bubble" onClick={() => onOpenChange(true)}>
-            What's up for today?
+            {t('bubbleCta')}
           </button>
         )}
         <button
           type="button"
           className="assistant__guy"
-          aria-label={open ? 'Close assistant' : 'Open assistant'}
+          aria-label={open ? t('closeAssistant') : t('openAssistant')}
           aria-expanded={open}
           onClick={() => onOpenChange(!open)}
         >

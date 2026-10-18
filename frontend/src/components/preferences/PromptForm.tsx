@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../../i18n/useT';
 
 const MAX_LENGTH = 1000; // contracts/README.md: query is 1-1000 characters
 
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function PromptForm({ value, onChange, onSubmit, compact, busy = false }: Props) {
+  const t = useT();
   const [touched, setTouched] = useState(false);
   const trimmed = value.trim();
   const emptyError = touched && trimmed.length === 0;
@@ -29,13 +31,13 @@ export function PromptForm({ value, onChange, onSubmit, compact, busy = false }:
 
   return (
     <form className="preferences-form" noValidate onSubmit={event => { event.preventDefault(); submit(); }}>
-      <label htmlFor="outing-query" className={compact ? undefined : 'visually-hidden'}>What are we exploring today?</label>
+      <label htmlFor="outing-query" className={compact ? undefined : 'visually-hidden'}>{t('promptLabel')}</label>
       <textarea
         id="outing-query"
         rows={compact ? 3 : 2}
         maxLength={MAX_LENGTH}
         value={value}
-        placeholder={compact ? undefined : 'Change your mind? Tell me more…'}
+        placeholder={compact ? undefined : t('promptPlaceholder')}
         aria-invalid={emptyError}
         aria-describedby="outing-hint"
         onChange={event => { onChange(event.target.value); setTouched(true); }}
@@ -47,9 +49,9 @@ export function PromptForm({ value, onChange, onSubmit, compact, busy = false }:
           }
         }}
       />
-      <p id="outing-hint" className="hint">{value.length}/{MAX_LENGTH} characters</p>
-      {emptyError && <p role="alert" className="error">Please describe your outing first.</p>}
-      <button type="submit" className="gradient-ring-button" disabled={busy}>{busy ? 'Finding routes…' : 'Find routes'}</button>
+      <p id="outing-hint" className="hint">{t('charactersHint', { count: value.length, max: MAX_LENGTH })}</p>
+      {emptyError && <p role="alert" className="error">{t('emptyError')}</p>}
+      <button type="submit" className="gradient-ring-button" disabled={busy}>{busy ? t('findingRoutes') : t('findRoutes')}</button>
     </form>
   );
 }

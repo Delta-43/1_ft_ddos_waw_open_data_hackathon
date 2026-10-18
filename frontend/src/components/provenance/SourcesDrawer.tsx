@@ -1,15 +1,17 @@
 import type { Source } from '../../api/contract';
+import { useT } from '../../i18n/useT';
 import { formatWarsawDate } from './formatDate';
 import { SourceLabel } from './SourceLabel';
 import './provenance.css';
 
 /** Answers: where does this data come from, how fresh is it, and how to cite it. */
 export function SourcesDrawer({ sources, id, hidden, notice }: { sources: Source[]; id?: string; hidden?: boolean; notice?: string }) {
+  const t = useT();
   const credits = [...new Map(sources.map(source => [source.attribution, source])).values()];
   return (
-    <section className="sources-drawer" id={id} aria-label="Data sources" hidden={hidden}>
+    <section className="sources-drawer" id={id} aria-label={t('dataSourcesAriaLabel')} hidden={hidden}>
       {notice && <p className="sources-drawer__notice" role="note">{notice}</p>}
-      <h3 className="sources-drawer__heading">Where does this data come from?</h3>
+      <h3 className="sources-drawer__heading">{t('whereFromHeading')}</h3>
       <ul className="sources-drawer__list">
         {sources.map(source => (
           <li key={source.id} className="sources-drawer__item">
@@ -20,20 +22,20 @@ export function SourcesDrawer({ sources, id, hidden, notice }: { sources: Source
             {source.method && <p className="sources-drawer__text">{source.method}</p>}
             <p className="sources-drawer__meta">
               {source.retrieved_at
-                ? `Fetched ${formatWarsawDate(source.retrieved_at)}`
-                : source.mode === 'simulated' ? 'Made for the demo' : 'Fetch time not recorded'}
-              {source.data_date && ` · data from ${source.data_date}`}
+                ? t('fetchedShort', { date: formatWarsawDate(source.retrieved_at) })
+                : source.mode === 'simulated' ? t('madeForDemo') : t('fetchTimeNotRecorded')}
+              {source.data_date && t('dataFromDate', { date: source.data_date })}
             </p>
           </li>
         ))}
       </ul>
 
-      <h3 className="sources-drawer__heading">How often is it updated?</h3>
+      <h3 className="sources-drawer__heading">{t('howOftenHeading')}</h3>
       <p className="sources-drawer__text">
-        Each source shows when it was fetched. Saved snapshots are not updated automatically.
+        {t('howOftenText')}
       </p>
 
-      <h3 className="sources-drawer__heading">How to cite it?</h3>
+      <h3 className="sources-drawer__heading">{t('howToCiteHeading')}</h3>
       <ul className="sources-drawer__list">
         {credits.map(source => (
           <li key={source.attribution} className="sources-drawer__text">
