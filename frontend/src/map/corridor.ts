@@ -18,8 +18,8 @@ const SOURCE = 'corridor';
 /** Base-map layers that a corridor replaces with flat footprints. */
 const CITY_3D = ['building-3d', 'building-roof', 'building-outline'];
 
-const CULTURE = '#8d74f0';
-const CULTURE_TOP = '#b9a6ff';
+const CULTURE = '#63432c';
+const CULTURE_TOP = '#92663f';
 const GREEN_FILL = '#1d3a26';
 const GREEN_EDGE = '#3f9a5f';
 
@@ -202,7 +202,7 @@ export function initCorridor(map: Map): void {
     source: SOURCE,
     filter: isKind('b'),
     paint: {
-      'fill-extrusion-color': ['case', ['get', 'c'], CULTURE, '#34363c'],
+      'fill-extrusion-color': ['case', ['get', 'c'], CULTURE, '#353539'],
       'fill-extrusion-height': ['get', 'h'],
       'fill-extrusion-base': ['coalesce', ['get', 'mh'], 0],
       'fill-extrusion-vertical-gradient': true,
@@ -216,7 +216,7 @@ export function initCorridor(map: Map): void {
     filter: isKind('b'),
     minzoom: 14.5,
     paint: {
-      'fill-extrusion-color': ['case', ['get', 'c'], CULTURE_TOP, '#55575f'],
+      'fill-extrusion-color': ['case', ['get', 'c'], CULTURE_TOP, '#57575d'],
       'fill-extrusion-base': ['get', 'h'],
       'fill-extrusion-height': ['+', ['get', 'h'], 0.5],
     },

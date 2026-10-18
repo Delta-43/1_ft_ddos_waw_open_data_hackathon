@@ -20,10 +20,10 @@ Built in 24 hours for the Warsaw Open Data Hackathon 2026 (Challenge 1: Warsaw 2
 - **Switch the mood.** Calmer, Faster, Relaxing, Curious, Artsy, By bike, or **Bus + groceries**: a car-free
   example that uses only buses and trams from today's timetable, with a grocery stop on the way.
 - **A quiet map that lights up your way.** A dark city with amber streets. Along the route, and only there:
-  3D buildings, parks with trees, culture and history in violet. Hover a violet building for its name, age and a
+  3D buildings, parks with trees, culture and history in clay orange. Hover a clay-orange building for its name, age and a
   short Wikipedia summary.
 - **What is on the way.** Public transport stops, with buses and trams heading your way moving by their
-  timetable; toilets and defibrillators on request; events, offers and tickets as small blue flags.
+  timetable; toilets and defibrillators on request; events, offers and tickets as small dark flags.
 - **Have your say.** A yellow button collects reports about missing benches, water, toilets or safer crossings.
   Your reports stay in your browser.
 - **English and Polish**, on a computer or a phone. An AI agent can use the same planner through MCP.
