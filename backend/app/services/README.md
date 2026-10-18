@@ -2,6 +2,13 @@
 
 Delta owns shared business logic here. REST and MCP should both call these services.
 
+## Predefined outings (tracks.py)
+
+- `tracks.run(query, track_id=None)` asks the model once to pick one of the six outings in
+  `data/fixtures/simulated-tracks.json` (structured output, ids only), falls back to a keyword match, then runs it
+  through `planner.plan` as an explicit itinerary. REST (`POST /api/tracks/run`) and the frontend use it.
+- The model never adds places or geometry; the response says who picked (`track.picked_by`).
+
 ## Route planning (BE-01)
 
 - `planner.plan(RouteRequest)` builds the whole `RouteResponse`. REST calls it; MCP must call it too.

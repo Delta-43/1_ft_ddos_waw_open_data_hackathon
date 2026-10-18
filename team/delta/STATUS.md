@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: none active. Merged today: #7 contract, #12 BE-01 routes (PR #40), #15 AI-01 (PR #44), city-data SQLite store and `/api/layers` (PR #47), isometric mockup (PR #53, #52)
-- Branch / PR: no open PRs from Delta. Open elsewhere: #51 (Aryna), #54 (Sonia, DATA-03), #59 (Alban, city pins from `/api/places` + `/api/layers`)
-- Last verified result: `ruff check backend` pass; `pytest backend/tests` 56 passed. Integrated server runs on silver-storm, Tailscale address only, port 8000. Live OSRM routes verified; OpenRouter path not tested with a real key
-- Blocker: #50 (layer source `mode` must be a SourceMode; Alban's #59 will surface it) and #56 (corrupt `city.db` returns 500). Restart the shared server from `main` to serve the merged code
-- Next action: fix #50 and #56 and `/api/health` mode; then MCP-01 (#16), INT-01 (#14) with Alban, DATA-06 write-up (#23), DATA-07 (#26), DATA-09 (#28). Pitch (#18) starts at the 06:00 freeze
-- Updated at (include timezone): 2026-10-17 17:52 +02:00
+- Current issue: none active. Merged on 18 Oct: #118 (Find YOUR way shell, EN/PL), #120 (car-free examples, nearby toilets and AEDs, culture cards, containers); this documentation update and the `submission` branch
+- Branch / PR: `delta/docs-and-submission` (docs). Open elsewhere: #119 translations (Sonia, branch `sonia/word-change-in-translation`)
+- Last verified result: CI green on #120; container stack (web 4173, api 8000, mcp 8001) running on silver-storm from `main`; six outings route with no network from the committed cache
+- Blocker: none. Not verified: real GPU, Safari, a real phone, teammates' devices on :4173
+- Next action: pitch (#18) with docs/DEMO.md's demo script and docs/Build_State_For_Pitch.md; close #14 once a teammate confirms :4173
+- Updated at (include timezone): 2026-10-18 07:11 +0200
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.

@@ -1,5 +1,7 @@
 # Warsaw 2076: frontend redesign review
 
+> **Historical (18 October 2026).** This review led to the "Find YOUR way" shell (#118). Kept as a record; see README.md and docs/DECISIONS.md for what was built.
+
 **Date:** 17 October 2026  
 **Status:** Ideas for team review. Implementation is on hold pending Delta’s feedback.
 

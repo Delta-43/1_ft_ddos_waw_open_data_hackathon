@@ -1,5 +1,7 @@
 # Starter validation
 
+> **Historical (18 October 2026).** Checks of the 16 October starter only. Current checks: docs/DEVELOPMENT.md; build state: docs/Build_State_For_Pitch.md.
+
 Verified locally on 16 October 2026:
 
 - Ruff backend checks passed.

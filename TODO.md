@@ -1,5 +1,7 @@
 # Initial backlog
 
+> **Historical (18 October 2026).** The initial backlog. GitHub issues are the task record; most items here are done or superseded.
+
 Each row is a GitHub issue (number in brackets). GitHub owns live status, owners and reviewers.
 
 | ID | Owner | Task | Depends on | Done when |
