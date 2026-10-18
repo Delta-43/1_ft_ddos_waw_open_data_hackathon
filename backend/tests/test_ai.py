@@ -114,6 +114,17 @@ def test_openrouter_request_denies_data_collection(monkeypatch):
     assert sent["headers"]["Authorization"] == "Bearer test-key"
 
 
+def test_data_collection_defaults_to_deny_and_allow_is_opt_in(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+    monkeypatch.delenv("LLM_DATA_COLLECTION", raising=False)
+    assert llm.get_client("explain").data_collection == "deny"
+    monkeypatch.setenv("LLM_DATA_COLLECTION", "maybe")
+    assert llm.get_client("explain").data_collection == "deny"
+    monkeypatch.setenv("LLM_DATA_COLLECTION", "allow")
+    assert llm.get_client("explain").data_collection == "allow"
+
+
 def test_openrouter_errors_become_unavailable(monkeypatch):
     def fake_post(url, json, headers, timeout):
         return httpx.Response(401, request=httpx.Request("POST", url))

@@ -58,3 +58,14 @@ The planner uses it in two places, with Warsaw time from `planner.clock()` (test
 after departure are left out of the candidate pool (unknown hours stay; if none would remain, all stay), and each route's
 explanation gets a sentence for museums `closed` at their estimated arrival or with unknown hours. Known limit: only the first
 arrival is used to filter the pool, so a later stop can still be flagged closed. No contract field was added.
+
+## Simulated tracks (decision call)
+
+`tracks.py` + `data/fixtures/simulated-tracks.json`: six predefined outings (fixed catalogue stops, travel mode, priorities), all labelled `simulated: true`.
+
+- `GET /api/tracks` lists them.
+- `POST /api/tracks/run {"query": "...", "track_id": null}` makes **one** model call that returns only a track id (enum schema) and a short reason, then runs the track through `planner.plan(..., use_model=False)` as an explicit itinerary. `track_id` skips the model.
+- Fallbacks: unknown id or model failure picks by keywords (English and Polish), then the first track. `track.picked_by` says `user`, `model` or `keywords`.
+- The response is a normal routes response plus a `track` object. `contracts/api.schema.json` does not list `track` yet; add it with Delta and Alban's sign-off before the frontend depends on it.
+- Geometry for all six tracks is in `data/fixtures/osrm-cache` (`python -m app.services.demo_cache` refreshes it), so `ROUTING_SOURCE=cache` serves street geometry offline.
+- `GET /api/health` reports `capabilities.simulated_tracks`.

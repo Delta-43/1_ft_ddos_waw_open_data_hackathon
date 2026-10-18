@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import Field
 
 from app import db
 from app.adapters.env import load_env
-from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest
+from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest, Strict
 from app.data.catalogue import places_response as load_places_response
-from app.services import planner
+from app.services import planner, tracks
 
 load_env()
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,7 +24,17 @@ def load_fixture(name: str) -> dict:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "mode": "fixture", "contract_version": CONTRACT_VERSION}
+    return {
+        "status": "ok",
+        "mode": "fixture",
+        "contract_version": CONTRACT_VERSION,
+        # Refs #85 step 4: only true once the matching feature has actually shipped,
+        # so the frontend can gate structured itinerary submission or catalogue search
+        # on this rather than guessing from whether a request field merely exists.
+        # ordered_stops: POST /api/routes honours destination_place_id/via_place_ids
+        # (#85). place_search: GET /api/places?q= (#84, merged in #87).
+        "capabilities": {"ordered_stops": True, "place_search": True, "simulated_tracks": True},
+    }
 
 
 @app.post("/api/routes")
@@ -31,6 +42,30 @@ def routes(request: RouteRequest):
     # Shared with MCP: both call planner.plan. The request is not stored or logged.
     try:
         return planner.plan(request)
+    except planner.InvalidItinerary as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+class TrackRunRequest(Strict):
+    query: str = Field(min_length=1, max_length=1000)
+    track_id: str | None = Field(default=None, max_length=60)
+
+
+@app.get("/api/tracks")
+def list_tracks():
+    """The predefined simulated tracks the decision call chooses from."""
+    return {"contract_version": CONTRACT_VERSION, "mode": "mock",
+            "tracks": [tracks.public(t) for t in tracks.load()]}
+
+
+@app.post("/api/tracks/run")
+def run_track(request: TrackRunRequest):
+    """One decision call picks a predefined track from the message (or `track_id` forces one),
+    then the shared planner runs it. The response is a normal routes response plus `track`."""
+    try:
+        return tracks.run(request.query, request.track_id)
+    except KeyError:
+        raise HTTPException(422, f"unknown track_id {request.track_id!r}; see GET /api/tracks") from None
     except planner.InvalidItinerary as exc:
         raise HTTPException(422, str(exc)) from exc
 
