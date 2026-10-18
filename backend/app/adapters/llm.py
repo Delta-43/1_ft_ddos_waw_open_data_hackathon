@@ -9,11 +9,14 @@ Settings (backend environment only, never VITE_ variables):
     OPENROUTER_API_KEY   one key for the whole backend
     LLM_MODEL            default model for every task
     LLM_MODEL_<TASK>     optional per-task override, e.g. LLM_MODEL_EXPLAIN
+    LLM_DATA_COLLECTION  deny (default) or allow. Free OpenRouter models only run with allow,
+                         which lets the provider train on the prompt text
     LLM_TIMEOUT_S        per request, default 12
 
 Requests carry the user's query text and route facts only: no identifiers.
 They are not logged here. OpenRouter is asked to route only to providers that
-do not collect prompts (provider.data_collection = deny).
+do not collect prompts (provider.data_collection = deny) unless LLM_DATA_COLLECTION=allow
+is set, which free models require.
 """
 import json
 import logging
@@ -41,8 +44,9 @@ class LLMClient(Protocol):
 class OpenRouterClient:
     name = "openrouter"
 
-    def __init__(self, api_key: str, model: str, timeout_s: float):
+    def __init__(self, api_key: str, model: str, timeout_s: float, data_collection: str = "deny"):
         self.api_key, self.model, self.timeout_s = api_key, model, timeout_s
+        self.data_collection = data_collection
 
     def complete_json(self, system: str, user: str, schema_name: str, schema: dict) -> dict:
         body: dict[str, Any] = {
@@ -52,7 +56,7 @@ class OpenRouterClient:
                 "type": "json_schema",
                 "json_schema": {"name": schema_name, "strict": True, "schema": schema},
             },
-            "provider": {"data_collection": "deny", "require_parameters": True},
+            "provider": {"data_collection": self.data_collection, "require_parameters": True},
             "temperature": 0,
             "max_tokens": 800,
         }
@@ -90,4 +94,5 @@ def get_client(task: str) -> LLMClient:
         raise LLMUnavailable(f"{key_var} is not set")
     model = (os.environ.get(f"LLM_MODEL_{task.upper()}") or os.environ.get("LLM_MODEL")
              or DEFAULT_MODEL)
-    return cls(key, model, float(os.environ.get("LLM_TIMEOUT_S", "12")))
+    collection = "allow" if os.environ.get("LLM_DATA_COLLECTION", "").lower() == "allow" else "deny"
+    return cls(key, model, float(os.environ.get("LLM_TIMEOUT_S", "12")), collection)
