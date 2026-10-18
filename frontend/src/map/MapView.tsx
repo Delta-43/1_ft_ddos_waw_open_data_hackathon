@@ -2,7 +2,8 @@ import type { Map, PaddingOptions } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import type { Route } from '../api/contract';
 import { loadPins } from '../data';
-import { addPins } from '../markers/pins';
+import { addPins, setVisiblePinCategories } from '../markers/pins';
+import type { PinCategory } from '../markers/types';
 import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
@@ -21,15 +22,18 @@ interface MapViewProps {
   onIntroDone?: (located: boolean) => void;
   /** The map instance, once created (for pop-ups anchored to places). */
   onMapReady?: (map: Map | null) => void;
-  /** A numbered stop marker was clicked. */
+  /** A stop, or the building at a stop, was tapped. */
   onStopClick?: (placeId: string) => void;
+  /** City pin categories to show; none by default (#114). */
+  pinCategories?: ReadonlySet<PinCategory>;
 }
 
-// Stable default, so the route effects don't rerun (and refit the camera) on every render.
+// Stable defaults, so the effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
+const NO_PINS: ReadonlySet<PinCategory> = new Set();
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, pinCategories = NO_PINS }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
@@ -82,6 +86,10 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     const selected = routes.find(route => route.id === selectedRouteId);
     focusRoute(map, selected, selected && routeColour(routes, selected.id));
   }, [routes, selectedRouteId]);
+
+  useEffect(() => {
+    if (mapRef.current) setVisiblePinCategories(mapRef.current, pinCategories);
+  }, [pinCategories]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
   useEffect(() => {

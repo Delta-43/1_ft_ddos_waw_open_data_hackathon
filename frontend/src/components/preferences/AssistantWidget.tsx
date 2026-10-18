@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Route, Source } from '../../api/contract';
 import type { ChatMessage, RequestStatus } from '../../useOuting';
 import { PromptForm } from './PromptForm';
-import { RouteSwitch } from './RouteSwitch';
+import { RouteComparison } from '../results/RouteComparison';
 import './preferences.css';
 
 interface AssistantWidgetProps {
@@ -11,18 +11,20 @@ interface AssistantWidgetProps {
   messages: ChatMessage[];
   status: RequestStatus;
   onAsk: (prompt: string) => void;
-  /** Candidate routes of the current response; shown as the A/B/C route switch. */
+  /** Candidate routes of the current response; listed in the chat under the assistant's reply (#114). */
   routes?: Route[];
   sources?: Source[];
+  notice?: string;
+  explainedByModel?: boolean;
   selectedRouteId?: string;
   onSelectRoute: (id: string) => void;
 }
 
 /**
- * The outing assistant: the chat, the route switch (A, B, C) under the "Recommended routes" reply, then the prompt bar. What it understood appears
- * as chips in the top bar.
+ * The outing assistant: a rounded chat that opens to the left of the bot button, with the suggested
+ * routes listed in the chat, then the prompt bar. What it understood is in the Preferences panel.
  */
-export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, routes, sources, selectedRouteId, onSelectRoute }: AssistantWidgetProps) {
+export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, routes, sources, notice, explainedByModel = false, selectedRouteId, onSelectRoute }: AssistantWidgetProps) {
   const [query, setQuery] = useState('');
   const started = messages.length > 0;
 
@@ -53,7 +55,14 @@ export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, r
           </ol>
         )}
         {routes && routes.length > 0 && (
-          <RouteSwitch routes={routes} sources={sources ?? []} selectedId={selectedRouteId} onSelect={onSelectRoute} />
+          <RouteComparison
+            routes={routes}
+            sources={sources ?? []}
+            selectedId={selectedRouteId}
+            onSelect={onSelectRoute}
+            explainedByModel={explainedByModel}
+            notice={notice}
+          />
         )}
         <PromptForm compact={!started} value={query} onChange={setQuery} onSubmit={ask} busy={status.state === 'loading'} />
       </section>

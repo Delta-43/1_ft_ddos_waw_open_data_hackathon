@@ -121,8 +121,9 @@ body {
  * a bottom-left MapLibre control would otherwise sit. */
 .historical-attribution {
   position: absolute;
-  left: 10px;
-  bottom: calc(var(--banner-height) + 1.5rem + env(safe-area-inset-bottom));
+  /* Beside the round Sources button, bottom-left (#114). */
+  left: calc(var(--edge, 1rem) + var(--round-size, 3.5rem) + 0.75rem);
+  bottom: calc(var(--edge, 1rem) + env(safe-area-inset-bottom));
   background: rgba(11, 18, 32, 0.75);
   color: var(--muted);
   font-size: 0.68rem;

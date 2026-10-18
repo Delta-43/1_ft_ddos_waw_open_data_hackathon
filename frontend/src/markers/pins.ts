@@ -1,4 +1,4 @@
-import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
+import { Popup, type FilterSpecification, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
 import { TILES } from '../map/config';
 import { setPinCredits } from './credits';
 import { iconId, registerPinIcons } from './icons';
@@ -41,7 +41,7 @@ function toGeoJSON(pins: Iterable<Pin>) {
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [pin.lng, pin.lat] },
       // Only what the layer needs for styling; the full Pin stays in the store.
-      properties: { id: pin.id, title: pin.title, icon: iconId(pin.category) },
+      properties: { id: pin.id, title: pin.title, icon: iconId(pin.category), category: pin.category },
     })),
   };
 }
@@ -113,6 +113,7 @@ function ensureLayer(map: Map) {
         // Applied at creation too, in case routes are already shown when the pins arrive.
         ...pinOpacity(map),
       },
+      filter: pinFilter(map),
     },
     // Below any route layers (ids `route-*`), so route lines and numbered stops stay on top
     // even when pins arrive after the routes are drawn.
@@ -121,6 +122,19 @@ function ensureLayer(map: Map) {
 
   registerHandlers(map);
   followRoutes(map);
+}
+
+/** Pin categories each map shows; none until the visitor switches a layer on in Sources (#114). */
+const visible = new WeakMap<Map, ReadonlySet<PinCategory>>();
+
+function pinFilter(map: Map): FilterSpecification {
+  return ['in', ['get', 'category'], ['literal', [...(visible.get(map) ?? [])]]];
+}
+
+/** Shows only the pins of `categories`; safe to call before the pins have loaded. */
+export function setVisiblePinCategories(map: Map, categories: ReadonlySet<PinCategory>): void {
+  visible.set(map, categories);
+  if (map.getLayer(LAYER_ID)) map.setFilter(LAYER_ID, pinFilter(map));
 }
 
 /** Click and hover handlers, once per map. */

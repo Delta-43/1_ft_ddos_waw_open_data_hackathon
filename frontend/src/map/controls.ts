@@ -13,7 +13,9 @@ export class ResetViewControl implements IControl {
     button.className = 'reset-view-button';
     button.title = 'Reset view';
     button.setAttribute('aria-label', 'Reset view');
-    button.textContent = '⟲';
+    button.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>';
     button.addEventListener('click', () => map.flyTo({ ...INITIAL_VIEW, duration: 1600 }));
     container.append(button);
     this.container = container;

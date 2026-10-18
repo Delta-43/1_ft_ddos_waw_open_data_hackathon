@@ -38,6 +38,10 @@ class HistoricalAttributionLabel {
   }
 }
 
+const HOURGLASS =
+  '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9s10 4 10 9"/><path d="M9.5 18.5h5" stroke-width="2.4"/></svg>';
+
 /**
  * Single-button control that cycles through the historical overlays (off ->
  * 1935 -> 1939 -> 1945 -> off). A dropdown or opacity slider would be nicer,
@@ -58,8 +62,9 @@ export class HistoricalOverlayControl implements IControl {
   private unavailable = new Set<string>(); // layer ids whose image failed to load
   private styleReady = false; // set once by the map's `load`; layers can only be added after it
 
+  /** Off: an hourglass (#114). On: the year shown, or a warning if its image failed. */
   private label(): string {
-    if (this.index === -1) return '🕰';
+    if (this.index === -1) return '';
     const layer = HISTORICAL_LAYERS[this.index];
     return this.unavailable.has(layer.id) ? '⚠' : String(layer.year);
   }
@@ -70,11 +75,17 @@ export class HistoricalOverlayControl implements IControl {
     return this.unavailable.has(layer.id) ? `${layer.title} — unavailable right now` : layer.title;
   }
 
+  private setContent(button: HTMLButtonElement): void {
+    const label = this.label();
+    if (label) button.textContent = label;
+    else button.innerHTML = HOURGLASS;
+  }
+
   private applyIndex(map: Map): void {
     // Before `load` only the button updates; the sync in onAdd applies the selection afterwards.
     if (this.styleReady) showHistoricalLayer(map, this.index);
     if (this.button) {
-      this.button.textContent = this.label();
+      this.setContent(this.button);
       this.button.title = this.title();
     }
     const active = this.index !== -1 && !this.unavailable.has(HISTORICAL_LAYERS[this.index].id);
@@ -90,7 +101,7 @@ export class HistoricalOverlayControl implements IControl {
     button.className = 'historical-overlay-button';
     button.title = this.title();
     button.setAttribute('aria-label', 'Toggle historical map overlay');
-    button.textContent = this.label();
+    this.setContent(button);
     button.addEventListener('click', () => {
       this.index = this.index === HISTORICAL_LAYERS.length - 1 ? -1 : this.index + 1;
       this.applyIndex(map);

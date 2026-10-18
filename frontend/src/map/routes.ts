@@ -1,11 +1,11 @@
 import { Marker, type FilterSpecification, type GeoJSONSource, type LngLatBoundsLike, type Map, type PaddingOptions } from 'maplibre-gl';
 import type { Route } from '../api/contract';
-import { routeColour, routeLetter } from './routeColours';
+import { routeColour } from './routeColours';
 
 /**
  * Candidate routes: the selected one like Google Maps' (a darker edge in its own colour around a
- * lighter centre); the others thin, dimmed lines in their lighter colour; stops are numbered
- * circles on a stem with a soft halo.
+ * lighter centre); the others thin, dimmed lines in their lighter colour. The selected route's
+ * stops are small glowing rings on the ground, without numbers (#114): you tap the building itself.
  */
 const ROUTE_SOURCE = 'candidate-routes';
 
@@ -94,21 +94,39 @@ function ensureLayers(map: Map): void {
   });
 }
 
-// ---------- Stop markers: numbered circles on a stem ----------
+// ---------- Stop markers: glowing rings at the stop; a tap on its building also opens it ----------
 const stopHandlers = new WeakMap<Map, (placeId: string) => void>();
 const stopMarkers = new WeakMap<Map, Marker[]>();
 /** Which selection the stop markers show, so they're only rebuilt when it changes. */
 const shownStops = new WeakMap<Map, string>();
 
-/** Calls `handler` with the place id when a numbered stop is clicked (or activated by keyboard). */
+/** Stops of the selected route, for matching a tap on a building to the nearest stop. */
+const stopPoints = new WeakMap<Map, { placeId: string; lng: number; lat: number }[]>();
+/** A tap on a building opens the stop within this distance of the tap. */
+const BUILDING_TAP_M = 70;
+const BUILDING_LAYERS = ['building-3d', 'building-roof'];
+
+/** Calls `handler` with the place id when a stop, or the building at a stop, is tapped (or a stop is activated by keyboard). */
 export function onStopClick(map: Map, handler: (placeId: string) => void): void {
   stopHandlers.set(map, handler);
+  map.on('click', event => {
+    const stops = stopPoints.get(map);
+    if (!stops?.length) return;
+    const layers = BUILDING_LAYERS.filter(id => map.getLayer(id));
+    if (!layers.length || !map.queryRenderedFeatures(event.point, { layers }).length) return;
+    const metresPerLng = 111_320 * Math.cos((event.lngLat.lat * Math.PI) / 180);
+    const nearest = stops
+      .map(stop => ({ stop, metres: Math.hypot((stop.lng - event.lngLat.lng) * metresPerLng, (stop.lat - event.lngLat.lat) * 110_540) }))
+      .sort((a, b) => a.metres - b.metres)[0];
+    if (nearest.metres <= BUILDING_TAP_M) handler(nearest.stop.placeId);
+  });
 }
 
 function showStops(map: Map, route: Route | undefined, colour: string): void {
   for (const marker of stopMarkers.get(map) ?? []) marker.remove();
   if (!route) {
     stopMarkers.delete(map);
+    stopPoints.delete(map);
     return;
   }
   const places = new globalThis.Map(route.places.map(place => [place.id, place]));
@@ -121,52 +139,17 @@ function showStops(map: Map, route: Route | undefined, colour: string): void {
     button.style.setProperty('--route', colour);
     button.setAttribute('aria-label', `Stop ${stop.order}: ${place.name}`);
     button.dataset.placeId = place.id;
-    const badge = document.createElement('span');
-    badge.className = 'stop-marker__badge';
-    badge.textContent = String(stop.order);
-    const stem = document.createElement('span');
-    stem.className = 'stop-marker__stem';
-    button.append(badge, stem);
+    const ring = document.createElement('span');
+    ring.className = 'stop-marker__ring';
+    button.append(ring);
     button.addEventListener('click', event => {
       event.stopPropagation(); // don't let the map also treat it as a click on a city pin
       stopHandlers.get(map)?.(place.id);
     });
-    return [new Marker({ element: button, anchor: 'bottom' }).setLngLat([place.longitude, place.latitude]).addTo(map)];
+    return [new Marker({ element: button }).setLngLat([place.longitude, place.latitude]).addTo(map)];
   });
   stopMarkers.set(map, markers);
-}
-
-// ---------- Route letters: A, B, C halfway along each candidate ----------
-const letterMarkers = new WeakMap<Map, Marker[]>();
-
-/** The point halfway along a line, by length, so the letter doesn't sit on a stop. */
-function halfway(coordinates: [number, number][]): [number, number] | undefined {
-  const lengths = coordinates.slice(1).map((point, index) => Math.hypot(point[0] - coordinates[index][0], point[1] - coordinates[index][1]));
-  let remaining = lengths.reduce((sum, length) => sum + length, 0) / 2;
-  for (const [index, length] of lengths.entries()) {
-    if (remaining <= length && length > 0) {
-      const [[x1, y1], [x2, y2]] = [coordinates[index], coordinates[index + 1]];
-      const t = remaining / length;
-      return [x1 + (x2 - x1) * t, y1 + (y2 - y1) * t];
-    }
-    remaining -= length;
-  }
-  return coordinates[0];
-}
-
-function showLetters(map: Map, routes: Route[], selectedId: string | undefined): void {
-  for (const marker of letterMarkers.get(map) ?? []) marker.remove();
-  const markers = routes.flatMap(route => {
-    const point = halfway(route.geometry.coordinates);
-    if (!point) return [];
-    const badge = document.createElement('span');
-    badge.className = `route-letter${route.id === selectedId ? ' route-letter--selected' : ''}`;
-    badge.style.setProperty('--route', routeColour(routes, route.id).line);
-    badge.setAttribute('aria-hidden', 'true'); // the route switch names the routes for screen readers
-    badge.textContent = routeLetter(routes, route.id);
-    return [new Marker({ element: badge }).setLngLat(point).addTo(map)];
-  });
-  letterMarkers.set(map, markers);
+  stopPoints.set(map, route.places.map(place => ({ placeId: place.id, lng: place.longitude, lat: place.latitude })));
 }
 
 /** Draws the candidates and highlights `selectedId`. Safe to call before the style loads. */
@@ -175,7 +158,6 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
     ensureLayers(map);
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
     (map.getSource(OTHER_STOPS_SOURCE) as GeoJSONSource).setData(otherStopFeatures(routes, selectedId));
-    showLetters(map, routes, selectedId);
     const selected = routes.find(route => route.id === selectedId);
     const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
     if (shownStops.get(map) !== key) {

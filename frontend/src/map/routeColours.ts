@@ -22,8 +22,3 @@ function rankIndex(routes: Route[], routeId: string | undefined): number {
 export function routeColour(routes: Route[], routeId: string | undefined): RouteColour {
   return PALETTE[rankIndex(routes, routeId) % PALETTE.length];
 }
-
-/** Letter for `routeId` by rank (rank 1 = A), the same on the map and in the route switch. */
-export function routeLetter(routes: Route[], routeId: string | undefined): string {
-  return String.fromCharCode(65 + rankIndex(routes, routeId));
-}

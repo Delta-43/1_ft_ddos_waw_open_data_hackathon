@@ -120,3 +120,16 @@
 .sources-drawer a { color: var(--rim, #8ab4f8); }
 .sources-drawer a:hover { color: #ffffff; }
 .sources-drawer__notice { margin: 0; font-size: 0.8rem; line-height: 1.45; color: var(--text, #e8eaed); padding-bottom: 0.5rem; border-bottom: 1px solid var(--rim-faint, #3c4043); }
+
+/* ---------- Sources panel (#114): credits, privacy promise, city layers, then the answer's sources ---------- */
+.sources-panel__credits a,
+.sources-panel .sources-drawer a { color: var(--text); text-decoration: underline; text-decoration-color: var(--rim-faint); text-underline-offset: 2px; }
+.sources-panel__credits a:hover,
+.sources-panel .sources-drawer a:hover { color: #fff; text-decoration-color: currentColor; }
+.sources-panel .sources-drawer__heading { margin-top: 1.2rem; }
+.sources-panel__layers { display: grid; gap: 0.35rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+.sources-panel__layer { display: flex; align-items: center; gap: 0.6rem; min-height: 2.25rem; padding: 0 0.75rem; border-radius: 0.75rem; border: 1px solid var(--rim-faint); font-size: 0.9rem; cursor: pointer; }
+.sources-panel__layer:hover { border-color: #5f6368; }
+.sources-panel__layer:has(input:checked) { border-color: var(--rim); color: #fff; }
+.sources-panel__layer input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--rim); }
+.sources-panel .sources-drawer { margin-top: 1rem; padding: 0; border: 0; background: none; }

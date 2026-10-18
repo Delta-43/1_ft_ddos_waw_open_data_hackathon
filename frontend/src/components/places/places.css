@@ -118,7 +118,7 @@
 .place-card__show[aria-pressed='true'] { color: #fff; border-color: var(--rim, #8ab4f8); }
 .place-card__show:focus-visible { outline: 2px solid var(--rim, #8ab4f8); outline-offset: 2px; }
 
-/* Pop-up above a numbered stop: the place card itself, on MapLibre's popup. */
+/* Pop-up next to a stop: the place card itself, on MapLibre's popup. */
 .place-popup .maplibregl-popup-content {
   padding: 0;
   background: none;
@@ -136,12 +136,10 @@
 }
 .place-popup .maplibregl-popup-close-button:hover { color: #fff; background: none; }
 
-/* Numbered stop on a stem with a soft halo, after Delta's mockup. */
-.stop-marker { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
-.stop-marker__badge { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--route, #3d6b50); color: #fff; font: 700 0.95rem system-ui, sans-serif; border: 2px solid #fff; box-shadow: 0 0 0 7px color-mix(in srgb, var(--route, #3d6b50) 22%, transparent); }
-.stop-marker__stem { width: 2px; height: 1.6rem; background: var(--route, #3d6b50); }
-.stop-marker:focus-visible { outline: 2px solid #8ab4f8; outline-offset: 3px; border-radius: 50%; }
-
-/* Route letters (#99): A/B/C halfway along each candidate, matching the route switch. */
-.route-letter { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--route, #3d6b50); color: #fff; font: 700 0.85rem system-ui, sans-serif; border: 2px solid #fff; opacity: 0.6; pointer-events: none; }
-.route-letter--selected { width: 2rem; height: 2rem; font-size: 1rem; opacity: 1; }
+/* Stop on the selected route (#114): a glowing ring on the ground, no number; tapping it or its building opens the card. */
+.stop-marker { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.stop-marker__ring { width: 1rem; height: 1rem; border-radius: 50%; background: #fff; border: 3px solid var(--route, #8ab4f8); box-shadow: 0 0 0 6px color-mix(in srgb, var(--route, #8ab4f8) 28%, transparent), 0 0 18px var(--route, #8ab4f8); animation: stop-glow 2.4s ease-in-out infinite; }
+.stop-marker:hover .stop-marker__ring { transform: scale(1.2); }
+.stop-marker:focus-visible { outline: 2px solid #8ab4f8; outline-offset: -2px; }
+@keyframes stop-glow { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--route, #8ab4f8) 12%, transparent), 0 0 24px var(--route, #8ab4f8); } }
+@media (prefers-reduced-motion: reduce) { .stop-marker__ring { animation: none; } }

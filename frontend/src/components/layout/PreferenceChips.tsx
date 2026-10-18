@@ -1,100 +1,121 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { InterpretedPreferences, Preferences } from '../../api/contract';
 import './layout.css';
 
 interface PreferenceChipsProps {
-  understood: InterpretedPreferences;
+  /** What the backend understood; undefined before the first answer. */
+  understood?: InterpretedPreferences;
   busy: boolean;
   onChange: (preferences: Preferences) => void;
 }
 
 const INTERPRETER_TEXT: Record<InterpretedPreferences['interpreted_by'], string> = {
-  fixture: 'demo fixture',
+  fixture: 'the demo fixture',
   rules: 'keyword rules',
-  model: 'AI model',
+  model: 'the AI model',
 };
 
 const ON = 0.8;
+const HOUR_S = 3600;
+const MIN_HOURS = 1;
+const MAX_HOURS = 5;
+/** Wait this long after the slider stops moving before re-planning. */
+const SLIDER_SETTLE_MS = 600;
 
 /**
- * A preferences icon in the nav bar. It opens a small panel with what the backend understood,
- * as toggles; each change re-sends the same prompt with explicit preferences.
+ * The Preferences panel's contents (#114, after the reference "What matters today?" card): what the
+ * backend understood, as toggles, a time slider and on foot / by bike. Each change re-sends the
+ * same prompt with explicit preferences.
  */
 export function PreferenceChips({ understood, busy, onChange }: PreferenceChipsProps) {
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
-  const root = useRef<HTMLDivElement>(null);
+  const understoodHours = understood?.max_duration_s != null ? understood.max_duration_s / HOUR_S : null;
+  const [hours, setHours] = useState<number | null>(understoodHours);
 
-  // Close on Escape or a click outside.
+  // A new answer resets the slider to what was understood.
+  useEffect(() => setHours(understoodHours), [understoodHours]);
+
+  // Re-plan once the slider has settled on a new value.
   useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
-    const onClick = (event: MouseEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('mousedown', onClick);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('mousedown', onClick);
-    };
-  }, [open]);
+    if (!understood || hours == null || hours === understoodHours) return;
+    const timer = window.setTimeout(() => onChange({ ...explicit(understood), max_duration_s: Math.round(hours * HOUR_S) }), SLIDER_SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [hours]);
 
-  const explicit = (): Preferences => ({
-    interests: understood.interests,
-    travel_mode: understood.travel_mode,
-    priorities: { ...understood.priorities },
-    ...(understood.max_duration_s != null && { max_duration_s: understood.max_duration_s }),
-  });
+  if (!understood) {
+    return (
+      <div className="preferences-panel">
+        <h2 className="corner__heading">What matters today?</h2>
+        <p className="corner__text">Ask the assistant for an outing first. What it understood appears here, and you can change it.</p>
+      </div>
+    );
+  }
+
   const toggle = (key: 'quiet' | 'green') => {
-    const next = explicit();
+    const next = explicit(understood);
     next.priorities = { ...understood.priorities, [key]: understood.priorities[key] > 0 ? 0 : ON };
     onChange(next);
   };
   const quiet = understood.priorities.quiet > 0;
   const green = understood.priorities.green > 0;
-  const hours = understood.max_duration_s != null ? Math.round(understood.max_duration_s / 360) / 10 : null;
+  const shown = hours ?? MAX_HOURS;
 
   return (
-    <div className="preferences-menu" ref={root}>
-      <button
-        type="button"
-        className="preferences-menu__button"
-        aria-label="Preferences"
-        aria-expanded={open}
-        aria-controls={panelId}
-        title={`Preferences (understood by ${INTERPRETER_TEXT[understood.interpreted_by]})`}
-        onClick={() => setOpen(value => !value)}
-      >
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-          <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-          <circle cx="16" cy="7" r="2" />
-          <circle cx="10" cy="17" r="2" />
-        </svg>
-      </button>
-      <div id={panelId} className="preferences-menu__panel" hidden={!open} role="group" aria-label="Your preferences" aria-busy={busy}>
-        <p className="preferences-menu__heading">Your preferences</p>
-        <div className="preference-chips">
-          {understood.interests.map(interest => (
-            <span key={interest} className="preference-chip preference-chip--static">{interest}</span>
-          ))}
-          <button
-            type="button"
-            className="preference-chip"
-            aria-pressed={understood.travel_mode === 'walk'}
-            disabled={busy}
-            onClick={() => onChange({ ...explicit(), travel_mode: understood.travel_mode === 'walk' ? 'bike' : 'walk' })}
-            title="Switch between walking and cycling"
-          >
-            {understood.travel_mode === 'walk' ? 'Walk' : 'Bike'}
-          </button>
-          <button type="button" className="preference-chip" aria-pressed={quiet} disabled={busy} onClick={() => toggle('quiet')}>
-            Quiet
-          </button>
-          <button type="button" className="preference-chip" aria-pressed={green} disabled={busy} onClick={() => toggle('green')}>
-            Green
-          </button>
-          <span className="preference-chip preference-chip--static">{hours != null ? `≤ ${hours} h` : 'No time limit'}</span>
-        </div>
+    <div className="preferences-panel" aria-busy={busy}>
+      <h2 className="corner__heading">What matters today?</h2>
+      <div className="preference-chips">
+        <button type="button" className="preference-chip" aria-pressed={quiet} disabled={busy} onClick={() => toggle('quiet')}>
+          {quiet && '✓ '}Quiet
+        </button>
+        <button type="button" className="preference-chip" aria-pressed={green} disabled={busy} onClick={() => toggle('green')}>
+          {green && '✓ '}Green
+        </button>
+        {understood.interests.map(interest => (
+          <span key={interest} className="preference-chip preference-chip--static">{interest}</span>
+        ))}
       </div>
+
+      <label className="preferences-panel__row" htmlFor="preferences-hours">
+        <span>Time for yourself</span>
+        <strong>{hours == null ? 'No limit' : `${shown} ${shown === 1 ? 'hour' : 'hours'}`}</strong>
+      </label>
+      <input
+        id="preferences-hours"
+        className="preferences-panel__slider"
+        type="range"
+        min={MIN_HOURS}
+        max={MAX_HOURS}
+        step={0.5}
+        value={shown}
+        disabled={busy}
+        onChange={event => setHours(Number(event.target.value))}
+      />
+      <div className="preferences-panel__scale" aria-hidden="true"><span>{MIN_HOURS} hour</span><span>{MAX_HOURS} hours</span></div>
+
+      <div className="segmented" role="group" aria-label="Travel mode">
+        {(['walk', 'bike'] as const).map(mode => (
+          <button
+            key={mode}
+            type="button"
+            className="segmented__option"
+            aria-pressed={understood.travel_mode === mode}
+            disabled={busy}
+            onClick={() => understood.travel_mode !== mode && onChange({ ...explicit(understood), travel_mode: mode })}
+          >
+            {mode === 'walk' ? 'On foot' : 'By bike'}
+          </button>
+        ))}
+      </div>
+
+      <p className="corner__text">Understood by {INTERPRETER_TEXT[understood.interpreted_by]}. Your changes re-plan the same request; nothing is stored.</p>
     </div>
   );
+}
+
+function explicit(understood: InterpretedPreferences): Preferences {
+  return {
+    interests: understood.interests,
+    travel_mode: understood.travel_mode,
+    priorities: { ...understood.priorities },
+    ...(understood.max_duration_s != null && { max_duration_s: understood.max_duration_s }),
+  };
 }
