@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
 import { sourceFor, type Route, type Source } from '../../api/contract';
 import type { TrackResponse } from '../../api/tracks';
+import type { Leg } from '../../api/transitExamples';
+import type { AmenityKind } from '../../map/amenities';
 import { routeLetter } from '../../map/routeColours';
 import type { RequestStatus } from '../../useOuting';
 import { formatDistance, formatDuration } from '../places/format';
@@ -34,6 +36,10 @@ interface AgentProps {
   onShowPlace: (placeId: string) => void;
   onToggleSources: () => void;
   onReset: () => void;
+  /** Toilets and defibrillators near the route: what is switched on, and how many there are. */
+  amenities: Set<AmenityKind>;
+  amenityCounts: Record<AmenityKind, number>;
+  onToggleAmenity: (kind: AmenityKind) => void;
 }
 
 const PICKED_BY: Record<string, Key> = {
@@ -183,7 +189,7 @@ interface TripProps extends AgentProps {
   orbState: 'idle' | 'listening' | 'thinking';
 }
 
-function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, aiTrackId, selectedRouteId, selectedPlaceId, sourcesOpen, ...actions }: TripProps) {
+function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, aiTrackId, selectedRouteId, selectedPlaceId, sourcesOpen, amenities, amenityCounts, ...actions }: TripProps) {
   const t = useT();
   const [details, setDetails] = useState(false);
   const [tweak, setTweak] = useState('');
@@ -213,6 +219,8 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
   const places = new Map(route.places.map(place => [place.id, place]));
   const startName = result.mode === 'mock' ? t('shellDemoStart') : 'Centrum';
   const pickedBy = track ? t(PICKED_BY[track.picked_by] ?? 'shellPickedModel') : undefined;
+  const legs = result.legs;
+  const modes = legs ? [...new Set(legs.filter(leg => leg.mode === 'bus' || leg.mode === 'tram' || leg.mode === 'metro' || leg.mode === 'rail').map(leg => t(LEG_MODE[leg.mode])))] : [];
 
   function submitTweak(event: FormEvent) {
     event.preventDefault();
@@ -225,9 +233,9 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
   return (
     <div className="trip" aria-busy={busy}>
       <TripHeader
-        title={track?.title ?? route.name}
-        sub={track?.reason && track.picked_by === 'model' ? track.reason : track?.summary}
-        tag={pickedBy}
+        title={legs ? t('transitTitle', { place: route.name }) : track?.title ?? route.name}
+        sub={legs ? t('transitSub', { depart: result.depart ?? '', arrive: result.arrive ?? '' }) : track?.reason && track.picked_by === 'model' ? track.reason : track?.summary}
+        tag={legs ? t('transitExampleTag') : pickedBy}
         orbState={orbState}
         accent={accent}
         onMinimise={() => onMinimise(true)}
@@ -237,10 +245,11 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
       <div className="trip__stats">
         <span className="trip__stat trip__stat--big">{formatDuration(route.metrics.duration_s.value)}</span>
         <span className="trip__stat">{formatDistance(route.metrics.distance_m.value)}</span>
-        <span className="trip__stat">{route.travel_mode === 'bike' ? t('shellByBike') : t('shellOnFoot')}</span>
+        <span className="trip__stat">{legs ? [...modes, t('shellOnFoot')].join(' + ') : route.travel_mode === 'bike' ? t('shellByBike') : t('shellOnFoot')}</span>
         {route.geometry_kind === 'straight_line' && <span className="trip__warning">{t('shellStraightLine')}</span>}
       </div>
 
+      {legs ? <LegList legs={legs} /> : (
       <ol className="journey" aria-label={t('shellYourWay')}>
         <li className="journey__row journey__row--start">
           <span className="journey__dot" aria-hidden="true" />
@@ -271,6 +280,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
           );
         })}
       </ol>
+      )}
 
       <fieldset className="moods" disabled={busy}>
         <legend className="moods__legend">
@@ -279,7 +289,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
         </legend>
         <div className="moods__list">
           {MOODS.map(mood => {
-            const active = mood.trackId === track?.id;
+            const active = moodForTrack(track?.id)?.id === mood.id;
             return (
               <button
                 key={mood.id}
@@ -299,6 +309,24 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
         </div>
       </fieldset>
 
+      <div className="nearby" role="group" aria-label={t('nearbyLabel')}>
+        <span className="nearby__label">{t('nearbyLabel')}</span>
+        {(['toilets', 'aed'] as AmenityKind[]).map(kind => (
+          <button
+            key={kind}
+            type="button"
+            className={`nearby__toggle nearby__toggle--${kind}`}
+            aria-pressed={amenities.has(kind)}
+            disabled={amenityCounts[kind] === 0}
+            onClick={() => actions.onToggleAmenity(kind)}
+          >
+            <span className="nearby__dot" aria-hidden="true" />
+            {t(kind === 'aed' ? 'amenityAedShort' : 'amenityToilets')}
+            <span className="nearby__count">{amenityCounts[kind]}</span>
+          </button>
+        ))}
+      </div>
+
       {result.routes.length > 1 && (
         <RoutePicker routes={result.routes} selectedId={route.id} onSelect={actions.onSelectRoute} />
       )}
@@ -309,7 +337,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
         {details ? t('shellLess') : t('shellWhy')}
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
       </button>
-      {details && <TripDetails route={route} sources={result.sources} />}
+      {details && <TripDetails route={route} sources={result.sources} example={!!legs} />}
 
       <form className="tweak" onSubmit={submitTweak}>
         <input
@@ -328,8 +356,12 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
 
       <footer className="trip__footer">
         <DataModeBadge mode={result.mode} />
-        {track?.simulated && <span className="trip__tag" title={t('shellDemoTrackTitle')}>{t('shellDemoTrack')}</span>}
-        {route.geometry_kind === 'street' && <span className="trip__tag" title={t('shellStreetRouteTitle')}>{t('shellStreetRoute')}</span>}
+        {legs ? <span className="trip__tag" title={result.notice}>{t('transitExampleTag')}</span> : (
+          <>
+            {track?.simulated && <span className="trip__tag" title={t('shellDemoTrackTitle')}>{t('shellDemoTrack')}</span>}
+            {route.geometry_kind === 'street' && <span className="trip__tag" title={t('shellStreetRouteTitle')}>{t('shellStreetRoute')}</span>}
+          </>
+        )}
         <button type="button" className="trip__sources" onClick={actions.onToggleSources} aria-expanded={sourcesOpen} aria-controls="sources-drawer">
           {t('sources')}
         </button>
@@ -397,7 +429,51 @@ function RoutePicker({ routes, selectedId, onSelect }: { routes: Route[]; select
   );
 }
 
-function TripDetails({ route, sources }: { route: Route; sources: Source[] }) {
+const LEG_MODE: Record<string, Key> = { bus: 'legBus', tram: 'legTram', metro: 'legMetro', rail: 'legRail' };
+
+const LEG_ICON: Record<string, string> = {
+  walk: 'M10 3.5a1.5 1.5 0 1 0 0 .01M8.5 17l1.5-5 2 2v3M7 10l2.5-3 2.5 1.5 1.5 2.5',
+  bus: 'M5 4h10a1 1 0 0 1 1 1v9H4V5a1 1 0 0 1 1-1zM4 10h12M7 16.5v-2.5M13 16.5v-2.5',
+  tram: 'M6 5h8a1 1 0 0 1 1 1v8H5V6a1 1 0 0 1 1-1zM5 10h10M8 2.5h4M10 2.5V5M7 17l1-3M13 17l-1-3',
+  metro: 'M6 5h8a1 1 0 0 1 1 1v8H5V6a1 1 0 0 1 1-1zM5 10h10M7 17l1-3M13 17l-1-3',
+  rail: 'M6 5h8a1 1 0 0 1 1 1v8H5V6a1 1 0 0 1 1-1zM5 10h10M7 17l1-3M13 17l-1-3',
+  shop: 'M4 7h12l-1.2 8.2a1 1 0 0 1-1 .8H6.2a1 1 0 0 1-1-.8zM7.5 7a2.5 2.5 0 0 1 5 0',
+};
+
+/** A car-free example, leg by leg: walk, ride, shop, ride, walk. */
+function LegList({ legs }: { legs: Leg[] }) {
+  const t = useT();
+  return (
+    <ol className="legs" aria-label={t('shellYourWay')}>
+      {legs.map((leg, index) => {
+        const ride = leg.mode !== 'walk' && leg.mode !== 'shop';
+        const main = leg.mode === 'walk' ? t('legWalk', { minutes: leg.minutes ?? 1, to: leg.to ?? '' })
+          : leg.mode === 'shop' ? t('legShop', { name: leg.name ?? '' })
+          : t('legRide', { mode: t(LEG_MODE[leg.mode] ?? 'legBus'), line: leg.line ?? '', to: leg.to ?? '' });
+        const sub = leg.mode === 'walk' ? (leg.straight ? t('legStraight') : '')
+          : leg.mode === 'shop' ? [t('legShopFor', { minutes: leg.minutes ?? 10 }), leg.opening_hours ?? ''].filter(Boolean).join(' · ')
+          : t('legRideDetail', { depart: leg.depart ?? '', arrive: leg.arrive ?? '', from: leg.from ?? '', stops: leg.stops ?? 1, headsign: leg.headsign ?? '' });
+        return (
+          <li key={index} className={`leg leg--${leg.mode}`}>
+            <span className="leg__icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20"><path d={LEG_ICON[leg.mode] ?? LEG_ICON.bus} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
+            <span className="leg__text">
+              <span className="leg__main">
+                {ride && <span className={`leg__line leg__line--${leg.mode}`}>{leg.line}</span>}
+                {main}
+              </span>
+              {sub && <span className="leg__sub">{sub}</span>}
+            </span>
+            {ride && <span className="leg__time">{leg.depart}</span>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function TripDetails({ route, sources, example = false }: { route: Route; sources: Source[]; example?: boolean }) {
   const t = useT();
   const scores = [
     { label: t('shellGreenery'), metric: route.metrics.green_score },
@@ -406,6 +482,7 @@ function TripDetails({ route, sources }: { route: Route; sources: Source[] }) {
   return (
     <div className="trip__details">
       <p className="trip__explanation">{route.explanation}</p>
+      {!example && (<>
       <dl className="scores">
         {scores.map(({ label, metric }) => (
           <div key={label} className="scores__row">
@@ -419,6 +496,7 @@ function TripDetails({ route, sources }: { route: Route; sources: Source[] }) {
         ))}
       </dl>
       <p className="trip__fine">{t('shellScoresNote')}</p>
+      </>)}
       <ul className="legend" aria-label={t('shellOnMap')}>
         <li><span className="legend__swatch legend__swatch--route" aria-hidden="true" />{t('shellYourWay')}</li>
         <li><span className="legend__swatch legend__swatch--culture" aria-hidden="true" />{t('shellLegendCulture')}</li>

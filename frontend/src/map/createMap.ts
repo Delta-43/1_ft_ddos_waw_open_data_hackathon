@@ -6,7 +6,6 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
 import { hideUnflaggedOutlines } from './buildingOutlines';
 import { ResetViewControl } from './controls';
-import { HistoricalOverlayControl } from './historicalOverlayControl';
 import { buildStyle, palette } from './style';
 
 setWorkerUrl(workerUrl);
@@ -33,7 +32,6 @@ export function createMap(container: HTMLElement, view: typeof INITIAL_VIEW = IN
 
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new ResetViewControl(), 'top-right');
-  map.addControl(new HistoricalOverlayControl(), 'top-right');
   // Show detailed building parts (Palace of Culture tiers, spires) instead of solid outlines.
   hideUnflaggedOutlines(map);
   return map;

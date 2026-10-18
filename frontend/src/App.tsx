@@ -7,6 +7,7 @@ import { moodForTrack } from './components/shell/moods';
 import { Reports } from './components/shell/Reports';
 import { TitleBar } from './components/shell/TitleBar';
 import { INITIAL_VIEW } from './map/config';
+import { amenitiesNear, type AmenityKind } from './map/amenities';
 import { MapView } from './map/MapView';
 import { startParallax } from './map/parallax';
 import { startRouteLight } from './map/routeLight';
@@ -72,6 +73,9 @@ export function App() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [map, setMap] = useState<Map | null>(null);
   const [popupPlaceId, setPopupPlaceId] = useState<string>();
+  /** Toilets and defibrillators near the route: off until the visitor asks for them. */
+  const [amenities, setAmenities] = useState<Set<AmenityKind>>(new Set());
+  const [amenityCounts, setAmenityCounts] = useState<Record<AmenityKind, number>>({ toilets: 0, aed: 0 });
   const [spotlight, setSpotlight] = useState<HTMLDivElement | null>(null);
   const mobile = useIsMobile();
 
@@ -142,6 +146,23 @@ export function App() {
 
   const selectedRoute = result?.routes.find(route => route.id === selectedId);
 
+  useEffect(() => {
+    let current = true;
+    void amenitiesNear(selectedRoute).then(found => {
+      if (current) setAmenityCounts({ toilets: found.toilets.length, aed: found.aed.length });
+    });
+    return () => { current = false; };
+  }, [selectedRoute]);
+
+  function toggleAmenity(kind: AmenityKind) {
+    setAmenities(previous => {
+      const next = new Set(previous);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  }
+
   // With a route, light follows the route's shape instead of the round spotlight, so the corridor
   // stays lit wherever the camera goes and everything else (also under the panel) stays dim.
   useEffect(() => {
@@ -193,6 +214,7 @@ export function App() {
         locate={false}
         fitKey={parked ? 'parked' : 'trip'}
         explore={!!result && !parked}
+        amenities={amenities}
         onIntroStart={() => setCurtain('lifting')}
         onIntroDone={() => setIntroDone(true)}
         onMapReady={setMap}
@@ -231,6 +253,9 @@ export function App() {
         onShowPlace={placeId => setPopupPlaceId(current => (current === placeId ? undefined : placeId))}
         onToggleSources={() => setSourcesOpen(open => !open)}
         onReset={park}
+        amenities={amenities}
+        amenityCounts={amenityCounts}
+        onToggleAmenity={toggleAmenity}
       />
       <Reports map={map} explore={!!result && !parked} />
       <p className="credits">

@@ -9,10 +9,12 @@ Heights: OSM `height`, else `building:levels` x 3.2 m, else 10 m. Most are estim
 marked `est`. Data (c) OpenStreetMap contributors, ODbL.
 
     python scripts/build_corridor_cache.py <backend-url>   # e.g. http://127.0.0.1:8000
+    python scripts/build_corridor_cache.py --wiki-only     # refresh only the Wikipedia summaries
 """
 import json
 import math
 import sys
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -88,6 +90,9 @@ def overpass(bbox):
   node["historic"]({box});
   node["tourism"~"^(museum|gallery|attraction|artwork)$"]({box});
   node["amenity"~"^(theatre|place_of_worship|arts_centre|library)$"]({box});
+  node["amenity"="toilets"]({box});
+  node["emergency"="defibrillator"]({box});
+  nwr["shop"~"^(supermarket|convenience|greengrocer|bakery|deli|butcher)$"]({box});
 );
 out geom tags;"""
     data = urllib.parse.urlencode({"data": query}).encode()
@@ -98,6 +103,81 @@ out geom tags;"""
         except OSError as error:
             print(f"overpass {url} failed: {error}")
     raise SystemExit("every Overpass mirror failed")
+
+
+AMENITY_M = KEEP_M + 150  # toilets and defibrillators a short detour away
+# Wikimedia asks for an identifying user agent with a contact URL; generic ones get HTTP 429.
+WIKI_UA = {"User-Agent": "FindYourWayDemo/1.0 (https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon)"}
+KIND_OF = [("tourism", {"museum": "museum", "gallery": "gallery", "attraction": "attraction"}),
+           ("amenity", {"theatre": "theatre", "place_of_worship": "place of worship", "arts_centre": "arts centre", "library": "library"}),
+           ("historic", {"castle": "castle", "palace": "palace", "monument": "monument", "church": "church", "manor": "manor", "fort": "fort", "city_gate": "city gate", "ruins": "ruins", "tower": "tower"}),
+           ("building", {"church": "church", "cathedral": "cathedral", "chapel": "chapel", "palace": "palace", "castle": "castle", "museum": "museum", "synagogue": "synagogue", "theatre": "theatre"})]
+
+
+def culture_info(tags):
+    """Name, kind and links of a culture place, from its OSM tags only."""
+    kind = next((names[tags[key]] for key, names in KIND_OF if tags.get(key) in names), None)
+    info = {"n": tags.get("name:en") or tags.get("name"), "npl": tags.get("name"), "ck": kind,
+            "wp": tags.get("wikipedia"), "wd": tags.get("wikidata"), "sd": tags.get("start_date"),
+            "arch": tags.get("architect"), "her": bool(tags.get("heritage") or tags.get("heritage:operator"))}
+    return {k: v for k, v in info.items() if v}
+
+
+def wiki_get(url):
+    time.sleep(0.25)  # stay well inside Wikimedia's rate limits
+    return json.load(urllib.request.urlopen(urllib.request.Request(url, headers=WIKI_UA), timeout=20))
+
+
+def first_sentences(text, limit=320):
+    out = ""
+    for sentence in text.replace("\n", " ").split(". "):
+        candidate = (out + ". " if out else "") + sentence.rstrip(".")
+        if len(candidate) > limit and out:
+            break
+        out = candidate
+    return out.rstrip(".") + "."
+
+
+def wiki_summaries(wikipedia, wikidata):
+    """Short Polish and English summaries from Wikipedia (CC BY-SA), linked from OSM's tags."""
+    titles = {}
+    if wikidata:
+        try:
+            links = wiki_get(f"https://www.wikidata.org/w/api.php?action=wbgetentities&ids={wikidata}&props=sitelinks&sitefilter=plwiki|enwiki&format=json")
+            for site, lang in (("plwiki", "pl"), ("enwiki", "en")):
+                link = links["entities"][wikidata]["sitelinks"].get(site)
+                if link:
+                    titles[lang] = link["title"]
+        except (OSError, KeyError, ValueError):
+            pass
+    if wikipedia and ":" in wikipedia:
+        lang, title = wikipedia.split(":", 1)
+        titles.setdefault(lang, title)
+    out = {}
+    for lang in ("en", "pl"):
+        if lang not in titles:
+            continue
+        try:
+            page = wiki_get(f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(titles[lang].replace(' ', '_'))}")
+            if page.get("extract"):
+                out[f"s{lang}"] = first_sentences(page["extract"])
+                out[f"u{lang}"] = page.get("content_urls", {}).get("desktop", {}).get("page", "")
+        except (OSError, KeyError, ValueError):
+            pass
+    return out
+
+
+def fill_summaries(features):
+    """Wikipedia summaries for the culture buildings OSM links to an article (fetched once per article)."""
+    cache = {}
+    for f in features:
+        p = f["properties"]
+        key = (p.get("wp"), p.get("wd"))
+        if p.get("c") and any(key):
+            if key not in cache:
+                cache[key] = wiki_summaries(*key)
+            p.update(cache[key])
+    print(f"wikipedia: {sum(1 for v in cache.values() if v)} of {len(cache)} linked articles summarised")
 
 
 def ring(way):
@@ -201,11 +281,26 @@ def main(backend):
 
     # Culture and history means places a visitor would notice: museums, galleries, theatres,
     # churches, palaces, monuments. Not every heritage-listed tenement (Warsaw lists many).
-    culture_points = [(e["lon"], e["lat"]) for e in elements if e["type"] == "node" and is_culture(e.get("tags", {}))]
+    culture_nodes = [((e["lon"], e["lat"]), e.get("tags", {})) for e in elements if e["type"] == "node" and is_culture(e.get("tags", {}))]
+    culture_points = [point for point, _ in culture_nodes]
     features = []
-    counts = {"building": 0, "green": 0, "tree": 0}
+    counts = {"building": 0, "green": 0, "tree": 0, "amenity": 0, "shop": 0}
     for e in elements:
         tags = e.get("tags", {})
+        # Toilets, defibrillators and grocery shops: points (a shop drawn as an area uses its middle).
+        point = (e["lon"], e["lat"]) if e["type"] == "node" else None
+        if point is None and e.get("geometry"):
+            geometry = e["geometry"]
+            point = (sum(n["lon"] for n in geometry) / len(geometry), sum(n["lat"] for n in geometry) / len(geometry))
+        amenity = "toilets" if tags.get("amenity") == "toilets" else "aed" if tags.get("emergency") == "defibrillator" else None
+        if amenity and point and near([xy(*point)], segments, AMENITY_M):
+            props = {"k": "a", "kind": amenity, **{k: tags[k] for k in ("name", "access", "fee", "opening_hours", "wheelchair", "indoor", "level", "operator") if k in tags}}
+            features.append({"type": "Feature", "properties": props, "geometry": {"type": "Point", "coordinates": [round(point[0], 6), round(point[1], 6)]}})
+            counts["amenity"] += 1
+        if tags.get("shop") and tags.get("name") and point:
+            props = {"k": "s", "kind": tags["shop"], "name": tags["name"], **({"opening_hours": tags["opening_hours"]} if "opening_hours" in tags else {})}
+            features.append({"type": "Feature", "properties": props, "geometry": {"type": "Point", "coordinates": [round(point[0], 6), round(point[1], 6)]}})
+            counts["shop"] += 1
         if e["type"] == "relation":
             polygons = assemble(e.get("members", []))
         elif e["type"] == "way":
@@ -219,11 +314,14 @@ def main(backend):
                 if not near(points, segments):
                     continue
                 height, estimated = height_of(tags)
-                culture = is_culture(tags) or tags.get("building") in CULTURE_BUILDINGS or any(inside(c, polygon) for c in culture_points)
-                features.append({"type": "Feature", "properties": {
-                    "k": "b", "h": round(height, 1), "mh": round(min_height_of(tags), 1), "est": estimated, "c": culture,
-                    "part": "building:part" in tags,
-                }, "geometry": {"type": "Polygon", "coordinates": [polygon]}})
+                inner = next((node_tags for point, node_tags in culture_nodes if inside(point, polygon)), None)
+                culture = is_culture(tags) or tags.get("building") in CULTURE_BUILDINGS or inner is not None
+                props = {"k": "b", "h": round(height, 1), "mh": round(min_height_of(tags), 1), "est": estimated, "c": culture,
+                         "part": "building:part" in tags}
+                if culture:
+                    # The building's own tags first, then the culture place inside it (e.g. a museum node).
+                    props.update({**culture_info(inner or {}), **culture_info(tags)})
+                features.append({"type": "Feature", "properties": props, "geometry": {"type": "Polygon", "coordinates": [polygon]}})
                 counts["building"] += 1
             else:
                 sample = points[:: max(1, len(points) // 60)]
@@ -246,17 +344,24 @@ def main(backend):
                     p["skip"] = True
         features = [f for f in features if not f["properties"].get("skip")]
 
+    fill_summaries(features)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         "type": "FeatureCollection",
         "source": "OpenStreetMap contributors (ODbL), via Overpass API",
         "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "bbox": [bbox[1], bbox[0], bbox[3], bbox[2]],
-        "note": "Building heights are mostly estimated from levels (3.2 m per level) or a 10 m default.",
+        "note": "Building heights are mostly estimated from levels (3.2 m per level) or a 10 m default. Culture summaries (se/sp) are from Wikipedia, CC BY-SA 4.0, linked by OSM's wikipedia/wikidata tags.",
         "features": features,
     }, separators=(",", ":"), ensure_ascii=False))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB): {counts}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000")
+    if "--wiki-only" in sys.argv:  # refill summaries in the existing cache without querying Overpass again
+        cached = json.loads(OUT.read_text(encoding="utf-8"))
+        fill_summaries(cached["features"])
+        OUT.write_text(json.dumps(cached, separators=(",", ":"), ensure_ascii=False))
+    else:
+        main(sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000")
