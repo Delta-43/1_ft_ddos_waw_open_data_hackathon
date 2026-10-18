@@ -24,7 +24,7 @@ src/
   components/places/         PlaceCard, PlacePopup (stop cards on the map)
   components/provenance/     SourceLabel, DataModeBadge, SourcesDrawer, MapCredits
   i18n/                      EN/PL dictionary, language store, useT()
-  data/cityNotes.ts          blue flags (one real event, invented offers) and example reports
+  data/cityNotes.ts          message flags (one real event, invented offers) and example reports
   map/
     style.ts                 dark map style (amber streets, dark blocks)
     corridor.ts              3D corridor from corridor-cache.json, reveal wave, culture cards on hover
@@ -32,7 +32,7 @@ src/
     routeLight.ts            the light band that follows the route
     transit.ts               stops near the route and scheduled vehicles (transit-cache.json)
     amenities.ts             toilets and defibrillators near the route
-    flags.ts                 blue message flags
+    flags.ts                 message flags
     parallax.ts              home-view camera lean
 public/
   corridor-cache.json        OSM buildings, parks, trees, amenities, shops, culture facts, Wikipedia summaries

@@ -14,7 +14,7 @@ export type FlagKind = 'event' | 'offer' | 'tickets';
 export interface CityFlag {
   id: string;
   kind: FlagKind;
-  /** Short text on the flag itself. */
+  /** Short text on the flag itself: the place or what it is, never the deal (that is in the card). */
   short: string;
   title: string;
   place: string;
@@ -50,56 +50,56 @@ export const CITY_FLAGS: CityFlag[] = [
     longitude: 21.0245, latitude: 52.2225, mode: 'mock', source: 'SIM-02 fictional event, demo only',
   },
   {
-    id: 'demo:offer/coffee', kind: 'offer', short: '−20% oat flat white',
+    id: 'demo:offer/coffee', kind: 'offer', short: 'Kawiarnia Pod Lipą',
     title: '20% off any oat flat white', place: 'Kawiarnia Pod Lipą',
     detail: 'Show this card at the counter. Today until 14:00.', when: 'Today, until 14:00',
     longitude: 21.01628, latitude: 52.22371, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:offer/lunch', kind: 'offer', short: '2-for-1 pierogi',
+    id: 'demo:offer/lunch', kind: 'offer', short: 'Bar Pierogowy',
     title: 'Two plates of pierogi for the price of one', place: 'Bar Pierogowy Jazdów',
     detail: 'Lunch menu, eat in or take away.', when: 'Today, 12:00–15:00',
     longitude: 21.01742, latitude: 52.22241, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:tickets/concert', kind: 'tickets', short: 'Concert · from 40 zł',
+    id: 'demo:tickets/concert', kind: 'tickets', short: 'Chamber concert',
     title: 'Sunday chamber concert, 18:00', place: 'Sala Kameralna Ujazdów',
-    detail: 'Last 12 seats. Pay at the door.', when: 'Today, 18:00',
+    detail: 'From 40 zł. Last 12 seats, pay at the door.', when: 'Today, 18:00',
     longitude: 21.02427, latitude: 52.22051, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:offer/lemonade', kind: 'offer', short: 'Lemonade 2+1',
+    id: 'demo:offer/lemonade', kind: 'offer', short: 'Ogródek nad Stawem',
     title: 'Buy two lemonades, the third is free', place: 'Ogródek nad Stawem',
     detail: 'Garden café by the pond.', when: 'Today, all day',
     longitude: 21.02696, latitude: 52.2191, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:tickets/night', kind: 'tickets', short: 'Night pass · 25 zł',
+    id: 'demo:tickets/night', kind: 'tickets', short: 'Galeria Nocna',
     title: 'Late opening pass', place: 'Galeria Nocna',
-    detail: 'Entry after 18:00 with a free audio guide.', when: 'Today, 18:00–22:00',
+    detail: '25 zł. Entry after 18:00 with a free audio guide.', when: 'Today, 18:00–22:00',
     longitude: 21.02025, latitude: 52.2227, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:offer/bike', kind: 'offer', short: 'Free bike check',
+    id: 'demo:offer/bike', kind: 'offer', short: 'Rowerownia Agrykola',
     title: 'Free five-minute bike check', place: 'Rowerownia Agrykola',
     detail: 'Tyres, brakes and chain, no booking.', when: 'Today, 10:00–16:00',
     longitude: 21.03182, latitude: 52.21965, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:offer/records', kind: 'offer', short: '−15% records',
+    id: 'demo:offer/records', kind: 'offer', short: 'Płytoteka pod Arkadami',
     title: '15% off second-hand records', place: 'Płytoteka pod Arkadami',
     detail: 'Jazz and Polish classics.', when: 'This weekend',
     longitude: 21.02583, latitude: 52.21925, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:tickets/garden', kind: 'tickets', short: 'Garden tour · 15 zł',
+    id: 'demo:tickets/garden', kind: 'tickets', short: 'Greenhouse tour',
     title: 'Guided greenhouse tour', place: 'Szklarnia Pokazowa',
-    detail: 'Every hour from 11:00, 40 minutes.', when: 'Today, 11:00–17:00',
+    detail: '15 zł. Every hour from 11:00, 40 minutes.', when: 'Today, 11:00–17:00',
     longitude: 21.02244, latitude: 52.22131, mode: 'mock', source: FICTIONAL,
   },
   {
-    id: 'demo:offer/museum-cafe', kind: 'offer', short: 'Cake + tea 18 zł',
-    title: 'Cake and tea set', place: 'Herbaciarnia przy Parku',
+    id: 'demo:offer/museum-cafe', kind: 'offer', short: 'Herbaciarnia przy Parku',
+    title: 'Cake and tea set, 18 zł', place: 'Herbaciarnia przy Parku',
     detail: 'Seasonal plum cake.', when: 'Today, from 12:00',
     longitude: 21.03783, latitude: 52.21731, mode: 'mock', source: FICTIONAL,
   },

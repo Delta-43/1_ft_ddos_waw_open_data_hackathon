@@ -5,9 +5,9 @@ import { getLang } from '../i18n/language';
 import { translate, type Key } from '../i18n/translations';
 
 /**
- * Blue message flags near the selected route: events, shop offers and tickets
- * (data/cityNotes.ts). A flag shows a few words; clicking opens its card, which always says
- * whether the listing is real or invented for the demo.
+ * Message flags near the selected route: events, shop offers and tickets (data/cityNotes.ts).
+ * A flag shows its kind and a place, never the deal itself; clicking opens its card, which
+ * always says whether the listing is real or invented for the demo.
  */
 const NEAR_M = 300;
 /** Fewer on a phone, where the open map is small. */
@@ -48,8 +48,9 @@ function element(flag: CityFlag, onOpen: (el: HTMLElement) => void): HTMLElement
   button.className = 'city-flag__pill';
   button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-label', `${t(KIND_TEXT[flag.kind])}: ${flag.title}${flag.mode === 'mock' ? ` (${t('flagDemoAria')})` : ''}`);
-  button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[flag.kind]}</svg><span></span>`;
-  button.querySelector('span')!.textContent = flag.short;
+  button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[flag.kind]}</svg><span class="city-flag__kind"></span><span class="city-flag__text"></span>`;
+  button.querySelector('.city-flag__kind')!.textContent = t(KIND_TEXT[flag.kind]);
+  button.querySelector('.city-flag__text')!.textContent = flag.short;
 
   const card = document.createElement('div');
   card.className = 'city-flag__card';

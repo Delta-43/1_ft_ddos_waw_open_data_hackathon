@@ -19,10 +19,10 @@ export const palette = {
   rail: '#4a4640',
   district: '#3a3b40',
   neighbourhood: '#2c2d31',
-  buildingLow: '#1d1e22',
-  buildingHigh: '#2c2e34',
+  buildingLow: '#1e1e21',
+  buildingHigh: '#2e2e32',
   // Slightly lighter roof slab: the "soft top light" of the reference.
-  buildingRoof: '#3b3d45',
+  buildingRoof: '#3d3d42',
   buildingRim: '#0b0b0c',
   // Warm, near-white: MapLibre adds (1 - light colour) as ambient light.
   light: '#fff4e8',

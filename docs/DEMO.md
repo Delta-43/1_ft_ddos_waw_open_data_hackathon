@@ -46,7 +46,7 @@ The ports are published only on that address, never on `0.0.0.0`.
 1. Open `/?time=11:00`. Let the intro land on the Mermaid by the Vistula; move the mouse a little.
 2. Tap the orb, choose "Somewhere calm and green, with a museum". Watch the route draw and the city rise.
 3. Point at the labels: "Picked by AI", Proxy for greenery and quiet, Live or Cached for the route.
-4. Hover a violet building for its card. Switch on Nearby toilets and AEDs.
+4. Hover a clay-orange building for its card. Switch on Nearby toilets and AEDs.
 5. Choose the **Bus + groceries** mood: buses only, a real shop on the way, every leg with its time.
 6. Tap a red stop for its next departures; point at a moving bus or tram ("scheduled, not live").
 7. Open the yellow reports button; close the trip and tap the orb again to resume it.

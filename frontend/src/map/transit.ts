@@ -2,15 +2,17 @@ import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'ma
 import type { Route } from '../api/contract';
 import { getLang } from '../i18n/language';
 import { translate, type Key } from '../i18n/translations';
+import { TILES } from './config';
+import { palette } from './style';
 
 const t = (key: Key, vars?: Record<string, string | number>) => translate(getLang(), key, vars);
 
 /**
  * Public transport near the selected route, from the ZTM timetable (public/transit-cache.json,
- * built by scripts/build_transit_cache.py). Stops within reach of the route are small red dots.
- * A tiny dot moves along each bus or tram that is approaching one of them, by its timetable: a
- * scheduled position, not live GPS. Only trips heading towards the route's destination or back
- * towards its start are shown.
+ * built by scripts/build_transit_cache.py). Stops within reach of the route are small blue dots.
+ * A letter (T for a tram, B for a bus) moves along each vehicle that is approaching one of them,
+ * by its timetable: a scheduled position, not live GPS. Only trips heading towards the route's
+ * destination or back towards its start are shown.
  */
 const CACHE_URL = '/transit-cache.json';
 const REACH_M = 250;
@@ -126,6 +128,8 @@ function positionAt(data: Cache, trip: Cache['trips'][number], now: number): Poi
   return [last[0], last[1]];
 }
 
+const TRAM_COLOUR = '#ffcf5c';
+const BUS_COLOUR = '#ff7a6b';
 interface State { timer?: number; popup?: Popup; data?: Cache; current?: ReturnType<typeof approaches> }
 const states = new WeakMap<Map, State>();
 const empty = () => ({ type: 'FeatureCollection' as const, features: [] as unknown[] });
@@ -136,22 +140,32 @@ export function initTransit(map: Map): void {
   states.set(map, {});
   for (const id of ['transit-stops', 'transit-vehicles', 'transit-trails']) map.addSource(id, { type: 'geojson', data: empty() as never });
   map.addLayer({ id: 'transit-trails', type: 'line', source: 'transit-trails', layout: { 'line-cap': 'round' },
-    paint: { 'line-color': ['match', ['get', 'mode'], 'tram', '#ffcf5c', '#ff7a6b'], 'line-width': 3, 'line-opacity': 0.55, 'line-blur': 1.5 } });
+    paint: { 'line-color': ['match', ['get', 'mode'], 'tram', TRAM_COLOUR, BUS_COLOUR], 'line-width': 3, 'line-opacity': 0.55, 'line-blur': 1.5 } });
   map.addLayer({ id: 'transit-stop-glow', type: 'circle', source: 'transit-stops',
-    paint: { 'circle-color': '#ff3b30', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 5, 17, 11], 'circle-opacity': 0.22, 'circle-blur': 1 } });
+    paint: { 'circle-color': '#5ac8fa', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 5, 17, 11], 'circle-opacity': 0.22, 'circle-blur': 1 } });
   map.addLayer({ id: 'transit-stops', type: 'circle', source: 'transit-stops',
     paint: {
-      'circle-color': '#ff3b30',
+      'circle-color': '#5ac8fa',
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2.2, 17, 4.5],
-      'circle-stroke-color': '#2a0c0a',
+      'circle-stroke-color': '#0b2a3a',
       'circle-stroke-width': 1,
     } });
-  map.addLayer({ id: 'transit-vehicles', type: 'circle', source: 'transit-vehicles',
+  // Each vehicle is a plain letter, like a map label: T for a tram, B for a bus (M and R for the
+  // odd metro or rail trip). Regular weight, a soft colour and a halo in the ground's own
+  // colour, so it reads as a label rather than a game marker.
+  map.addLayer({ id: 'transit-vehicles', type: 'symbol', source: 'transit-vehicles',
+    layout: {
+      'text-field': ['match', ['get', 'mode'], 'tram', 'T', 'metro', 'M', 'rail', 'R', 'B'],
+      'text-font': TILES.font,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 13, 11, 17, 15],
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
     paint: {
-      'circle-color': '#fff6ea',
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2.6, 17, 4.6],
-      'circle-stroke-color': ['match', ['get', 'mode'], 'tram', '#ffcf5c', '#ff7a6b'],
-      'circle-stroke-width': 2,
+      'text-color': ['match', ['get', 'mode'], 'tram', '#ecd28f', '#f0a092'],
+      'text-halo-color': palette.background,
+      'text-halo-width': 1,
+      'text-halo-blur': 0.5,
     } });
   map.on('click', 'transit-stops', event => openStop(map, event));
   map.on('mouseenter', 'transit-stops', () => { map.getCanvas().style.cursor = 'pointer'; });

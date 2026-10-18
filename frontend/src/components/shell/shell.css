@@ -631,9 +631,9 @@
 .legend li { display: inline-flex; align-items: center; gap: 7px; }
 .legend__swatch { width: 10px; height: 10px; border-radius: 3px; }
 .legend__swatch--route { height: 3px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-.legend__swatch--culture { background: #8d74f0; }
+.legend__swatch--culture { background: #63432c; }
 .legend__swatch--green { background: #3f8f58; border-radius: 50%; }
-.legend__swatch--stop { width: 7px; height: 7px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 6px #ff3b30; }
+.legend__swatch--stop { width: 7px; height: 7px; background: #5ac8fa; border-radius: 50%; box-shadow: 0 0 6px #5ac8fa; }
 
 /* Transit stop pop-up */
 .transit-popup .maplibregl-popup-content {
@@ -744,39 +744,50 @@
 .trip-pill__text { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .trip-pill__meta { font-size: 13px; color: var(--fg-3); white-space: nowrap; }
 
-/* ---------- Blue message flags: events, offers, tickets ---------- */
+/* ---------- Message flags: events, offers, tickets ---------- */
+/* Same dark glass as the panels: a quiet kind label and the place, never a loud promo. */
 .city-flag { position: relative; display: flex; flex-direction: column; align-items: center; }
 .city-flag__pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  max-width: 170px;
-  padding: 3px 8px 3px 6px;
-  border: 1px solid rgba(120, 180, 255, 0.55);
-  border-radius: 8px 8px 8px 2px;
-  background: linear-gradient(180deg, #2f7fe8, #1f63c4);
-  color: #fff;
-  font: 600 11px/1.3 var(--font-body);
+  gap: 6px;
+  max-width: 220px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 8px;
+  background: var(--glass);
+  color: var(--fg);
+  font: 400 11px/1.3 var(--font-body);
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(20, 90, 200, 0.45), 0 0 0 3px rgba(60, 140, 255, 0.12);
-  transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s, border-color 0.25s;
   animation: flag-in 0.35s var(--ease-out) both;
 }
-.city-flag__pill span { overflow: hidden; text-overflow: ellipsis; }
-.city-flag__pill svg { flex: none; width: 13px; height: 13px; }
+.city-flag__pill svg { flex: none; width: 13px; height: 13px; color: var(--kind); }
+.city-flag__kind {
+  flex: none;
+  color: var(--kind);
+  font: 600 9.5px/1 var(--font-sub);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.city-flag__text { overflow: hidden; text-overflow: ellipsis; }
+.city-flag--event { --kind: #e6c27a; }
+.city-flag--offer { --kind: #d9a37a; }
+.city-flag--tickets { --kind: #9ecbff; }
 
-.city-flag--real .city-flag__pill { background: linear-gradient(180deg, #3f8cff, #2b6fd6); border-color: #cfe2ff; }
-.city-flag__stem { width: 1.5px; height: 14px; background: linear-gradient(#4b95f5, transparent); }
+.city-flag--real .city-flag__pill { border-color: rgba(243, 240, 234, 0.3); }
+.city-flag__stem { width: 1px; height: 14px; background: linear-gradient(rgba(243, 240, 234, 0.45), transparent); }
 .city-flag__card {
   position: absolute;
   bottom: calc(100% + 6px);
   left: 50%;
   width: 220px;
   padding: 10px 12px;
-  border: 1px solid rgba(120, 180, 255, 0.35);
+  border: 1px solid var(--hair-strong);
   border-radius: 12px;
-  background: rgba(14, 22, 38, 0.97);
+  background: var(--panel);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   color: var(--fg);
   font: 12px/1.4 var(--font-body);
@@ -801,8 +812,8 @@
   margin-left: 2px;
   padding: 0 6px;
   border-radius: 5px;
-  background: rgba(120, 180, 255, 0.16);
-  color: #a9cdff;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--fg-2);
   font-size: 10.5px;
   font-weight: 600;
   vertical-align: 1px;
@@ -1038,7 +1049,7 @@
   .mood:hover .mood__swatch { opacity: 1; }
   .trip__more:hover { color: var(--fg); }
   .trip__sources:hover { color: var(--fg); }
-  .city-flag__pill:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20, 90, 200, 0.55), 0 0 0 3px rgba(60, 140, 255, 0.2); }
+  .city-flag__pill:hover { transform: translateY(-2px); border-color: rgba(243, 240, 234, 0.32); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
   .reports__button:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 190, 40, 0.3); }
   .report__action:hover { color: var(--fg); border-color: var(--hair-strong); }
   .reports__add:hover { background: rgba(255, 201, 60, 0.07); }
@@ -1166,9 +1177,9 @@
 
 /* ---------- Culture card on hover ---------- */
 .culture-popup { pointer-events: none; }
-.culture-card__title { margin: 0; font-family: var(--font-sub); font-size: 15px; font-weight: 700; line-height: 1.25; color: #d9ccff; text-wrap: balance; }
+.culture-card__title { margin: 0; font-family: var(--font-sub); font-size: 15px; font-weight: 700; line-height: 1.25; color: #ad8160; text-wrap: balance; }
 .culture-card__facts { margin: 3px 0 0; color: var(--fg-2); }
-.culture-card__badge { display: inline-block; margin-top: 6px; padding: 0 7px; border-radius: 5px; background: rgba(141, 116, 240, 0.2); color: #cbbcff; font-family: var(--font-sub); font-size: 11px; font-weight: 600; }
+.culture-card__badge { display: inline-block; margin-top: 6px; padding: 0 7px; border-radius: 5px; background: rgba(99, 67, 44, 0.3); color: #b8906e; font-family: var(--font-sub); font-size: 11px; font-weight: 600; }
 .culture-card__summary { margin: 8px 0 0; font-weight: 300; line-height: 1.5; }
 .culture-card__source { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid var(--hair); font-size: 10.5px; color: var(--fg-3); }
 
