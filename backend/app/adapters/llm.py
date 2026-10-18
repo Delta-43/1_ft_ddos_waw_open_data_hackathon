@@ -12,6 +12,7 @@ Settings (backend environment only, never VITE_ variables):
     LLM_DATA_COLLECTION  deny (default) or allow. Free OpenRouter models only run with allow,
                          which lets the provider train on the prompt text
     LLM_TIMEOUT_S        per request, default 12
+    LLM_MAX_TOKENS       per request, default 2500 (reasoning models need headroom)
 
 Requests carry the user's query text and route facts only: no identifiers.
 They are not logged here. OpenRouter is asked to route only to providers that
@@ -47,6 +48,8 @@ class OpenRouterClient:
     def __init__(self, api_key: str, model: str, timeout_s: float, data_collection: str = "deny"):
         self.api_key, self.model, self.timeout_s = api_key, model, timeout_s
         self.data_collection = data_collection
+        # Reasoning models spend part of the budget thinking; 800 left the answer empty.
+        self.max_tokens = int(os.environ.get("LLM_MAX_TOKENS", "2500"))
 
     def complete_json(self, system: str, user: str, schema_name: str, schema: dict) -> dict:
         body: dict[str, Any] = {
@@ -58,7 +61,7 @@ class OpenRouterClient:
             },
             "provider": {"data_collection": self.data_collection, "require_parameters": True},
             "temperature": 0,
-            "max_tokens": 800,
+            "max_tokens": self.max_tokens,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
