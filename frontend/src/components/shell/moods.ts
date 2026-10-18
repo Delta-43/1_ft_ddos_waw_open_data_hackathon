@@ -3,6 +3,7 @@
  * (data/fixtures/simulated-tracks.json) through the real planner, so the route is a street route
  * and only the choice of places is predefined. `accent` colours the pill and the route glow.
  */
+import { TRANSIT_EXAMPLE_TRACK, isTransitExample } from '../../api/transitExamples';
 import type { Key } from '../../i18n/translations';
 
 export interface Mood {
@@ -21,9 +22,12 @@ export const MOODS: Mood[] = [
   { id: 'curious', label: 'moodCurious', trackId: 'history-memory', accent: '#e8c27a', hint: 'moodCuriousHint' },
   { id: 'artsy', label: 'moodArtsy', trackId: 'art-gallery-stroll', accent: '#c7a6ff', hint: 'moodArtsyHint' },
   { id: 'bike', label: 'moodBike', trackId: 'bike-green-loop', accent: '#7fc2ff', hint: 'moodBikeHint' },
+  // Not a planner track: a car-free example from the timetable (api/transitExamples.ts).
+  { id: 'transit', label: 'moodTransit', trackId: TRANSIT_EXAMPLE_TRACK, accent: '#ff9a76', hint: 'moodTransitHint' },
 ];
 
-export const moodForTrack = (trackId: string | undefined) => MOODS.find(mood => mood.trackId === trackId);
+export const moodForTrack = (trackId: string | undefined) =>
+  MOODS.find(mood => mood.trackId === trackId || (mood.trackId === TRANSIT_EXAMPLE_TRACK && isTransitExample(trackId)));
 
 /**
  * One-tap starting prompts. The label follows the interface language; the query sent to the

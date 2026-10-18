@@ -21,7 +21,7 @@ const HEIGHT_PROPERTIES = [
 ] as const;
 const COLOUR_LAYERS = ['building-3d', 'building-roof'] as const;
 const FADED = '#151618'; // far buildings: close to the veil, so they sink into the dark ground
-const VEIL_SOURCE = 'focus-veil'; // not 'route-…': historicalOverlay.ts inserts below the first 'route-' layer
+const VEIL_SOURCE = 'focus-veil';
 const VEIL_LAYER = 'focus-veil';
 const VEIL_OPACITY = 0.55;
 

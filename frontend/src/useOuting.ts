@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 import { runTrack, type TrackResponse } from './api/tracks';
+import { isTransitExample, transitExample } from './api/transitExamples';
 import { getLang } from './i18n/language';
 import { translate } from './i18n/translations';
 
@@ -27,6 +28,8 @@ export function useOuting() {
   /** The track the AI chose for the current prompt, so the UI can tell it from the user's own pick. */
   const [aiTrackId, setAiTrackId] = useState<string>();
   const inFlight = useRef<AbortController | null>(null);
+  /** The last real outing, so a car-free example can head for the same destination. */
+  const lastTrack = useRef<{ id?: string; end?: [number, number] }>({});
 
   async function fetchFor(text: string, trackId: string | undefined, signal: AbortSignal): Promise<TrackResponse> {
     if (MOCK_ROUTES_ENABLED) return mockRoutes(signal);
@@ -48,6 +51,8 @@ export function useOuting() {
       const response = await fetchFor(text, trackId, abort.signal);
       if (abort.signal.aborted) return;
       setResult(response);
+      const coordinates = response.routes[0]?.geometry.coordinates;
+      lastTrack.current = { id: response.track?.id, end: coordinates?.[coordinates.length - 1] };
       if (!trackId) setAiTrackId(response.track?.id);
       setStatus({ state: 'success' });
     } catch (error) {
@@ -66,9 +71,20 @@ export function useOuting() {
       setQuery(prompt);
       void run(prompt);
     },
-    /** The same prompt with the mood (track) the user chose. */
+    /** The same prompt with the mood (track) the user chose; the transit mood loads a car-free example. */
     chooseTrack(trackId: string) {
-      void run(query || 'A calm outing in Warsaw', trackId);
+      if (!isTransitExample(trackId)) {
+        void run(query || 'A calm outing in Warsaw', trackId);
+        return;
+      }
+      inFlight.current?.abort();
+      setStatus({ state: 'loading' });
+      void transitExample(lastTrack.current.id, lastTrack.current.end).then(example => {
+        if (example) {
+          setResult(example);
+          setStatus({ state: 'success' });
+        } else setStatus({ state: 'error', message: translate(getLang(), 'shellErrorReach') });
+      });
     },
     /** Back to the opening view. */
     reset() {

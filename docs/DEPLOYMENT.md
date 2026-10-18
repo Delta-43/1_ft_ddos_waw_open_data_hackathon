@@ -1,4 +1,4 @@
-# Backend container stack
+# Container stack
 
 Delta runs this on shared hosts (silver-storm now, delta-server for the demo). Teammates do not need Docker: they use the URL Delta supplies.
 
@@ -6,6 +6,7 @@ One image (`Dockerfile`) serves both processes. `compose.yaml` starts them:
 
 | Service | Port | Start |
 | --- | --- | --- |
+| `web` (built frontend on nginx, forwards `/api`) | `WEB_PORT`, default 4173 | `docker compose up -d --build` or `scripts/demo-up.sh` |
 | `api` (FastAPI) | 8000 | `docker compose up -d --build` |
 | `mcp` (Streamable HTTP MCP, needs `MCP_TOKEN`) | 8001 | `docker compose --profile mcp up -d --build` |
 
@@ -40,7 +41,7 @@ docker compose --profile mcp up -d --build   # update after `git pull`
 - The image holds code and the committed fixtures only. Secrets come from `.env` at run time (gitignored, not copied into the image, excluded by `.dockerignore`).
 - The container runs as an unprivileged user with a read-only root filesystem, no capabilities and `no-new-privileges`. The only writable places are `/tmp` and the `city-data` volume at `/app/data/local`.
 - `restart: unless-stopped` brings both services back after a reboot or crash.
-- The frontend is not containerised. Build it with `pnpm build` or run it separately.
+- The frontend runs in the `web` container (`frontend/Dockerfile`): an unprivileged nginx serves the built app with gzip and forwards `/api` to `api`. For the live demo on any team machine, see `docs/DEMO.md`.
 - Full Warsaw open-data caches (`data/local/warsaw_open_data_raw.json`) are not in the image. To use them, copy the file into the volume. Without it the layers serve the committed 8-feature samples.
 
 ## Verified and not verified
