@@ -27,7 +27,8 @@ export function routeLetter(routes: Route[], routeId: string | undefined): strin
   return String.fromCharCode(65 + rankIndex(routes, routeId));
 }
 
-const DARK_BUILDING = '#1d1e22';
+const CORRIDOR_BUILDING = '#3a3c43';
+const CORRIDOR_ROOF = '#5c5e66';
 
 /** Blends two #rrggbb colours; `t` is the share of `b`. */
 function mix(a: string, b: string, t: number): string {
@@ -36,7 +37,7 @@ function mix(a: string, b: string, t: number): string {
   return `#${blended.map(value => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** A route colour from a mood accent: the route glows in the accent, nearby buildings take a faint tint of it. */
+/** A route colour from a mood accent: the route glows in the accent, corridor buildings take a faint tint of it. */
 export function accentColour(accent: string): RouteColour {
-  return { line: accent, tint: mix(accent, DARK_BUILDING, 0.78), roof: mix(accent, DARK_BUILDING, 0.6) };
+  return { line: accent, tint: mix(accent, CORRIDOR_BUILDING, 0.85), roof: mix(accent, CORRIDOR_ROOF, 0.72) };
 }

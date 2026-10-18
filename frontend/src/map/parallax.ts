@@ -25,11 +25,25 @@ export function startParallax(map: Map, { bearing, pitch, onMove }: ParallaxOpti
   const target = { x: 0, y: 0 };
   const current = { x: 0, y: 0 };
   let frame = 0;
+  // Never interrupt a camera flight (the intro, or fitting a route); lean in once it lands.
+  // Our own jumpTo fires its move events synchronously, so `own` tells them apart.
+  let own = false;
+  let flying = map.isMoving(); // a flight may already be under way when this starts
+  const onMoveStart = () => { if (!own) flying = true; };
+  const onMoveEnd = () => { if (!own) flying = false; };
+  map.on('movestart', onMoveStart);
+  map.on('moveend', onMoveEnd);
 
   const step = () => {
+    if (flying) {
+      frame = requestAnimationFrame(step);
+      return;
+    }
     current.x += (target.x - current.x) * EASE;
     current.y += (target.y - current.y) * EASE;
+    own = true;
     map.jumpTo({ bearing: bearing + current.x * MAX_BEARING, pitch: pitch - current.y * MAX_PITCH });
+    own = false;
     onMove?.(current.x, current.y);
     const settled = Math.abs(target.x - current.x) < 0.002 && Math.abs(target.y - current.y) < 0.002;
     frame = settled ? 0 : requestAnimationFrame(step);
@@ -45,6 +59,8 @@ export function startParallax(map: Map, { bearing, pitch, onMove }: ParallaxOpti
   window.addEventListener('pointermove', onPointerMove);
   return () => {
     window.removeEventListener('pointermove', onPointerMove);
+    map.off('movestart', onMoveStart);
+    map.off('moveend', onMoveEnd);
     cancelAnimationFrame(frame);
   };
 }

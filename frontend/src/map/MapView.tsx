@@ -7,7 +7,8 @@ import { INITIAL_VIEW } from './config';
 import { createMap } from './createMap';
 import { INTRO_START, locateVisitor, markVisitor, playIntro, retargetIntro } from './intro';
 import { accentColour, routeColour } from './routeColours';
-import { focusRoute, initRouteFocus } from './routeFocus';
+import { initCorridor, showCorridor } from './corridor';
+import { initRouteFocus } from './routeFocus';
 import { fitRoute, onStopClick, showRoutes } from './routes';
 
 interface MapViewProps {
@@ -27,13 +28,15 @@ interface MapViewProps {
   locate?: boolean;
   /** Mood colour for the selected route's glow and corridor; rank colours otherwise. */
   accent?: string;
+  /** Changing it refits the selected route with the current padding (e.g. trip ⇄ parked on home). */
+  fitKey?: string;
 }
 
 // Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent, fitKey }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
@@ -54,6 +57,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     map.once('load', () => {
       // Buildings rise with zoom during the intro, and later sink away from the selected route.
       initRouteFocus(map);
+      initCorridor(map);
       // Don't wait for a location prompt: fly to central Warsaw now, and re-target if a position arrives.
       let landed = false;
       let located = false;
@@ -84,7 +88,7 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     if (!map) return;
     showRoutes(map, routes, selectedRouteId, accent);
     const selected = routes.find(route => route.id === selectedRouteId);
-    focusRoute(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
+    showCorridor(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
   }, [routes, selectedRouteId, accent]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
@@ -94,8 +98,8 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     if (map && route && padding) fitRoute(map, route, padding);
     // Back home: return to the opening view (padding keeps it composed around the spotlight).
     else if (map && routes.length === 0 && map.loaded()) map.easeTo({ ...INITIAL_VIEW, ...(padding && { padding }), duration: 900 });
-    // padding is recomputed each render on purpose: only routes or selection move the camera.
-  }, [routes, selectedRouteId]);
+    // padding is recomputed each render on purpose: only routes, selection or fitKey move the camera.
+  }, [routes, selectedRouteId, fitKey]);
 
   return <div ref={container} className="map" />;
 }

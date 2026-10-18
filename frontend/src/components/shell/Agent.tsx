@@ -23,6 +23,9 @@ interface AgentProps {
   sourcesOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
+  /** Title of a closed trip whose route is still on the map; the orb can bring it back. */
+  resumeTitle?: string;
+  onResume: () => void;
   onAsk: (prompt: string) => void;
   onChooseTrack: (trackId: string) => void;
   onSelectRoute: (id: string) => void;
@@ -67,10 +70,19 @@ export function Agent(props: AgentProps) {
             {phase === 'home' ? (
               <button type="button" className="agent__greeting" onClick={props.onOpen}>
                 <span className="agent__question">Where’re we feeling today?</span>
-                <span className="agent__hint">Tell me a mood, a place or how long you have</span>
+                <span className="agent__hint">
+                  <span>{props.resumeTitle ? <>Pick up <em>{props.resumeTitle}</em>, or try something new</> : 'Tell me a mood, a place or how long you have'}</span>
+                </span>
               </button>
             ) : (
-              <Compose busy={busy} error={status.state === 'error' ? status.message : undefined} onAsk={props.onAsk} onClose={props.onClose} />
+              <Compose
+                busy={busy}
+                error={status.state === 'error' ? status.message : undefined}
+                resumeTitle={props.resumeTitle}
+                onResume={props.onResume}
+                onAsk={props.onAsk}
+                onClose={props.onClose}
+              />
             )}
           </div>
         </>
@@ -79,7 +91,16 @@ export function Agent(props: AgentProps) {
   );
 }
 
-function Compose({ busy, error, onAsk, onClose }: { busy: boolean; error?: string; onAsk: (prompt: string) => void; onClose: () => void }) {
+interface ComposeProps {
+  busy: boolean;
+  error?: string;
+  resumeTitle?: string;
+  onResume: () => void;
+  onAsk: (prompt: string) => void;
+  onClose: () => void;
+}
+
+function Compose({ busy, error, resumeTitle, onResume, onAsk, onClose }: ComposeProps) {
   const [text, setText] = useState('');
   const input = useRef<HTMLTextAreaElement>(null);
   useEffect(() => input.current?.focus(), []);
@@ -87,7 +108,10 @@ function Compose({ busy, error, onAsk, onClose }: { busy: boolean; error?: strin
   function submit(event?: FormEvent) {
     event?.preventDefault();
     const prompt = text.trim();
-    if (prompt && !busy) onAsk(prompt);
+    if (busy) return;
+    // Nothing typed: carry on with the last trip, if there is one.
+    if (prompt) onAsk(prompt);
+    else if (resumeTitle) onResume();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -111,7 +135,12 @@ function Compose({ busy, error, onAsk, onClose }: { busy: boolean; error?: strin
           aria-labelledby="compose-question"
           disabled={busy}
         />
-        <button type="submit" className="compose__send" disabled={busy || !text.trim()} aria-label="Find my way">
+        <button
+          type="submit"
+          className="compose__send"
+          disabled={busy || (!text.trim() && !resumeTitle)}
+          aria-label={text.trim() || !resumeTitle ? 'Find my way' : `Resume: ${resumeTitle}`}
+        >
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
@@ -121,6 +150,14 @@ function Compose({ busy, error, onAsk, onClose }: { busy: boolean; error?: strin
         <p className="compose__error" role="alert">{error}</p>
       ) : (
         <ul className="compose__suggestions" aria-label="Ideas">
+          {resumeTitle && (
+            <li className="compose__resume-item">
+              <button type="button" className="compose__resume" onClick={onResume}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 2.5 7 6 10.5M3 7h6.5a4 4 0 0 1 0 8H8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span>Back to <strong>{resumeTitle}</strong></span>
+              </button>
+            </li>
+          )}
           {SUGGESTIONS.map(suggestion => (
             <li key={suggestion}>
               <button type="button" className="compose__suggestion" onClick={() => onAsk(suggestion)}>{suggestion}</button>
@@ -285,6 +322,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
       <footer className="trip__footer">
         <DataModeBadge mode={result.mode} />
         {track?.simulated && <span className="trip__tag" title="The places on this way are predefined for the demo; the street route is computed.">Demo track</span>}
+        {route.geometry_kind === 'street' && <span className="trip__tag" title="Walking or cycling directions on OpenStreetMap streets.">Street route</span>}
         <button type="button" className="trip__sources" onClick={actions.onToggleSources} aria-expanded={sourcesOpen} aria-controls="sources-drawer">
           Sources
         </button>
@@ -317,7 +355,7 @@ function TripHeader({ title, sub, tag, orbState, accent, onMinimise, onReset }: 
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
           </button>
         )}
-        <button type="button" className="icon-button" onClick={onReset} aria-label="Start over">
+        <button type="button" className="icon-button" onClick={onReset} aria-label="Close; your way stays on the map">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7m0-7-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
         </button>
       </div>
@@ -367,6 +405,12 @@ function TripDetails({ route, sources }: { route: Route; sources: Source[] }) {
         ))}
       </dl>
       <p className="trip__fine">Greenery and quiet are estimates from map data, not measurements.</p>
+      <ul className="legend" aria-label="On the map">
+        <li><span className="legend__swatch legend__swatch--route" aria-hidden="true" />Your way</li>
+        <li><span className="legend__swatch legend__swatch--culture" aria-hidden="true" />Culture and history</li>
+        <li><span className="legend__swatch legend__swatch--green" aria-hidden="true" />Parks and trees</li>
+      </ul>
+      <p className="trip__fine">3D only along your way. Buildings and trees from OpenStreetMap; most heights are estimated from floor counts.</p>
     </div>
   );
 }

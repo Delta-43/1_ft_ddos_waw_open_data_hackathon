@@ -1,4 +1,4 @@
-import { Marker, type FilterSpecification, type GeoJSONSource, type LngLatBoundsLike, type Map, type PaddingOptions } from 'maplibre-gl';
+import { Marker, type ExpressionSpecification, type FilterSpecification, type GeoJSONSource, type LngLatBoundsLike, type Map, type PaddingOptions } from 'maplibre-gl';
 import type { Route } from '../api/contract';
 import { routeColour, routeLetter } from './routeColours';
 
@@ -43,7 +43,8 @@ const DASH_REST = [2, 1.2];
 /** Adds the route layers once. */
 function ensureLayers(map: Map): void {
   if (map.getSource(ROUTE_SOURCE)) return;
-  map.addSource(ROUTE_SOURCE, { type: 'geojson', data: empty() });
+  // lineMetrics enables line-progress, which the drawing animation reads.
+  map.addSource(ROUTE_SOURCE, { type: 'geojson', data: empty(), lineMetrics: true });
   const isSelected = ['==', ['get', 'selected'], true] as FilterSpecification;
   const notSelected = ['==', ['get', 'selected'], false] as FilterSpecification;
   map.addLayer({
@@ -78,6 +79,40 @@ function ensureLayers(map: Map): void {
     layout: { 'line-cap': 'butt', 'line-join': 'round' },
     paint: { 'line-color': '#fff8ee', 'line-width': 1.6, 'line-opacity': 0.85, 'line-dasharray': DASH_REST },
   });
+}
+
+// ---------- Drawing: the selected route runs from start to end with a bright head ----------
+const DRAW_MS = 1700;
+const draws = new WeakMap<Map, number>();
+
+/** Gradient along the selected line: solid up to `front`, a white-hot head, nothing after. */
+function drawn(colour: string, front: number): ExpressionSpecification {
+  if (front >= 1) return ['interpolate', ['linear'], ['line-progress'], 0, colour, 1, colour];
+  const head = Math.max(front, 0.0001);
+  const tail = Math.max(0, head - 0.04);
+  const stops: (number | string)[] = tail > 0 ? [0, colour, tail, colour] : [0, colour];
+  return ['interpolate', ['linear'], ['line-progress'], ...stops, head, '#fff8ee', Math.min(1, head + 0.0001), 'rgba(0,0,0,0)', ...(head + 0.0001 < 1 ? [1, 'rgba(0,0,0,0)'] : [])] as ExpressionSpecification;
+}
+
+function drawSelected(map: Map, colour: string, animate: boolean): void {
+  cancelAnimationFrame(draws.get(map) ?? 0);
+  const paint = (front: number) => {
+    for (const layer of ['route-core', 'route-glow']) if (map.getLayer(layer)) map.setPaintProperty(layer, 'line-gradient', drawn(colour, front));
+    if (map.getLayer('route-dash')) map.setPaintProperty('route-dash', 'line-opacity', front >= 1 ? 0.85 : 0);
+  };
+  if (!animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    paint(1);
+    return;
+  }
+  const started = performance.now();
+  const frame = (now: number) => {
+    const t = Math.min(1, (now - started) / DRAW_MS);
+    paint(1 - (1 - t) ** 3);
+    if (t < 1) draws.set(map, requestAnimationFrame(frame));
+    else draws.delete(map);
+  };
+  paint(0);
+  draws.set(map, requestAnimationFrame(frame));
 }
 
 // ---------- Brief "travelling dash" after selecting a route ----------
@@ -196,7 +231,9 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
     const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}|${accent ?? ''}` : '';
     if (animatedKeys.get(map) !== key) {
       animatedKeys.set(map, key);
-      showStops(map, selected, lineColour(routes, selectedId, selectedId, accent));
+      const colour = lineColour(routes, selectedId, selectedId, accent);
+      showStops(map, selected, colour);
+      if (selected) drawSelected(map, colour, true);
       animateSelected(map, key !== '');
     }
   };
@@ -219,12 +256,17 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): void 
   const lngs = coordinates.map(([lng]) => lng);
   const lats = coordinates.map(([, lat]) => lat);
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
-  const camera = map.cameraForBounds(bounds, { padding, bearing: -20, maxZoom: 16 });
+  // Zoom: fit the route into the open area's size (symmetric padding, so only the size counts).
+  const x = ((padding.left ?? 0) + (padding.right ?? 0)) / 2;
+  const y = ((padding.top ?? 0) + (padding.bottom ?? 0)) / 2;
+  const camera = map.cameraForBounds(bounds, { padding: { top: y, bottom: y, left: x, right: x }, bearing: -20, maxZoom: 16 });
   if (!camera) return;
-  // The camera already accounts for `padding`; clear any padding left on the map (the home view
-  // sets one) so the offset is not applied twice.
-  const none = { top: 0, bottom: 0, left: 0, right: 0 };
   // The fit is computed for a flat map; tilted, the route looks smaller, so move a little closer.
-  const zoom = Math.min(16, Math.max((camera.zoom ?? MIN_FOCUS_ZOOM) + TILT_ZOOM, MIN_FOCUS_ZOOM));
-  map.easeTo({ ...camera, padding: none, zoom, pitch: 55, bearing: -20, duration: 1200 });
+  // A short open area (a phone above its bottom sheet) has no room to spare for that.
+  const open = map.getContainer().clientHeight - 2 * y;
+  const zoom = Math.min(16, Math.max((camera.zoom ?? MIN_FOCUS_ZOOM) + (open < 420 ? -0.15 : TILT_ZOOM), 13));
+  // Centre: the route's own middle, placed in the open area by MapLibre's padding, which stays
+  // correct when tilted (a flat-map offset grows towards the horizon and misses on phones).
+  const center: [number, number] = [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
+  map.easeTo({ center, zoom, padding, pitch: 55, bearing: -20, duration: 1200 });
 }

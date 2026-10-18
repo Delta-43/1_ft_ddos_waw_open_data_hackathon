@@ -1,5 +1,5 @@
 import type { Map, PaddingOptions } from 'maplibre-gl';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { PlacePopup } from './components/places/PlacePopup';
 import { MapCredits } from './components/provenance/MapCredits';
 import { Agent, type AgentPhase } from './components/shell/Agent';
@@ -30,8 +30,10 @@ function useIsMobile(): boolean {
  * Map padding per view. Home shifts the map's centre into the spotlight (left of centre on a
  * desktop, upper half on a phone); a trip keeps the route clear of the docked panel.
  */
-function paddingFor(home: boolean, mobile: boolean): PaddingOptions {
+function paddingFor(home: boolean, mobile: boolean, parked = false): PaddingOptions {
   const { innerWidth: width, innerHeight: height } = window;
+  // A parked route sits in the home spotlight, clear of the orb and greeting.
+  if (parked) return mobile ? { top: 110, bottom: Math.round(height * 0.38), left: 40, right: 40 } : { top: 120, bottom: 90, left: 90, right: Math.round(width * 0.46) };
   if (home) return mobile ? { top: 0, bottom: Math.round(height * 0.3), left: 0, right: 0 } : { top: 0, bottom: 0, left: 0, right: Math.round(width * 0.24) };
   return mobile
     ? { top: 100, bottom: Math.round(height * 0.55), left: 30, right: 30 }
@@ -57,19 +59,21 @@ export function App() {
   const outing = useOuting();
   const { result, status } = outing;
   const [composing, setComposing] = useState(false);
+  /** The trip panel is closed but its route stays on the home view, ready to resume. */
+  const [parked, setParked] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
   const [curtain, setCurtain] = useState<Curtain>('down');
   const [introDone, setIntroDone] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [map, setMap] = useState<Map | null>(null);
   const [popupPlaceId, setPopupPlaceId] = useState<string>();
-  const spotlight = useRef<HTMLDivElement>(null);
+  const [spotlight, setSpotlight] = useState<HTMLDivElement | null>(null);
   const mobile = useIsMobile();
 
-  const home = !result;
-  const phase: AgentPhase = result ? 'result' : composing ? 'compose' : 'home';
+  const home = !result || parked;
+  const phase: AgentPhase = result && !parked ? 'result' : composing ? 'compose' : 'home';
   const accent = moodForTrack(result?.track?.id)?.accent ?? DEFAULT_ACCENT;
-  const padding = paddingFor(home, mobile);
+  const padding = paddingFor(home, mobile, parked && !!result);
 
   // Safety net: if tiles never load (no network), lift the curtain and show the UI anyway.
   useEffect(() => {
@@ -79,6 +83,21 @@ export function App() {
     }, 6000);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // The spotlight lies directly on the map canvas: under the stop markers, pop-ups and controls,
+  // which MapLibre appends after the canvas, so it darkens the city and nothing else.
+  useEffect(() => {
+    if (!map) return;
+    const element = document.createElement('div');
+    element.className = 'spotlight';
+    element.setAttribute('aria-hidden', 'true');
+    map.getCanvas().after(element);
+    setSpotlight(element);
+    return () => {
+      element.remove();
+      setSpotlight(null);
+    };
+  }, [map]);
 
   // Compose the opening shot around the spotlight before the intro flies in.
   useEffect(() => {
@@ -97,32 +116,84 @@ export function App() {
   useEffect(() => {
     if (!map || !home || !introDone) return;
     return startParallax(map, {
-      bearing: INITIAL_VIEW.bearing,
-      pitch: INITIAL_VIEW.pitch,
+      // A parked route keeps the angle it was fitted with (routes.ts fitRoute).
+      bearing: parked ? -20 : INITIAL_VIEW.bearing,
+      pitch: parked ? 55 : INITIAL_VIEW.pitch,
       onMove: (x, y) => {
-        spotlight.current?.style.setProperty('--drift-x', `${(x * 3).toFixed(2)}%`);
-        spotlight.current?.style.setProperty('--drift-y', `${(y * 3).toFixed(2)}%`);
+        spotlight?.style.setProperty('--drift-x', `${(x * 3).toFixed(2)}%`);
+        spotlight?.style.setProperty('--drift-y', `${(y * 3).toFixed(2)}%`);
       },
     });
-  }, [map, home, introDone]);
+  }, [map, home, introDone, parked, spotlight]);
 
   // Each new response selects its recommended route and closes the opening bubble.
   useEffect(() => {
     if (!result) return;
     setSelectedId((result.routes.find(route => route.recommended) ?? result.routes[0])?.id);
     setComposing(false);
+    setParked(false);
     setPopupPlaceId(undefined);
   }, [result]);
 
   const selectedRoute = result?.routes.find(route => route.id === selectedId);
+
+  // The spotlight follows the selected route: lit around it, dark everywhere else (also under the panel).
+  useEffect(() => {
+    const element = spotlight;
+    const vars = ['--cx', '--cy', '--rx', '--ry'];
+    if (!map || !element || !selectedRoute) {
+      element?.classList.remove('spotlight--route');
+      for (const name of vars) element?.style.removeProperty(name);
+      return;
+    }
+    element.classList.add('spotlight--route');
+    const coordinates = selectedRoute.geometry.coordinates;
+    const step = Math.max(1, Math.floor(coordinates.length / 80));
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < coordinates.length; i += step) {
+        const { x, y } = map.project(coordinates[i]);
+        [minX, minY, maxX, maxY] = [Math.min(minX, x), Math.min(minY, y), Math.max(maxX, x), Math.max(maxY, y)];
+      }
+      const margin = 260;
+      element.style.setProperty('--cx', `${Math.round((minX + maxX) / 2)}px`);
+      element.style.setProperty('--cy', `${Math.round((minY + maxY) / 2)}px`);
+      element.style.setProperty('--rx', `${Math.round(Math.max(340, (maxX - minX) / 2 + margin))}px`);
+      element.style.setProperty('--ry', `${Math.round(Math.max(300, (maxY - minY) / 2 + margin))}px`);
+    };
+    const onMove = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    map.on('move', onMove);
+    return () => {
+      map.off('move', onMove);
+      cancelAnimationFrame(frame);
+    };
+  }, [map, selectedRoute, spotlight]);
 
   function selectRoute(id: string) {
     setSelectedId(id);
     setPopupPlaceId(undefined);
   }
 
+  /** Close the trip but keep its route glowing on the home view. */
+  function park() {
+    setParked(true);
+    setComposing(false);
+    setSourcesOpen(false);
+    setPopupPlaceId(undefined);
+  }
+
+  function resume() {
+    setParked(false);
+    setComposing(false);
+  }
+
+  /** Forget the trip entirely and return to the opening view. */
   function goHome() {
     outing.reset();
+    setParked(false);
     setComposing(false);
     setSourcesOpen(false);
     setPopupPlaceId(undefined);
@@ -139,13 +210,12 @@ export function App() {
         padding={padding}
         accent={result ? accent : undefined}
         locate={false}
+        fitKey={parked ? 'parked' : 'trip'}
         onIntroStart={() => setCurtain('lifting')}
         onIntroDone={() => setIntroDone(true)}
         onMapReady={setMap}
         onStopClick={setPopupPlaceId}
       />
-      <div ref={spotlight} className="spotlight" aria-hidden="true" />
-      <div className="vignette" aria-hidden="true" />
       {map && selectedRoute && popupPlaceId && (
         <PlacePopup
           key={popupPlaceId}
@@ -171,12 +241,14 @@ export function App() {
         sourcesOpen={sourcesOpen}
         onOpen={() => setComposing(true)}
         onClose={() => setComposing(false)}
+        resumeTitle={parked && result ? result.track?.title ?? selectedRoute?.name : undefined}
+        onResume={resume}
         onAsk={outing.ask}
         onChooseTrack={outing.chooseTrack}
         onSelectRoute={selectRoute}
         onShowPlace={placeId => setPopupPlaceId(current => (current === placeId ? undefined : placeId))}
         onToggleSources={() => setSourcesOpen(open => !open)}
-        onReset={goHome}
+        onReset={park}
       />
       <p className="credits">
         <MapCredits /> · We don’t store your requests or location.

@@ -43,30 +43,36 @@
 .credits { transition: opacity 0.9s var(--ease-out) 0.15s; }
 .shell:not(.shell--in) :is(.title-bar, .agent, .credits) { opacity: 0; pointer-events: none; }
 
-/* ---------- Spotlight (home) and vignette (trip) ---------- */
-.spotlight,
-.vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 1.4s var(--ease-signature);
-}
+/* ---------- Spotlight: lit around the home view or the route, dark everywhere else ---------- */
+/* Registered so the halo glides between the home spot and the route instead of jumping. */
+@property --cx { syntax: '<length-percentage>'; inherits: false; initial-value: 38%; }
+@property --cy { syntax: '<length-percentage>'; inherits: false; initial-value: 52%; }
+@property --rx { syntax: '<length-percentage>'; inherits: false; initial-value: 36vmax; }
+@property --ry { syntax: '<length-percentage>'; inherits: false; initial-value: 30vmax; }
+@property --clear { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+@property --mid { syntax: '<percentage>'; inherits: false; initial-value: 45%; }
+@property --outer { syntax: '<percentage>'; inherits: false; initial-value: 82%; }
+
 .spotlight {
-  --sx: calc(38% + var(--drift-x, 0%));
-  --sy: calc(52% + var(--drift-y, 0%));
+  --sx: calc(var(--cx) + var(--drift-x, 0%));
+  --sy: calc(var(--cy) + var(--drift-y, 0%));
+  /* Inside MapLibre's canvas container, right after the canvas (see App.tsx). */
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(circle 26vmax at var(--sx) var(--sy), rgba(255, 160, 80, 0.06), transparent 70%),
-    radial-gradient(ellipse 36vmax 30vmax at var(--sx) var(--sy), transparent 0%, rgba(6, 6, 7, 0.28) 45%, rgba(6, 6, 7, 0.9) 82%, #060607 100%);
+    radial-gradient(ellipse calc(var(--rx) * 0.7) calc(var(--ry) * 0.7) at var(--sx) var(--sy), color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
+    radial-gradient(ellipse var(--rx) var(--ry) at var(--sx) var(--sy), transparent var(--clear), rgba(6, 6, 7, 0.3) var(--mid), rgba(6, 6, 7, 0.86) var(--outer), rgba(6, 6, 7, 0.94) 100%);
+  transition: --cx 0.9s var(--ease-signature), --cy 0.9s var(--ease-signature), --rx 0.9s var(--ease-signature), --ry 0.9s var(--ease-signature),
+    --clear 0.9s, --mid 0.9s, --outer 0.9s;
 }
-.vignette {
-  opacity: 0;
-  background:
-    linear-gradient(90deg, transparent 55%, rgba(6, 6, 7, 0.55) 100%),
-    radial-gradient(ellipse 70% 85% at 40% 50%, transparent 50%, rgba(6, 6, 7, 0.8) 100%);
+/* Around a route the lit area is wider and clear; following the camera needs a short glide only. */
+.spotlight--route {
+  --clear: 34%;
+  --mid: 62%;
+  --outer: 96%;
+  transition: --cx 0.25s ease-out, --cy 0.25s ease-out, --rx 0.25s ease-out, --ry 0.25s ease-out, --clear 0.9s, --mid 0.9s, --outer 0.9s;
 }
-.shell--trip .spotlight { opacity: 0; }
-.shell--trip .vignette { opacity: 1; }
 
 /* ---------- Title bar: transparent, mark and name only ---------- */
 .title-bar {
@@ -174,6 +180,36 @@
   transition: color 0.3s, gap 0.3s var(--ease-out);
 }
 .agent__hint::after { content: '→'; color: var(--accent); }
+.agent__hint em { font-style: normal; color: var(--fg-2); }
+.agent__hint > span { max-width: 30ch; }
+/* Labels inside the trip stay readable but quiet. */
+.trip .source-label {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+.compose__resume-item { flex-basis: 100%; }
+.compose__resume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--fg-2);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.compose__resume svg { flex: none; width: 15px; height: 15px; color: var(--accent); }
+.compose__resume strong { font-weight: 500; color: var(--fg); }
+.compose__resume:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--fg); }
 .agent__greeting:hover .agent__hint { color: var(--fg-2); gap: 14px; }
 
 /* ---------- Orb ---------- */
@@ -316,19 +352,20 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
-  padding: 18px;
+  padding: 18px 18px 16px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--hair-strong) transparent;
+  /* Scrolls when it must, but never shows a bar that breaks the rounded card. */
+  scrollbar-width: none;
   border: 1px solid var(--hair);
   border-radius: 26px;
   background: var(--glass);
   box-shadow: var(--shadow);
   animation: trip-in 0.7s var(--ease-out) both;
 }
+.trip::-webkit-scrollbar { display: none; }
 .trip > * { animation: rise 0.6s var(--ease-out) both; }
 .trip > :nth-child(2) { animation-delay: 0.06s; }
 .trip > :nth-child(3) { animation-delay: 0.12s; }
@@ -418,7 +455,7 @@
   background: linear-gradient(var(--hair-strong), var(--accent));
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
 }
-.journey__row { position: relative; display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; min-height: 46px; }
+.journey__row { position: relative; display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; min-height: 44px; }
 .journey__dot {
   z-index: 1;
   display: grid;
@@ -555,7 +592,13 @@
 .scores__bar { flex: 1; height: 4px; overflow: hidden; border-radius: 4px; background: rgba(255, 255, 255, 0.07); }
 .scores__bar > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
 .scores__number { width: 3.2em; font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
-.trip__fine { margin: 0; font-size: 11.5px; color: var(--fg-3); }
+.trip__fine { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--fg-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--fg-2); }
+.legend li { display: inline-flex; align-items: center; gap: 7px; }
+.legend__swatch { width: 10px; height: 10px; border-radius: 3px; }
+.legend__swatch--route { height: 3px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.legend__swatch--culture { background: #8d74f0; }
+.legend__swatch--green { background: #3f8f58; border-radius: 50%; }
 
 .tweak {
   display: flex;
@@ -574,29 +617,44 @@
 .tweak__send { width: 30px; height: 30px; }
 .tweak__send svg { width: 15px; height: 15px; }
 
-.trip__footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 2px; }
-.trip__tag {
-  padding: 0.1rem 0.45rem;
-  border: 1px dashed var(--hair-strong);
-  border-radius: 2px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fg-2);
+/* Provenance as one quiet line: every label stays, none of them shouts. */
+.trip__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hair);
 }
+.trip .data-mode-badge,
+.trip__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--fg-3);
+}
+.trip .data-mode-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.trip .data-mode-badge--live::before { background: #8fd19e; box-shadow: 0 0 6px #8fd19e; }
+.trip .data-mode-badge--mock::before { background: #e6c27a; }
+.trip .data-mode-badge--cached::before { background: #9cc3e8; }
+.trip__tag::before { content: '·'; margin-right: 4px; color: var(--fg-3); }
 .trip__sources {
   margin-left: auto;
-  padding: 4px 2px;
+  padding: 2px 0;
   border: 0;
   background: none;
   color: var(--fg-2);
   font: inherit;
-  font-size: 12.5px;
-  text-decoration: underline;
-  text-decoration-color: var(--hair-strong);
-  text-underline-offset: 3px;
+  font-size: 11.5px;
   cursor: pointer;
+  transition: color 0.2s;
 }
+.trip__sources::after { content: ' ↗'; color: var(--fg-3); }
 .trip__sources:hover { color: var(--fg); }
 .trip .sources-drawer { border-color: var(--hair); border-radius: 16px; background: rgba(255, 255, 255, 0.025); }
 
@@ -641,6 +699,7 @@
 .shell--home .maplibregl-ctrl-top-right { opacity: 0; pointer-events: none; }
 .shell--trip .maplibregl-ctrl-top-right { right: calc(var(--dock) + 32px); }
 .shell .maplibregl-ctrl-group { border: 1px solid var(--hair); border-radius: 12px; background: rgba(16, 16, 19, 0.92); overflow: hidden; }
+.shell--home .stop-marker { pointer-events: none; }
 .shell .historical-attribution { bottom: calc(40px + env(safe-area-inset-bottom)); left: 20px; }
 
 .shell .stop-marker__badge {
@@ -656,14 +715,7 @@
 /* ---------- Phones ---------- */
 @media (max-width: 700px) {
   .shell { --dock: 0px; }
-  .spotlight {
-    --sx: calc(50% + var(--drift-x, 0%));
-    --sy: calc(36% + var(--drift-y, 0%));
-    background:
-      radial-gradient(circle 60vmin at var(--sx) var(--sy), rgba(255, 160, 80, 0.06), transparent 70%),
-      radial-gradient(ellipse 80vmin 74vmin at var(--sx) var(--sy), transparent 0%, rgba(6, 6, 7, 0.3) 45%, rgba(6, 6, 7, 0.9) 85%, #060607 100%);
-  }
-  .vignette { background: linear-gradient(transparent 40%, rgba(6, 6, 7, 0.7) 100%); }
+  .spotlight:not(.spotlight--route) { --cx: 50%; --cy: 36%; --rx: 80vmin; --ry: 74vmin; }
   .agent {
     left: 16px;
     top: auto;
