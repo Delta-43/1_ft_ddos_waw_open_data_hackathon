@@ -2,6 +2,15 @@
 
 Team concept notes for the Warsaw Open Data Hackathon 2026.
 
+## What the demo implements (18 October 2026)
+
+The product shipped as **Find YOUR way**: a calm, agent-led route guide for central Warsaw. A language model
+picks one of six predefined outings from free text; real street routes; a dark map lit only along the route
+with OSM buildings, parks and culture cards; timetable-driven buses and trams heading your way; a car-free
+example with a grocery stop; toilets and AEDs on request; event and offer flags; reports kept in the browser;
+EN/PL; MCP for agents; Docker for anyone. What is real, estimated or invented: README.md and
+docs/Build_State_For_Pitch.md. Everything else below is the concept and roadmap.
+
 ## Event and challenge
 
 - **Event:** Warsaw Open Data Hackathon 2026

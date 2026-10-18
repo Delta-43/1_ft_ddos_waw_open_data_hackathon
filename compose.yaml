@@ -15,7 +15,8 @@ x-backend: &backend
     - path: .env
       required: false
   environment:
-    ROUTING_SOURCE: ${ROUTING_SOURCE:-live}
+    # cache: the committed street routes for the demo tracks first, live OSRM only for anything else.
+    ROUTING_SOURCE: ${ROUTING_SOURCE:-cache}
   volumes:
     - city-data:/app/data/local
   read_only: true
@@ -38,7 +39,7 @@ services:
     # extra names in MCP_ALLOWED_HOSTS, for example the MagicDNS name with :8001.
     command: ["python", "-m", "app.adapters.mcp_server", "--host", "0.0.0.0", "--port", "8001"]
     environment:
-      ROUTING_SOURCE: ${ROUTING_SOURCE:-live}
+      ROUTING_SOURCE: ${ROUTING_SOURCE:-cache}
       MCP_ALLOWED_HOSTS: ${BIND_ADDR:-127.0.0.1}:8001,${MCP_ALLOWED_HOSTS:-}
     ports:
       - "${BIND_ADDR:-127.0.0.1}:8001:8001"
