@@ -2,14 +2,17 @@ import { useRef, useState } from 'react';
 import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 import { runTrack, type TrackResponse } from './api/tracks';
+import { getLang } from './i18n/language';
+import { translate } from './i18n/translations';
 
 export type RequestStatus = { state: 'idle' } | { state: 'loading' } | { state: 'error'; message: string } | { state: 'success' };
 
 function messageFor(error: unknown): string {
   const text = error instanceof Error ? error.message : '';
-  if (text.endsWith('422')) return 'I couldn’t read that one. Try a few words about the mood or the place.';
-  if (text.startsWith('Request failed')) return `The route service had a problem (${text.replace(/\D+/g, '')}). Try again in a moment.`;
-  return 'I can’t reach the route service right now. Try again in a moment.';
+  const lang = getLang();
+  if (text.endsWith('422')) return translate(lang, 'shellErrorRead');
+  if (text.startsWith('Request failed')) return translate(lang, 'shellErrorService', { code: text.replace(/\D+/g, '') });
+  return translate(lang, 'shellErrorReach');
 }
 
 /**

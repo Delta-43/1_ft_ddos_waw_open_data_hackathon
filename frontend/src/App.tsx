@@ -10,6 +10,7 @@ import { INITIAL_VIEW } from './map/config';
 import { MapView } from './map/MapView';
 import { startParallax } from './map/parallax';
 import { startRouteLight } from './map/routeLight';
+import { useT } from './i18n/useT';
 import { useOuting } from './useOuting';
 import './components/shell/shell.css';
 
@@ -58,6 +59,7 @@ function showPins(map: Map, visible: boolean): () => void {
 type Curtain = 'down' | 'lifting' | 'up';
 
 export function App() {
+  const t = useT();
   const outing = useOuting();
   const { result, status } = outing;
   const [composing, setComposing] = useState(false);
@@ -234,13 +236,13 @@ export function App() {
         <MapCredits />
         {result && (
           <>
-            {' · Timetable '}
+            {` · ${t('shellTimetable')} `}
             <a href="https://ztm.waw.pl" target="_blank" rel="noreferrer">ZTM Warszawa</a>
-            {', GTFS by '}
+            {`, ${t('shellGtfsBy')} `}
             <a href="https://mkuran.pl/gtfs/" target="_blank" rel="noreferrer">Mikołaj Kuranowski</a>
           </>
         )}
-        {' · We don’t store your requests or location.'}
+        {` · ${t('privacyLine')}`}
       </p>
     </div>
   );

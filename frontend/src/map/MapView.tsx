@@ -12,6 +12,7 @@ import { initRouteFocus } from './routeFocus';
 import { initTransit, showTransit } from './transit';
 import { fitRoute, holdOnRoute, onStopClick, showRoutes } from './routes';
 import { showFlags } from './flags';
+import { useLang } from '../i18n/useT';
 
 interface MapViewProps {
   routes?: Route[];
@@ -41,6 +42,7 @@ const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
 export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent, fitKey, explore = false }: MapViewProps) {
+  const lang = useLang();
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const callbacks = useRef({ onIntroStart, onIntroDone, onMapReady, onStop });
@@ -95,8 +97,14 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     const selected = routes.find(route => route.id === selectedRouteId);
     showCorridor(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
     showTransit(map, selected);
-    showFlags(map, explore ? selected : undefined);
-  }, [routes, selectedRouteId, accent, explore]);
+  }, [routes, selectedRouteId, accent]);
+
+  // Offer and event flags along the route, rebuilt in the current language.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    showFlags(map, explore ? routes.find(route => route.id === selectedRouteId) : undefined);
+  }, [routes, selectedRouteId, explore, lang]);
 
   // Fit the camera when a new set of routes arrives or the selection changes.
   useEffect(() => {

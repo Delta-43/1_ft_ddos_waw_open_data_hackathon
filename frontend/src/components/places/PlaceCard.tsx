@@ -1,14 +1,16 @@
 import type { PlaceCategory, Source } from '../../api/contract';
+import { useT } from '../../i18n/useT';
+import type { Key } from '../../i18n/translations';
 import { SourceLabel } from '../provenance/SourceLabel';
 import { formatDuration } from './format';
 import type { Place, Stop } from './types';
 import './places.css';
 
-const CATEGORY_TEXT: Record<PlaceCategory, string> = {
-  museum: 'Museum',
-  landmark: 'Landmark',
-  park: 'Park',
-  generic: 'Place',
+const CATEGORY_KEY: Record<PlaceCategory, Key> = {
+  museum: 'categoryMuseum',
+  landmark: 'categoryLandmark',
+  park: 'categoryPark',
+  generic: 'categoryGeneric',
 };
 
 /** Short link text for a website; falls back to the raw value if it isn't a valid URL. */
@@ -32,13 +34,14 @@ interface PlaceCardProps {
 }
 
 export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }: PlaceCardProps) {
+  const t = useT();
   return (
     <article className={`place-card${selected ? ' place-card--selected' : ''}`}>
       <header className="place-card__header">
-        {stop && <span className="place-card__order" aria-label={`Stop ${stop.order}`}>{stop.order}</span>}
+        {stop && <span className="place-card__order" aria-label={t('stopAriaLabel', { order: stop.order })}>{stop.order}</span>}
         <div className="place-card__heading">
           <h3 className="place-card__name">{place.name}</h3>
-          <span className="place-card__category">{CATEGORY_TEXT[place.category] ?? CATEGORY_TEXT.generic}</span>
+          <span className="place-card__category">{t(CATEGORY_KEY[place.category] ?? CATEGORY_KEY.generic)}</span>
         </div>
       </header>
       <SourceLabel source={source} />
@@ -46,30 +49,30 @@ export function PlaceCard({ place, source, stop, selected = false, onShowOnMap }
       <dl className="place-card__details">
         {stop && (
           <>
-            <dt>Arrive</dt>
+            <dt>{t('arrive')}</dt>
             <dd>{formatDuration(stop.arrival_offset_s, '+')}</dd>
-            <dt>Visit</dt>
+            <dt>{t('visit')}</dt>
             <dd>{formatDuration(stop.visit_duration_s)}</dd>
           </>
         )}
-        <dt>Opening hours</dt>
-        <dd className={place.opening_hours ? 'place-card__hours' : undefined}>{place.opening_hours ?? 'Unknown'}</dd>
+        <dt>{t('openingHours')}</dt>
+        <dd className={place.opening_hours ? 'place-card__hours' : undefined}>{place.opening_hours ?? t('unknown')}</dd>
         {place.address && (
           <>
-            <dt>Address</dt>
+            <dt>{t('address')}</dt>
             <dd>{place.address}</dd>
           </>
         )}
         {place.website && (
           <>
-            <dt>Website</dt>
+            <dt>{t('website')}</dt>
             <dd><a href={place.website} target="_blank" rel="noreferrer">{websiteLabel(place.website)}</a></dd>
           </>
         )}
       </dl>
       {onShowOnMap && (
         <button type="button" className="place-card__show" onClick={onShowOnMap} aria-pressed={selected}>
-          Show on map
+          {t('showOnMap')}
         </button>
       )}
     </article>

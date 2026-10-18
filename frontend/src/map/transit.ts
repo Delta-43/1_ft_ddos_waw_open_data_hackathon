@@ -1,5 +1,9 @@
 import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
 import type { Route } from '../api/contract';
+import { getLang } from '../i18n/language';
+import { translate, type Key } from '../i18n/translations';
+
+const t = (key: Key, vars?: Record<string, string | number>) => translate(getLang(), key, vars);
 
 /**
  * Public transport near the selected route, from the ZTM timetable (public/transit-cache.json,
@@ -156,7 +160,7 @@ export function initTransit(map: Map): void {
 
 function minutes(seconds: number): string {
   const m = Math.round(seconds / 60);
-  return m <= 0 ? 'now' : `${m} min`;
+  return m <= 0 ? t('transitNow') : t('transitMinutes', { n: m });
 }
 
 function openStop(map: Map, event: MapLayerMouseEvent): void {
@@ -194,20 +198,20 @@ function openStop(map: Map, event: MapLayerMouseEvent): void {
     lineEl.dataset.mode = row.mode;
     toEl.textContent = row.headsign;
     const towards = document.createElement('small');
-    towards.textContent = row.towards === 'destination' ? 'towards your destination' : 'back towards your start';
+    towards.textContent = row.towards === 'destination' ? t('transitTowardsDestination') : t('transitTowardsStart');
     toEl.append(towards);
     inEl.textContent = minutes(row.in);
     list.append(item);
   }
   if (rows.length === 0) {
     const item = document.createElement('li');
-    item.textContent = 'No more departures your way today.';
+    item.textContent = t('transitNoDepartures');
     list.append(item);
   }
   root.append(list);
   const note = document.createElement('p');
   note.className = 'transit-popup__note';
-  note.textContent = `Timetable ${data.service_date}${pinnedTime ? `, shown at ${pinnedTime}` : ''}. Scheduled, not live.`;
+  note.textContent = t('transitNote', { date: data.service_date, at: pinnedTime ? t('transitShownAt', { time: pinnedTime }) : '' });
   root.append(note);
   state.popup?.remove();
   state.popup = new Popup({ offset: 10, className: 'transit-popup', maxWidth: '18rem' }).setLngLat([data.stops[id][1], data.stops[id][2]]).setDOMContent(root).addTo(map);

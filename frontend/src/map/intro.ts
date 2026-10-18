@@ -1,4 +1,6 @@
 import { Marker, type LngLatLike, type Map } from 'maplibre-gl';
+import { getLang } from '../i18n/language';
+import { translate } from '../i18n/translations';
 import { CAMERA_LIMITS, INITIAL_VIEW } from './config';
 
 /** The camera the intro starts from: high above Warsaw, looking straight down. */
@@ -78,6 +80,6 @@ export function markVisitor(map: Map, point: [number, number]): Marker {
   const dot = document.createElement('div');
   dot.className = 'you-are-here';
   dot.setAttribute('role', 'img');
-  dot.setAttribute('aria-label', 'You are here');
+  dot.setAttribute('aria-label', translate(getLang(), 'youAreHere'));
   return new Marker({ element: dot }).setLngLat(point).addTo(map);
 }

@@ -1,3 +1,5 @@
+import { getLang } from '../i18n/language';
+import { translate } from '../i18n/translations';
 import { PIN_CATEGORIES, type Pin, type PinCategory } from '../markers/types';
 import { getJson, modeBadge, sourceRows, WARSAW_BBOX, type ApiSource } from './api';
 import type { PinProvider } from './types';
@@ -18,20 +20,23 @@ interface ApiPlace {
 /** Places (museums, landmarks, parks) from `GET /api/places`, OpenStreetMap-based. */
 export const placesProvider: PinProvider = {
   id: 'places',
-  label: 'Places',
+  get label() {
+    return translate(getLang(), 'layerPlaces');
+  },
   async fetchPins(signal) {
     const data = await getJson<{ places: ApiPlace[]; sources: ApiSource[] }>(
       `/api/places?bbox=${WARSAW_BBOX}&limit=100`,
       signal,
     );
+    const lang = getLang();
     const sources = new Map(data.sources.map(source => [source.id, source]));
     return data.places.map((place): Pin => {
       const source = sources.get(place.source_id);
       const properties: Pin['properties'] = {};
-      if (place.summary) properties.About = place.summary;
-      if (place.opening_hours) properties['Opening hours'] = place.opening_hours;
-      if (place.address) properties.Address = place.address;
-      if (place.website) properties.Website = place.website;
+      if (place.summary) properties[translate(lang, 'rowAbout')] = place.summary;
+      if (place.opening_hours) properties[translate(lang, 'openingHours')] = place.opening_hours;
+      if (place.address) properties[translate(lang, 'address')] = place.address;
+      if (place.website) properties[translate(lang, 'website')] = place.website;
       return {
         id: place.id,
         lat: place.latitude,

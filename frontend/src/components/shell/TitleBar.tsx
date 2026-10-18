@@ -10,16 +10,21 @@ export function AppMark() {
   );
 }
 
-/** Transparent title bar: the mark and the name, nothing else. */
+import { useT } from '../../i18n/useT';
+import { LanguageToggle } from './LanguageToggle';
+
+/** Transparent title bar: the mark and the name, and the language switch. */
 export function TitleBar({ onHome }: { onHome?: () => void }) {
+  const t = useT();
   return (
     <header className="title-bar">
-      <button type="button" className="title-bar__brand" onClick={onHome} aria-label="Find YOUR way: back to the start">
+      <button type="button" className="title-bar__brand" onClick={onHome} aria-label={t('shellBackToStart')}>
         <AppMark />
         <span className="title-bar__name">
           Find <strong>YOUR</strong> way
         </span>
       </button>
+      <LanguageToggle />
     </header>
   );
 }

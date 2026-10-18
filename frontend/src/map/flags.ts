@@ -1,6 +1,8 @@
 import { Marker, type Map } from 'maplibre-gl';
 import type { Route } from '../api/contract';
 import { CITY_FLAGS, type CityFlag, type FlagKind } from '../data/cityNotes';
+import { getLang } from '../i18n/language';
+import { translate, type Key } from '../i18n/translations';
 
 /**
  * Blue message flags near the selected route: events, shop offers and tickets
@@ -19,7 +21,8 @@ const ICONS: Record<FlagKind, string> = {
   offer: '<path d="M10.5 3H16a1 1 0 0 1 1 1v5.5L9.5 17 3 10.5zM13.5 6.5h.01"/>',
   tickets: '<path d="M3 7a2 2 0 0 0 0 4v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3a2 2 0 0 1 0-4V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1zM12 3.5v11"/>',
 };
-const KIND_TEXT: Record<FlagKind, string> = { event: 'Event', offer: 'Offer', tickets: 'Tickets' };
+const KIND_TEXT: Record<FlagKind, Key> = { event: 'flagEvent', offer: 'flagOffer', tickets: 'flagTickets' };
+const t = (key: Key) => translate(getLang(), key);
 
 function distanceToRoute(flag: CityFlag, route: Route): number {
   const x = flag.longitude * M_PER_DEG_LNG;
@@ -44,15 +47,23 @@ function element(flag: CityFlag, onOpen: (el: HTMLElement) => void): HTMLElement
   button.type = 'button';
   button.className = 'city-flag__pill';
   button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-label', `${KIND_TEXT[flag.kind]}: ${flag.title}${flag.mode === 'mock' ? ' (demo, fictional)' : ''}`);
+  button.setAttribute('aria-label', `${t(KIND_TEXT[flag.kind])}: ${flag.title}${flag.mode === 'mock' ? ` (${t('flagDemoAria')})` : ''}`);
   button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[flag.kind]}</svg><span></span>`;
   button.querySelector('span')!.textContent = flag.short;
 
   const card = document.createElement('div');
   card.className = 'city-flag__card';
-  card.hidden = true;
-  const rows: [string, string][] = [['city-flag__kind', `${KIND_TEXT[flag.kind]} · ${flag.mode === 'real' ? 'Real' : 'Demo'}`], ['city-flag__title', flag.title], ['city-flag__place', flag.place], ['city-flag__when', flag.when], ['city-flag__detail', flag.detail], ['city-flag__source', flag.source]];
-  for (const [className, text] of rows) {
+  card.setAttribute('aria-hidden', 'true');
+  // The title carries its Real/Demo badge, so the label is never cut off below the fold.
+  const title = document.createElement('p');
+  title.className = 'city-flag__title';
+  title.textContent = flag.title;
+  const badge = document.createElement('span');
+  badge.className = `city-flag__badge city-flag__badge--${flag.mode}`;
+  badge.textContent = `${t(KIND_TEXT[flag.kind])} · ${t(flag.mode === 'real' ? 'flagReal' : 'flagDemo')}`;
+  title.append(' ', badge);
+  card.append(title);
+  for (const [className, text] of [['city-flag__place', flag.place], ['city-flag__when', flag.when], ['city-flag__detail', flag.detail], ['city-flag__source', flag.source]]) {
     const p = document.createElement('p');
     p.className = className;
     p.textContent = text;
@@ -60,8 +71,8 @@ function element(flag: CityFlag, onOpen: (el: HTMLElement) => void): HTMLElement
   }
   button.addEventListener('click', event => {
     event.stopPropagation();
-    const open = card.hidden;
-    card.hidden = !open;
+    const open = !root.classList.contains('city-flag--open');
+    card.setAttribute('aria-hidden', String(!open));
     button.setAttribute('aria-expanded', String(open));
     root.classList.toggle('city-flag--open', open);
     // Near the top of the screen the card opens downwards, clear of the title and credits.
@@ -108,7 +119,7 @@ export function showFlags(map: Map, route: Route | undefined): void {
       const el = marker.getElement();
       if (el === open || !el.classList.contains('city-flag--open')) continue;
       el.classList.remove('city-flag--open');
-      el.querySelector<HTMLElement>('.city-flag__card')!.hidden = true;
+      el.querySelector<HTMLElement>('.city-flag__card')!.setAttribute('aria-hidden', 'true');
       el.querySelector('button')!.setAttribute('aria-expanded', 'false');
     }
   };
