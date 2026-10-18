@@ -1,0 +1,138 @@
+"""API for contract 1.0. Routes come from app.services.planner; places are still a fixture (BE-02)."""
+import json
+from pathlib import Path
+from typing import Annotated, Literal
+
+from fastapi import FastAPI, HTTPException, Query
+from pydantic import Field
+
+from app import db
+from app.adapters.env import load_env
+from app.contract import CONTRACT_VERSION, PlaceCategory, RouteRequest, Strict
+from app.data.catalogue import places_response as load_places_response
+from app.services import planner, tracks
+
+load_env()
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / "data/fixtures"
+app = FastAPI(title="Warsaw 2076")
+
+
+def load_fixture(name: str) -> dict:
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+@app.get("/api/health")
+def health():
+    return {
+        "status": "ok",
+        "mode": "fixture",
+        "contract_version": CONTRACT_VERSION,
+        # Refs #85 step 4: only true once the matching feature has actually shipped,
+        # so the frontend can gate structured itinerary submission or catalogue search
+        # on this rather than guessing from whether a request field merely exists.
+        # ordered_stops: POST /api/routes honours destination_place_id/via_place_ids
+        # (#85). place_search: GET /api/places?q= (#84, merged in #87).
+        "capabilities": {"ordered_stops": True, "place_search": True, "simulated_tracks": True},
+    }
+
+
+@app.post("/api/routes")
+def routes(request: RouteRequest):
+    # Shared with MCP: both call planner.plan. The request is not stored or logged.
+    try:
+        return planner.plan(request)
+    except planner.InvalidItinerary as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+class TrackRunRequest(Strict):
+    query: str = Field(min_length=1, max_length=1000)
+    track_id: str | None = Field(default=None, max_length=60)
+
+
+@app.get("/api/tracks")
+def list_tracks():
+    """The predefined simulated tracks the decision call chooses from."""
+    return {"contract_version": CONTRACT_VERSION, "mode": "mock",
+            "tracks": [tracks.public(t) for t in tracks.load()]}
+
+
+@app.post("/api/tracks/run")
+def run_track(request: TrackRunRequest):
+    """One decision call picks a predefined track from the message (or `track_id` forces one),
+    then the shared planner runs it. The response is a normal routes response plus `track`."""
+    try:
+        return tracks.run(request.query, request.track_id)
+    except KeyError:
+        raise HTTPException(422, f"unknown track_id {request.track_id!r}; see GET /api/tracks") from None
+    except planner.InvalidItinerary as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+def parse_bbox(bbox: str | None) -> tuple[float, float, float, float] | None:
+    if not bbox:
+        return None
+    try:
+        min_lon, min_lat, max_lon, max_lat = (float(v) for v in bbox.split(","))
+    except ValueError:
+        raise HTTPException(422, "bbox must be min_lon,min_lat,max_lon,max_lat") from None
+    if not (min_lon <= max_lon and min_lat <= max_lat):
+        raise HTTPException(422, "bbox minimums must not exceed maximums")
+    return min_lon, min_lat, max_lon, max_lat
+
+
+BBox = Annotated[
+    str | None, Query(description="min_lon,min_lat,max_lon,max_lat", max_length=100)
+]
+Search = Annotated[
+    str | None, Query(description="Case-insensitive name/address match, trimmed, 1-100 characters")
+]
+
+
+def parse_search(q: str | None) -> str | None:
+    if q is None:
+        return None
+    query = q.strip()
+    if not (1 <= len(query) <= 100):
+        raise HTTPException(422, "q must be 1-100 characters after trimming")
+    return query
+
+
+@app.get("/api/places")
+def places(
+    category: PlaceCategory | None = None,
+    bbox: BBox = None,
+    q: Search = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+):
+    data = load_places_response()  # envelope: mode, notice, generated_at
+    data["places"], data["sources"] = db.query_places(category, parse_bbox(bbox), limit, parse_search(q))
+    return data
+
+
+@app.get("/api/layers")
+def layers():
+    """Open-data layers available as GeoJSON, with feature counts held in the store."""
+    counts = db.layer_counts()
+    return {"layers": [
+        {"id": k, "label": label, "count": counts.get(k, 0), "url": f"/api/layers/{k}"}
+        for k, (_, label) in db.LAYERS.items()
+    ]}
+
+
+@app.get("/api/layers/{layer}")
+def layer(
+    layer: Literal["air_quality", "aed", "toilets", "events"],
+    bbox: BBox = None,
+    limit: Annotated[int, Query(ge=1, le=500)] = 200,
+):
+    """GeoJSON FeatureCollection (lon,lat) for MapLibre; `sources` carries attribution."""
+    features, sources = db.query_layer(layer, parse_bbox(bbox), limit)
+    return {
+        "type": "FeatureCollection",
+        "contract_version": CONTRACT_VERSION,
+        "mode": "cached",
+        "features": features,
+        "sources": sources,
+    }

@@ -1,0 +1,66 @@
+{
+  "note": "Predefined demo tracks. Stops are real catalogue places (GET /api/places); the track itself is a scripted choice, labelled simulated. The model only picks an id from this list.",
+  "tracks": [
+    {
+      "id": "calm-park-museum",
+      "title": "Calm park walk to the Hunting Museum",
+      "summary": "Two quiet parks, then a small museum. The default quiet-and-green outing.",
+      "travel_mode": "walk",
+      "priorities": {"quiet": 0.8, "green": 0.8},
+      "keywords": ["quiet", "calm", "green", "park", "relax", "hunting", "cichy", "spokojny", "park", "zielony"],
+      "destination_place_id": "osm:node/4141608192",
+      "via_place_ids": ["osm:way/390489496", "osm:way/5839423"]
+    },
+    {
+      "id": "history-memory",
+      "title": "History walk to the Mausoleum of Struggle and Martyrdom",
+      "summary": "Through Ujazdowski Park to a museum on 20th-century history.",
+      "travel_mode": "walk",
+      "priorities": {"quiet": 0.6, "green": 0.5},
+      "keywords": ["history", "historic", "war", "memorial", "memory", "mauzoleum", "historia", "wojna", "pamięć"],
+      "destination_place_id": "osm:node/343292162",
+      "via_place_ids": ["osm:way/5081164"]
+    },
+    {
+      "id": "art-gallery-stroll",
+      "title": "Art stroll: Swiss Valley, gallery and contemporary art",
+      "summary": "Dolina Szwajcarska, Apteka Sztuki, then the Centre for Contemporary Art.",
+      "travel_mode": "walk",
+      "priorities": {"quiet": 0.6, "green": 0.6},
+      "keywords": ["art", "gallery", "contemporary", "painting", "sztuka", "galeria", "sztuki", "wystawa"],
+      "destination_place_id": "osm:node/11137285958",
+      "via_place_ids": ["osm:way/5837655", "osm:node/13781789690"]
+    },
+    {
+      "id": "bike-green-loop",
+      "title": "Green bike ride to the Palace on the Isle",
+      "summary": "Agrykola and Belweder parks by bike, ending at the Palace on the Isle.",
+      "travel_mode": "bike",
+      "priorities": {"quiet": 0.5, "green": 0.85},
+      "keywords": ["bike", "cycle", "cycling", "ride", "rower", "rowerem", "przejażdżka"],
+      "destination_place_id": "osm:way/1325609735",
+      "via_place_ids": ["osm:way/390489497", "osm:way/1452367433"]
+    },
+    {
+      "id": "short-direct-hour",
+      "title": "Short direct walk to the Hunting Museum",
+      "summary": "No detours: the quickest sensible museum walk, about an hour or less.",
+      "travel_mode": "walk",
+      "priorities": {"quiet": 0.5, "green": 0.3},
+      "max_duration_s": 3600,
+      "keywords": ["short", "quick", "fast", "hour", "direct", "busy", "krótki", "szybki", "godzina", "bezpośredni"],
+      "destination_place_id": "osm:node/4141608192",
+      "via_place_ids": []
+    },
+    {
+      "id": "botanical-sky",
+      "title": "Botanical garden and the Astronomical Observatory",
+      "summary": "A garden walk ending at the observatory. For science and nature.",
+      "travel_mode": "walk",
+      "priorities": {"quiet": 0.7, "green": 0.9},
+      "keywords": ["science", "astronomy", "observatory", "botanical", "garden", "stars", "nauka", "obserwatorium", "ogród", "botaniczny"],
+      "destination_place_id": "osm:way/25748409",
+      "via_place_ids": ["osm:way/5081150"]
+    }
+  ]
+}
