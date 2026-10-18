@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060607">
+<title>Find YOUR way · Prezentacja</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* A fixed 1280 x 720 stage scaled to the window, so the HTML and the PDF lay out the same.
+     The look is the app's own (frontend/src/components/shell/shell.css): near-black ground, amber
+     streets, one mood accent per slide, Barlow Condensed titles, Titillium Web labels, Biryani text. */
+  :root {
+    color-scheme: dark;
+    --bg: #060607; --fg: #f3f0ea; --fg2: rgba(243, 240, 234, .72); --fg3: rgba(243, 240, 234, .5);
+    --hair: rgba(255, 255, 255, .08); --hair2: rgba(255, 255, 255, .16);
+    --glass: linear-gradient(180deg, rgba(26, 26, 30, .92), rgba(14, 14, 17, .94));
+    --shadow: 0 30px 80px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .05);
+    --amber: #ffb35c; --teal: #7fd8c4; --violet: #c7a6ff; --coral: #ff9a76; --green: #a6d98a; --blue: #7fc2ff; --gold: #e8c27a; --yellow: #ffd34d;
+    --ease: cubic-bezier(.6, 0, .05, 1); --ease-out: cubic-bezier(.23, 1, .32, 1);
+    --title: 'Barlow Condensed', 'Arial Narrow', sans-serif; --sub: 'Titillium Web', 'Segoe UI', sans-serif; --body: 'Biryani', system-ui, sans-serif;
+    --k: 1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; }
+  body { overflow: hidden; color: var(--fg); font: 300 18px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, p, ul, ol, figure, blockquote { margin: 0; }
+  ul, ol { padding: 0; list-style: none; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--a, var(--amber)); outline-offset: 3px; }
+  b, strong { font-weight: 600; }
+
+  /* ---------- stage and slides ---------- */
+  .stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform: translate(-50%, -50%) scale(var(--k)); background: var(--bg); overflow: hidden; perspective: 1600px; }
+  .slide { --a: var(--amber); position: absolute; inset: 0; display: flex; flex-direction: column; gap: 22px; padding: 92px 80px 76px; background: var(--bg); visibility: hidden; }
+  .slide::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(56% 64% at var(--gx, 22%) var(--gy, 40%), color-mix(in srgb, var(--a) 10%, transparent), transparent 72%); transition: background .8s; }
+  .slide > * { position: relative; }
+  .slide.active { visibility: visible; z-index: 2; }
+  .slide.leave { visibility: visible; z-index: 1; animation: leave .6s var(--ease) both; }
+  .slide.enter { animation: .95s var(--ease) both; }
+  .slide.enter[data-tr="rise"] { animation-name: tr-rise; }
+  .slide.enter[data-tr="spot"] { animation-name: tr-spot; animation-duration: 1.15s; }
+  .slide.enter[data-tr="tilt"] { animation-name: tr-tilt; transform-origin: 50% 100%; }
+  .slide.enter[data-tr="dock"] { animation-name: tr-dock; }
+  .slide.enter[data-tr="wipe"] { animation-name: tr-wipe; animation-duration: 1.05s; }
+  .slide.enter[data-tr="zoom"] { animation-name: tr-zoom; animation-duration: 1.2s; }
+  @keyframes leave { to { opacity: 0; transform: scale(.985); filter: blur(5px); } }
+  @keyframes tr-rise { from { opacity: 0; transform: translateY(34px); filter: blur(10px); } }
+  @keyframes tr-spot { from { clip-path: circle(0% at var(--ox, 50%) var(--oy, 50%)); } to { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); } }
+  @keyframes tr-tilt { from { opacity: 0; transform: rotateX(24deg) translateY(90px) scale(.94); } }
+  @keyframes tr-dock { from { opacity: 0; transform: translateX(110px); } }
+  @keyframes tr-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes tr-zoom { from { opacity: 0; transform: scale(1.16); filter: blur(12px); } }
+
+  /* staged builds: [data-step] waits for a click; .rise enters on its own, staggered by --i */
+  [data-step] { transition: opacity .75s var(--ease-out), transform .75s var(--ease-out), filter .75s var(--ease-out); }
+  [data-step].pending { opacity: 0; transform: translateY(18px); filter: blur(6px); pointer-events: none; }
+  [data-step][data-fx="left"].pending { transform: translateX(-28px); }
+  [data-step][data-fx="right"].pending { transform: translateX(28px); }
+  [data-step][data-fx="scale"].pending { transform: scale(.9); }
+  .slide.active .rise { animation: rise .9s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 110ms + .3s); }
+  @keyframes rise { from { opacity: 0; transform: translateY(22px); filter: blur(8px); } }
+
+  /* ---------- the app's title bar ---------- */
+  .bar { position: absolute; top: 0; left: 0; right: 0; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; z-index: 5; }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .mark { width: 30px; height: 30px; color: var(--fg); }
+  .mark .dot { fill: var(--a); filter: drop-shadow(0 0 5px var(--a)); transition: fill .6s; }
+  .name { font: 300 21px/1 var(--title); letter-spacing: .02em; color: var(--fg2); }
+  .name b { font: 700 14px/1 var(--sub); letter-spacing: .14em; color: var(--fg); margin: 0 2px; }
+  .pg { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid var(--hair2); border-radius: 999px; font: 600 12px/1 var(--sub); letter-spacing: .12em; color: var(--fg3); background: none; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pg strong { color: var(--fg); font-weight: 700; }
+
+  /* ---------- type ---------- */
+  .eyebrow { font: 700 13px/1.2 var(--sub); letter-spacing: .18em; text-transform: uppercase; color: var(--a); }
+  h1 { font: 300 112px/.92 var(--title); letter-spacing: -.005em; }
+  h1 b { font: 700 .62em/1 var(--sub); letter-spacing: .1em; vertical-align: .14em; margin: 0 .04em; }
+  h2 { font: 300 60px/1.02 var(--title); letter-spacing: -.003em; text-wrap: balance; }
+  h2 em, h1 em, .lead em { font-style: normal; color: var(--a); }
+  h3 { font: 700 20px/1.25 var(--sub); letter-spacing: .005em; }
+  .lead { font-size: 20px; line-height: 1.6; color: var(--fg2); max-width: 34em; }
+  .small { font-size: 15px; line-height: 1.55; color: var(--fg2); }
+  .fine { font: 600 12px/1.4 var(--sub); letter-spacing: .04em; color: var(--fg3); }
+  .row { display: flex; gap: 48px; min-height: 0; }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .grow { flex: 1; }
+  .center { align-items: center; }
+  .end { margin-top: auto; }
+
+  /* status tags, after the app's data-mode badges */
+  .tag { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px; border-radius: 999px; font: 700 11px/1 var(--sub); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; vertical-align: middle; }
+  .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  .tag.now { color: #8fe0b0; background: rgba(143, 224, 176, .1); }
+  .tag.vis { color: var(--gold); background: rgba(232, 194, 122, .1); }
+  .tag.est { color: var(--blue); background: rgba(127, 194, 255, .1); }
+  .tag.sim { color: var(--coral); background: rgba(255, 154, 118, .1); }
+
+  /* ---------- screens of the real app ---------- */
+  .frame { position: relative; flex: none; overflow: hidden; border: 1px solid var(--hair2); border-radius: 16px; background: #0b0b0d; box-shadow: var(--shadow), 0 0 90px color-mix(in srgb, var(--a) 14%, transparent); }
+  .frame > img, .frame > video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .frame .label { position: absolute; left: 14px; bottom: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: rgba(6, 6, 7, .78); border: 1px solid var(--hair2); font: 700 10.5px/1 var(--sub); letter-spacing: .14em; text-transform: uppercase; color: var(--fg2); }
+  .frame .label::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #ff5a4e; box-shadow: 0 0 8px #ff5a4e; }
+  .frame .label.still::before { background: var(--a); box-shadow: 0 0 8px var(--a); }
+  .crop { position: relative; flex: none; overflow: hidden; border: 1px solid var(--hair2); border-radius: 16px; background-repeat: no-repeat; box-shadow: var(--shadow), 0 0 80px color-mix(in srgb, var(--a) 14%, transparent); }
+  .phone { position: relative; flex: none; width: 258px; height: 548px; padding: 9px; border-radius: 44px; background: linear-gradient(160deg, #26262b, #0d0d10 60%); border: 1px solid var(--hair2); box-shadow: var(--shadow), 0 0 90px color-mix(in srgb, var(--a) 16%, transparent); }
+  .phone .scr { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 36px; background: #000; }
+  .phone .scr > img, .phone .scr > video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .phone::after { content: ""; position: absolute; top: 18px; left: 50%; width: 76px; height: 20px; margin-left: -38px; border-radius: 12px; background: #000; }
+  .print-poster { display: none; }
+
+  /* ---------- the progress route: one stop per slide, walking like the app's route ---------- */
+  .trail { position: absolute; left: 0; bottom: 0; width: 1280px; height: 56px; z-index: 6; pointer-events: none; }
+  .trail svg { width: 100%; height: 100%; overflow: visible; }
+  .trail .base { fill: none; stroke: rgba(255, 255, 255, .1); stroke-width: 1.5; stroke-dasharray: 2 5; }
+  .trail .done { fill: none; stroke: var(--ta, var(--amber)); stroke-width: 2.5; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--ta, var(--amber))); transition: stroke-dashoffset 1.1s var(--ease), stroke .6s; }
+  .trail .stop { fill: #0b0b0d; stroke: rgba(255, 255, 255, .28); stroke-width: 1.5; pointer-events: auto; cursor: pointer; transition: fill .5s, stroke .5s; }
+  .trail .stop.past { fill: var(--ta, var(--amber)); stroke: var(--ta, var(--amber)); }
+  .trail .walker { fill: #fffaf2; filter: drop-shadow(0 0 7px var(--ta, var(--amber))) drop-shadow(0 0 14px var(--ta, var(--amber))); transition: transform 1.1s var(--ease); }
+
+  /* ---------- orb (shell.css) ---------- */
+  .orb { --orb: 76px; position: relative; display: block; flex: none; width: var(--orb); height: var(--orb); }
+  .orb > span { position: absolute; border-radius: 50%; }
+  .orb__halo { inset: -70%; background: radial-gradient(circle, color-mix(in srgb, var(--a) 34%, transparent) 0%, transparent 60%); animation: orb-breathe 5.5s ease-in-out infinite; }
+  .orb__core { inset: 0; background: radial-gradient(circle at 36% 30%, #fffaf2 0%, color-mix(in srgb, var(--a) 55%, #fff) 16%, var(--a) 40%, color-mix(in srgb, var(--a) 40%, #1a0e05) 76%, #0e0804 100%); box-shadow: 0 0 28px color-mix(in srgb, var(--a) 55%, transparent), inset 0 -8px 16px rgba(0, 0, 0, .45); animation: orb-breathe 5.5s ease-in-out infinite; }
+  .orb__ring { inset: -8px; background: conic-gradient(from 0deg, transparent 0 50%, color-mix(in srgb, var(--a) 85%, #fff) 78%, transparent 96%); -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); opacity: .55; animation: orb-spin 9s linear infinite; }
+  .orb__glint { left: 22%; top: 15%; width: 28%; height: 18%; background: rgba(255, 255, 255, .65); filter: blur(3px); }
+  @keyframes orb-breathe { 50% { transform: scale(1.05); } }
+  @keyframes orb-spin { to { transform: rotate(1turn); } }
+
+  /* ---------- 1 title ---------- */
+  .s-title { padding: 0; }
+  .s-title::before { display: none; }
+  .bgv { position: absolute; inset: 0; overflow: hidden; }
+  .bgv video, .bgv img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.16); transform-origin: 54% 50%; }
+  .s-title .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6, 6, 7, .94) 0%, rgba(6, 6, 7, .72) 38%, rgba(6, 6, 7, .05) 66%), linear-gradient(0deg, rgba(6, 6, 7, .9), transparent 30%); }
+  .s-title .tb { position: absolute; left: 80px; top: 150px; display: flex; flex-direction: column; gap: 26px; max-width: 600px; }
+  .s-title h1 { display: flex; align-items: center; gap: 22px; white-space: nowrap; font-size: 104px; }
+  .s-title .mark { width: 74px; height: 74px; flex: none; }
+  .s-title .lead { max-width: 30em; }
+  .s-title .credit { position: absolute; left: 80px; bottom: 74px; }
+
+  /* ---------- 2 problem ---------- */
+  .s-problem .big { font: 300 66px/1.02 var(--title); }
+  .s-problem .big.dim { color: var(--fg2); font-size: 44px; line-height: 1.12; max-width: 15em; }
+  .quote { width: 380px; flex: none; align-self: flex-start; margin-top: 8px; padding: 30px 30px 26px; border: 1px solid var(--hair2); border-radius: 24px; background: var(--glass); box-shadow: var(--shadow); }
+  .quote blockquote { font: 300 44px/1.04 var(--title); color: var(--fg); }
+  .quote blockquote span { color: var(--a); }
+  .quote figcaption { margin-top: 18px; font-size: 14px; line-height: 1.55; color: var(--fg2); }
+  .swap { display: flex; align-items: baseline; gap: 26px; font: 300 40px/1 var(--title); }
+  .swap s { color: var(--fg3); text-decoration-thickness: 2px; text-decoration-color: var(--a); }
+  .swap .arrow { color: var(--a); font-family: var(--sub); font-size: 28px; }
+  .swap .q { color: var(--a); }
+
+  /* ---------- 3 how it works: the compose bubble ---------- */
+  .compose { width: 470px; flex: none; padding: 22px; border: 1px solid var(--hair); border-radius: 26px; background: var(--glass); box-shadow: var(--shadow); }
+  .compose .q { font: 400 26px/1.1 var(--title); margin: 0 4px 16px; }
+  .compose .field { display: flex; align-items: flex-end; gap: 10px; min-height: 86px; padding: 14px 12px 12px 16px; border: 1px solid color-mix(in srgb, var(--a) 50%, transparent); border-radius: 18px; background: rgba(255, 255, 255, .05); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a) 10%, transparent); }
+  .compose .typed { flex: 1; font-size: 18px; line-height: 1.45; min-height: 52px; }
+  .compose .typed::after { content: ""; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: var(--a); animation: caret 1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
+  .compose .send { width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--a); color: #1a0e05; }
+  .compose .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid var(--hair2); border-radius: 999px; font: 400 14px/1 var(--body); color: var(--fg2); background: rgba(255, 255, 255, .025); }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--m, var(--a)); box-shadow: 0 0 6px var(--m, var(--a)); }
+  .steps3 { display: flex; flex-direction: column; gap: 26px; }
+  .steps3 li { display: grid; grid-template-columns: 76px 1fr; gap: 4px 18px; align-items: center; }
+  .steps3 .n { font: 300 60px/.9 var(--title); color: var(--a); }
+  .steps3 h3 { font-size: 25px; }
+  .steps3 p { color: var(--fg2); font-size: 16px; line-height: 1.55; }
+
+  /* ---------- 4 demo ---------- */
+  .notes-list { display: flex; flex-direction: column; gap: 22px; }
+  .notes-list li { padding-left: 18px; border-left: 2px solid color-mix(in srgb, var(--a) 60%, transparent); }
+  .notes-list b { display: block; font: 700 21px/1.3 var(--sub); color: var(--fg); }
+  .notes-list span { font-size: 14px; line-height: 1.5; color: var(--fg2); }
+
+  /* ---------- 5 explorer ---------- */
+  .tabs { display: flex; flex-direction: column; gap: 9px; width: 214px; flex: none; }
+  .tab { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 16px; border: 1px solid var(--hair2); border-radius: 999px; background: rgba(255, 255, 255, .02); font: 400 15px/1 var(--body); color: var(--fg2); cursor: pointer; text-align: left; transition: background .3s, border-color .3s, color .3s, box-shadow .3s; }
+  .tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--m); box-shadow: 0 0 6px var(--m); flex: none; }
+  .tab:hover { color: var(--fg); border-color: rgba(255, 255, 255, .3); }
+  .tab[aria-selected="true"] { color: var(--fg); border-color: color-mix(in srgb, var(--m) 70%, transparent); background: color-mix(in srgb, var(--m) 12%, transparent); box-shadow: 0 0 22px color-mix(in srgb, var(--m) 25%, transparent); }
+  .view { width: 760px; height: 475px; }
+  .view img { position: absolute; inset: 0; opacity: 0; transform: scale(1.03); transition: opacity .6s var(--ease-out), transform 1.2s var(--ease-out); }
+  .view img.on { opacity: 1; transform: none; }
+  .tabcap { min-height: 72px; font-size: 15.5px; line-height: 1.55; color: var(--fg2); }
+  .tabcap b { display: block; color: var(--fg); font: 700 17px/1.3 var(--sub); margin-bottom: 4px; }
+  .print-grid { display: none; }
+
+  /* ---------- 6 devices ---------- */
+  .devices { display: flex; align-items: center; gap: 36px; }
+  .browser { width: 660px; height: 440px; border-radius: 16px; }
+  .browser .chrome { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--hair); background: #111114; font: 600 10.5px/1 var(--sub); letter-spacing: .1em; color: var(--fg3); }
+  .browser .chrome i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, .14); }
+  .browser .chrome span { margin-left: 14px; }
+  .browser video, .browser img { display: block; width: 100%; height: 412px; object-fit: cover; }
+  .devices .phone { width: 206px; height: 440px; padding: 7px; border-radius: 36px; }
+  .devices .phone .scr { border-radius: 30px; }
+  .devices .phone::after { top: 14px; width: 60px; height: 16px; margin-left: -30px; }
+  .facts { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  /* ---------- 7 data ---------- */
+  .counters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: 20px; overflow: hidden; }
+  .counters li { padding: 22px 22px 20px; background: var(--bg); }
+  .counters .num { font: 300 58px/1 var(--title); color: var(--fg); font-variant-numeric: tabular-nums; }
+  .counters .num.acc { color: var(--a); }
+  .counters .what { margin-top: 8px; font: 600 14px/1.35 var(--sub); color: var(--fg); }
+  .counters .src { margin-top: 3px; font-size: 12.5px; color: var(--fg3); }
+  .sources { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: center; font: 600 15px/1 var(--sub); color: var(--fg2); }
+  .sources span { display: inline-flex; align-items: center; gap: 9px; }
+  .sources span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--a); }
+
+  /* ---------- 8 divider ---------- */
+  .bgimg { position: absolute; inset: 0; background-size: 170% auto; background-position: 10% 50%; opacity: .32; filter: saturate(1.1); }
+  .bgimg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg) 18%, rgba(6, 6, 7, .55) 60%, rgba(6, 6, 7, .2)); }
+  .six { display: grid; grid-template-columns: 1fr 1fr; gap: 0 56px; width: 1000px; }
+  .six button { display: grid; grid-template-columns: 58px 1fr auto; align-items: baseline; gap: 14px; padding: 16px 4px; border: 0; border-bottom: 1px solid var(--hair2); background: none; text-align: left; cursor: pointer; transition: padding .35s var(--ease-out); }
+  .six button:hover { padding-left: 14px; }
+  .six .n { font: 300 34px/1 var(--title); color: var(--m); }
+  .six .t { font: 300 32px/1.05 var(--title); }
+  .six .go { font: 600 13px/1 var(--sub); color: var(--fg3); opacity: 0; transition: opacity .3s; }
+  .six button:hover .go { opacity: 1; }
+
+  /* ---------- problems: shared layout ---------- */
+  .pts { display: flex; flex-direction: column; gap: 15px; }
+  .pts li { display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: start; font-size: 16px; line-height: 1.55; color: var(--fg2); }
+  .pts li .tag { justify-self: start; margin-top: 1px; }
+  .pts li b { color: var(--fg); }
+
+  /* 9 business: the mini route with flags */
+  .mini { position: relative; width: 470px; height: 476px; flex: none; border: 1px solid var(--hair2); border-radius: 22px; overflow: hidden; background: radial-gradient(70% 60% at 45% 50%, #15151a, #08080a); box-shadow: var(--shadow); }
+  .mini svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mini .streets path { fill: none; stroke: #ff8a2a; stroke-opacity: .22; stroke-width: 1.2; }
+  .mini .route { fill: none; stroke: var(--a); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px var(--a)); stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .slide.active .mini .route { animation: draw 2.4s .5s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .flag { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
+  .flag .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 9px 9px 9px 3px; background: linear-gradient(180deg, #2f7fe8, #1f63c4); border: 1px solid rgba(120, 180, 255, .55); font: 600 12.5px/1.2 var(--body); white-space: nowrap; box-shadow: 0 0 16px rgba(47, 127, 232, .45); }
+  .flag .pill.local { background: linear-gradient(180deg, #ff9a76, #d9643e); border-color: #ffc2ab; box-shadow: 0 0 16px rgba(255, 154, 118, .45); color: #1d0b04; }
+  .flag .stem { width: 1.5px; height: 16px; margin-left: 6px; background: linear-gradient(currentColor, transparent); color: #6aa8ff; }
+  .flag .why { margin-top: 2px; font: 600 11px/1.3 var(--sub); letter-spacing: .04em; color: var(--fg2); background: rgba(6, 6, 7, .8); padding: 3px 8px; border-radius: 6px; }
+  .mini .who { position: absolute; left: 18px; bottom: 16px; right: 18px; }
+
+  /* 10 Mazovia */
+  .maz { position: relative; width: 600px; height: 508px; flex: none; }
+  .maz svg { width: 100%; height: 100%; overflow: visible; }
+  .maz .ring { fill: none; stroke: rgba(255, 255, 255, .06); stroke-dasharray: 2 6; }
+  .maz .river { fill: none; stroke: #2a5d8f; stroke-width: 7; stroke-opacity: .55; stroke-linecap: round; }
+  .maz .road { fill: none; stroke: var(--a); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 4px var(--a)); opacity: .9; }
+  .maz.go .road { animation: draw 1.6s var(--ease) forwards; animation-delay: calc(var(--i) * 140ms); }
+  .maz .town { cursor: pointer; }
+  .maz .town circle { fill: #0b0b0d; stroke: var(--a); stroke-width: 2; transition: r .3s, fill .3s; }
+  .maz .town text { fill: var(--fg2); font: 600 14px var(--sub); letter-spacing: .03em; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; transition: fill .3s; }
+  .maz .town:hover circle, .maz .town:focus circle, .maz .town.on circle { fill: var(--a); r: 9; }
+  .maz .town:hover text, .maz .town:focus text, .maz .town.on text { fill: var(--fg); }
+  .maz .town:focus { outline: none; }
+  .maz .waw circle { fill: var(--a); stroke: #fffaf2; filter: drop-shadow(0 0 10px var(--a)); }
+  .maz .waw text { fill: var(--fg); font: 700 16px var(--sub); }
+  .tcard { position: absolute; right: 0; top: 10px; width: 200px; padding: 16px 18px; border: 1px solid var(--hair2); border-radius: 18px; background: var(--glass); box-shadow: var(--shadow); }
+  .tcard h3 { font-size: 17px; color: var(--fg); }
+  .tcard p { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--fg2); }
+  .tcard .fine { margin-top: 10px; }
+  .maz .note { position: absolute; left: 0; bottom: -4px; }
+
+  /* 11 seniors */
+  .s-seniors .crop { width: 470px; height: 488px; }
+
+  /* 12 reports */
+  .flow3 { display: grid; grid-template-columns: 1fr 34px 1fr 34px 1fr; align-items: stretch; }
+  .flow3 .box { padding: 16px 16px 14px; border: 1px solid var(--hair2); border-radius: 16px; background: var(--glass); }
+  .flow3 .box h3 { font-size: 16px; margin: 8px 0 4px; }
+  .flow3 .box p { font-size: 13.5px; line-height: 1.5; color: var(--fg2); }
+  .flow3 .ar { align-self: center; justify-self: center; color: var(--a); font: 600 22px/1 var(--sub); }
+  .needs { position: relative; height: 120px; border: 1px solid var(--hair); border-radius: 16px; overflow: hidden; background: radial-gradient(80% 90% at 50% 50%, #131316, #08080a); }
+  .needs i { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: var(--a); box-shadow: 0 0 calc(var(--s) * 1px) calc(var(--s) * .4px) color-mix(in srgb, var(--a) 70%, transparent); opacity: .9; }
+  .slide.active .needs i { animation: ping 2.8s ease-in-out infinite; animation-delay: calc(var(--d) * 1s); }
+  @keyframes ping { 50% { transform: scale(1.5); opacity: .55; } }
+  .needs span { position: absolute; font: 600 11px/1 var(--sub); letter-spacing: .05em; color: var(--fg2); }
+
+  /* 13 privacy */
+  .zeros { display: flex; gap: 18px; }
+  .zero { flex: 1; padding: 26px 26px 24px; border: 1px solid var(--hair2); border-radius: 20px; background: var(--glass); }
+  .zero .num { font: 300 128px/.9 var(--title); color: var(--a); text-shadow: 0 0 30px color-mix(in srgb, var(--a) 40%, transparent); }
+  .zero .what { margin-top: 8px; font: 700 16px/1.3 var(--sub); }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .three h3 { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+  .three h3 svg { width: 22px; height: 22px; color: var(--a); flex: none; }
+  .three p { margin-top: 6px; font-size: 15px; line-height: 1.55; color: var(--fg2); }
+
+  /* 14 2076 */
+  .tl { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; padding-top: 44px; }
+  .tl::before { content: ""; position: absolute; left: 10px; right: 10px; top: 13px; height: 2px; background: linear-gradient(90deg, var(--a), color-mix(in srgb, var(--a) 30%, transparent)); box-shadow: 0 0 10px var(--a); }
+  .tl li { position: relative; }
+  .tl li::before { content: ""; position: absolute; left: 0; top: -39px; width: 16px; height: 16px; border-radius: 50%; background: #0b0b0d; border: 2px solid var(--a); box-shadow: 0 0 12px var(--a); }
+  .tl .yr { font: 300 56px/1 var(--title); color: var(--a); }
+  .tl h3 { margin: 6px 0 6px; font-size: 18px; }
+  .tl p { font-size: 15px; line-height: 1.55; color: var(--fg2); }
+  .sky { position: absolute; right: 70px; top: 96px; width: 300px; height: 150px; }
+  .sky .pad { position: absolute; right: 18px; bottom: 0; width: 120px; height: 46px; border: 1px solid var(--hair2); border-bottom: 0; border-radius: 6px 6px 0 0; background: linear-gradient(#141418, #0b0b0d); }
+  .sky .pad::before { content: "H"; position: absolute; left: 50%; top: -15px; width: 46px; height: 12px; margin-left: -23px; border-radius: 50%; border: 1.5px solid var(--a); font: 700 0/0 a; box-shadow: 0 0 12px var(--a); }
+  .sky .car { position: absolute; left: 0; top: 0; width: 46px; height: 18px; offset-path: path("M 0 20 C 90 -10, 170 10, 214 82"); offset-rotate: 0deg; offset-distance: 0%; }
+  .sky .car svg { width: 46px; height: 18px; color: var(--fg); filter: drop-shadow(0 0 8px var(--a)); }
+  .sky.go .car { animation: fly 3.4s var(--ease) forwards; }
+  @keyframes fly { to { offset-distance: 100%; } }
+  .sky .walk { position: absolute; right: 14px; bottom: -22px; font: 600 11px/1 var(--sub); letter-spacing: .06em; color: var(--fg3); opacity: 0; transition: opacity .6s 3.2s; }
+  .sky.go .walk { opacity: 1; }
+
+  /* 15 honest */
+  .honest { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+  .honest > div { padding: 20px 22px; border: 1px solid var(--hair2); border-radius: 20px; background: var(--glass); }
+  .honest ul { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
+  .honest li { font-size: 14.5px; line-height: 1.5; color: var(--fg2); padding-left: 14px; position: relative; }
+  .honest li::before { content: ""; position: absolute; left: 0; top: .62em; width: 5px; height: 5px; border-radius: 50%; background: var(--fg3); }
+
+  /* 16 end */
+  .s-end { align-items: center; justify-content: center; text-align: center; gap: 26px; }
+  .s-end .orb { --orb: 120px; margin-bottom: 18px; }
+  .s-end h2 { font-size: 84px; }
+  .team { display: flex; gap: 34px; justify-content: center; }
+  .team li { display: flex; flex-direction: column; gap: 4px; }
+  .team b { font: 700 18px/1.2 var(--sub); }
+  .team span { font: 600 13px/1.2 var(--sub); letter-spacing: .03em; color: var(--fg3); }
+  .repo { font: 600 15px/1 var(--sub); letter-spacing: .04em; color: var(--fg2); }
+  .repo b { color: var(--a); font-weight: 700; }
+
+  /* ---------- Warsaw open data ---------- */
+  .tag.api { color: var(--teal); background: rgba(127, 216, 196, .1); }
+  .wod { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .wod li { display: flex; flex-direction: column; gap: 5px; min-height: 172px; padding: 16px 16px 14px; border: 1px solid var(--hair2); border-radius: 18px; background: var(--glass); transition: border-color .3s, transform .4s var(--ease-out); }
+  .wod li:hover { border-color: color-mix(in srgb, var(--a) 55%, transparent); transform: translateY(-3px); }
+  .wod .num { font: 300 46px/1 var(--title); color: var(--a); font-variant-numeric: tabular-nums; }
+  .wod .what { font: 700 15px/1.25 var(--sub); color: var(--fg); }
+  .wod .use { font-size: 12.5px; line-height: 1.5; color: var(--fg2); }
+  .wod .tag { margin-top: auto; align-self: flex-start; height: 21px; font-size: 10px; }
+
+  /* ---------- scenarios ---------- */
+  .people { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .people button { --m: var(--a); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 340px; padding: 20px 18px 18px; border: 1px solid var(--hair2); border-radius: 22px; background: var(--glass); text-align: left; cursor: pointer; transition: border-color .35s, transform .45s var(--ease-out), box-shadow .35s; }
+  .people button:hover { border-color: color-mix(in srgb, var(--m) 65%, transparent); transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 40px color-mix(in srgb, var(--m) 18%, transparent); }
+  .people b { font: 700 19px/1.2 var(--sub); }
+  .people .dist { font: 700 11px/1 var(--sub); letter-spacing: .14em; text-transform: uppercase; color: var(--m); }
+  .people .pb { font-size: 15px; line-height: 1.5; color: var(--fg2); }
+  .people .go { margin-top: auto; font: 600 13px/1 var(--sub); color: var(--fg3); transition: color .3s; }
+  .people button:hover .go { color: var(--m); }
+  .av { --m: var(--a); width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; font: 700 19px/1 var(--sub); color: #140d05; background: radial-gradient(circle at 36% 30%, #fffaf2 0%, color-mix(in srgb, var(--m) 60%, #fff) 18%, var(--m) 50%, color-mix(in srgb, var(--m) 45%, #1a0e05) 100%); box-shadow: 0 0 24px color-mix(in srgb, var(--m) 45%, transparent); }
+  .sc-grid { flex: 1; display: grid; grid-template-columns: 344px 1fr 300px; gap: 30px; min-height: 0; }
+  .sc-who { gap: 14px; }
+  .sc h2 { font-size: 46px; line-height: 1.02; }
+  .persona { display: flex; align-items: center; gap: 12px; font-size: 15px; line-height: 1.35; }
+  .persona b { font: 700 16px/1.3 var(--sub); }
+  .sc .prob { font-size: 14.5px; line-height: 1.55; color: var(--fg2); }
+  .ask { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--a) 45%, transparent); border-radius: 18px; background: rgba(255, 255, 255, .04); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a) 8%, transparent); }
+  .ask .orb { --orb: 24px; margin-top: 3px; }
+  .ask q { display: block; font: 400 16.5px/1.45 var(--body); color: var(--fg); quotes: "„" "”"; }
+  .ask small { display: block; margin-top: 4px; font: 600 11px/1.3 var(--sub); letter-spacing: .04em; color: var(--fg3); }
+  .jr { position: relative; display: flex; flex-direction: column; gap: 13px; }
+  .jr::before { content: ""; position: absolute; left: 11px; top: 12px; bottom: 24px; width: 2px; background: linear-gradient(var(--a), color-mix(in srgb, var(--a) 20%, transparent)); box-shadow: 0 0 8px color-mix(in srgb, var(--a) 50%, transparent); }
+  .jr li { position: relative; display: grid; grid-template-columns: 24px 1fr; gap: 0 14px; }
+  .jr .dot { z-index: 1; width: 24px; height: 24px; margin-top: 1px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--a); background: #0b0b0d; font: 700 11px/1 var(--sub); color: var(--a); }
+  .jr li:last-child .dot { background: var(--a); color: #120a04; box-shadow: 0 0 14px var(--a); }
+  .jr .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .jr .lbl { font: 700 10.5px/1.2 var(--sub); letter-spacing: .14em; text-transform: uppercase; color: var(--fg3); }
+  .jr .tag { height: 19px; padding: 0 8px; font-size: 9.5px; gap: 5px; }
+  .jr .tag::before { width: 5px; height: 5px; }
+  .jr b { display: block; margin-top: 2px; font: 700 16px/1.3 var(--sub); color: var(--fg); }
+  .jr .sub { display: block; font-size: 13.2px; line-height: 1.45; color: var(--fg2); }
+  .sc-side { gap: 14px; }
+  .effect { padding: 14px 16px; border: 1px solid var(--hair2); border-radius: 16px; background: var(--glass); font-size: 13.8px; line-height: 1.5; color: var(--fg2); }
+  .effect b { display: block; margin-bottom: 4px; font: 700 11px/1.2 var(--sub); letter-spacing: .14em; text-transform: uppercase; color: var(--a); }
+  .datal { font: 600 11.5px/1.5 var(--sub); letter-spacing: .02em; color: var(--fg3); }
+  .smap { position: relative; width: 300px; height: 300px; flex: none; overflow: hidden; border: 1px solid var(--hair2); border-radius: 20px; background: radial-gradient(80% 70% at 50% 45%, #141419, #08080a); box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--a) 10%, transparent); }
+  .smap svg { display: block; width: 100%; height: 100%; }
+  .smap .river { fill: none; stroke: #2a5d8f; stroke-width: 7; stroke-opacity: .5; stroke-linecap: round; }
+  .smap .dlab { fill: rgba(243, 240, 234, .3); font: 700 8.5px var(--sub); letter-spacing: .14em; }
+  .smap .st { fill: none; stroke: #ff8a2a; stroke-opacity: .18; stroke-width: 1; }
+  .smap .blk { fill: #1c1d22; }
+  .smap .grn { fill: #1d3a26; stroke: #3f9a5f; stroke-opacity: .55; }
+  .smap .tree { fill: #3f8f58; }
+  .smap .art { fill: none; stroke: #ff8a2a; stroke-opacity: .5; stroke-width: 8; stroke-linecap: round; }
+  .smap .crowd { fill: #ff5a4e; opacity: .18; }
+  .slide.active .smap .crowd { animation: ping 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .smap .walk { fill: none; stroke: var(--a); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px var(--a)); stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .smap .transit { fill: none; stroke: var(--a); stroke-width: 2.4; stroke-dasharray: 5 5; stroke-linecap: round; opacity: 0; }
+  .smap .back { stroke-opacity: .45; }
+  .slide.active .smap .walk { animation: draw 1.8s var(--ease) forwards; animation-delay: calc(.5s + var(--i, 0) * .5s); }
+  .slide.active .smap .transit { animation: show .6s ease forwards; animation-delay: calc(.4s + var(--i, 0) * .5s); }
+  @keyframes show { to { opacity: 1; } }
+  .smap .pt { stroke: #0b0b0d; stroke-width: 2; }
+  .smap .pl { fill: var(--fg2); font: 600 10.5px var(--sub); paint-order: stroke; stroke: #0b0b0d; stroke-width: 3.5px; stroke-linejoin: round; }
+  .smap .pl.hi { fill: var(--fg); font-weight: 700; }
+  .smap .note { position: absolute; right: 12px; bottom: 10px; text-align: right; font: 700 10px/1 var(--sub); letter-spacing: .12em; text-transform: uppercase; color: var(--fg3); }
+
+  /* ---------- summary cards ---------- */
+  .sum { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .sum.four { grid-template-columns: repeat(4, 1fr); }
+  .sum li { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--hair2); border-radius: 20px; background: var(--glass); transition: transform .45s var(--ease-out), border-color .3s, box-shadow .3s; }
+  .sum li:hover { transform: translateY(-6px); border-color: color-mix(in srgb, var(--m) 60%, transparent); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 40px color-mix(in srgb, var(--m) 16%, transparent); }
+  .sum .pic { height: 62px; flex: none; background-repeat: no-repeat; border-bottom: 1px solid var(--hair); }
+  .sum .zeros-mini { display: flex; align-items: center; justify-content: center; gap: 16px; font: 300 46px/1 var(--title); color: var(--m); text-shadow: 0 0 24px color-mix(in srgb, var(--m) 45%, transparent); background: radial-gradient(70% 80% at 50% 50%, #141822, #0b0b0e); }
+  .sum .body { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px 12px; }
+  .sum h3 .n { margin-right: 8px; font-size: 22px; }
+  .sum .seniors { display: block; width: 100%; height: 100%; background: radial-gradient(80% 90% at 50% 50%, #141419, #0b0b0e); }
+  .sum .seniors text { fill: var(--fg2); font: 600 8.5px var(--sub); }
+  .ycap { font: 600 13.5px/1.4 var(--sub); color: var(--fg2); }
+  .ycap b { color: var(--a); margin-right: 6px; }
+  .tl3.mini li { font-size: 12.8px; line-height: 1.45; color: var(--fg2); padding-left: 12px; }
+  .tl3.mini b { display: block; font: 700 13px/1.3 var(--sub); color: var(--a); }
+  .sum .n { font: 300 22px/1 var(--title); color: var(--m); }
+  .sum h3 { display: flex; align-items: baseline; font-size: 15.5px; }
+  .sum .line { font-size: 12.6px; line-height: 1.45; color: var(--fg2); }
+  .sum .line .tag { display: flex; width: max-content; height: 18px; margin-bottom: 4px; padding: 0 7px; font-size: 9px; gap: 5px; }
+  .sum .line .tag::before { width: 5px; height: 5px; }
+
+  /* ---------- 2076: an interactive skyline ---------- */
+  .scene { position: relative; height: 222px; flex: none; overflow: hidden; border: 1px solid var(--hair2); border-radius: 22px; background: radial-gradient(90% 120% at 60% 0%, rgba(199, 166, 255, .08), transparent 60%), linear-gradient(#0b0b10, #070708); box-shadow: var(--shadow); }
+  .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .years { position: absolute; left: 14px; top: 12px; z-index: 2; display: flex; gap: 6px; }
+  .years button { height: 30px !important; padding: 0 12px !important; font-size: 12px !important; }
+  .years button { height: 32px; padding: 0 14px; border: 1px solid var(--hair2); border-radius: 999px; background: rgba(8, 8, 10, .8); font: 700 13px/1 var(--sub); letter-spacing: .06em; color: var(--fg2); cursor: pointer; transition: all .3s; }
+  .years button:hover { color: var(--fg); }
+  .years button.on { color: #120a04; background: var(--a); border-color: var(--a); box-shadow: 0 0 22px color-mix(in srgb, var(--a) 50%, transparent); }
+  .scene .cap { position: absolute; right: 18px; top: 16px; z-index: 2; max-width: 420px; text-align: right; font: 600 13px/1.4 var(--sub); color: var(--fg2); transition: opacity .4s; }
+  .scene .lay { opacity: 0; transition: opacity .8s var(--ease-out); }
+  .scene[data-y="1"] .l26, .scene[data-y="1"] .l40, .scene[data-y="2"] .lar, .scene[data-y="3"] .lev, .scene[data-y="4"] .l76, .scene[data-y="5"] .ltp { opacity: 1; }
+  .scene[data-y="3"] .l26 { opacity: .4; }
+  .scene .arl rect { fill: rgba(10, 10, 16, .88); stroke: var(--a); stroke-width: 1.2; }
+  .scene .arl text { fill: var(--fg2); font: 600 10.5px var(--sub); }
+  .scene .arl .t1 { fill: var(--fg); font-weight: 700; font-size: 11.5px; }
+  .scene .arpath { fill: none; stroke: var(--teal); stroke-width: 3; stroke-dasharray: 10 8; opacity: .8; }
+  .scene .chg rect { fill: #10241a; stroke: #8fe0b0; stroke-width: 1.5; }
+  .scene .chg path { fill: #8fe0b0; }
+  .scene .chg { filter: drop-shadow(0 0 6px #8fe0b0); }
+  .scene .portal { fill: none; stroke: var(--a); stroke-width: 3; filter: drop-shadow(0 0 10px var(--a)); }
+  .scene[data-y="5"] .portal { animation: padpulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .scene .tparc { fill: none; stroke: var(--a); stroke-width: 1.4; stroke-dasharray: 3 8; opacity: .8; animation: flow 1.2s linear infinite; }
+  .scene .walk26, .scene .km { fill: none; stroke: var(--teal); stroke-width: 3.5; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--teal)); }
+  .scene .km { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .scene[data-y="4"] .km { transition: stroke-dashoffset 2.2s var(--ease) 2.9s; stroke-dashoffset: 0; }
+  .scene .bus { animation: bus 9s linear infinite; }
+  @keyframes bus { from { transform: translateX(0); } to { transform: translateX(560px); } }
+  .scene .link { fill: none; stroke: var(--a); stroke-width: 1.3; stroke-dasharray: 4 5; opacity: .8; animation: flow 1.2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -18; } }
+  .scene .bub rect { fill: rgba(20, 20, 26, .95); stroke: color-mix(in srgb, var(--a) 60%, transparent); }
+  .scene .bub text, .scene .lbl76 { fill: var(--fg); font: 600 12px var(--sub); }
+  .scene .bub .k { fill: var(--a); font-weight: 700; }
+  .scene .lane { fill: none; stroke: var(--a); stroke-width: 1.4; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .9; }
+  .scene .padring { fill: none; stroke: var(--a); stroke-width: 2; filter: drop-shadow(0 0 6px var(--a)); }
+  .scene[data-y="4"] .padring { animation: padpulse 1.6s ease-in-out 2.4s 3; transform-box: fill-box; transform-origin: center; }
+  @keyframes padpulse { 50% { transform: scale(1.35); opacity: .5; } }
+  .scene .ev { opacity: 0; }
+  .scene[data-y="4"] .ev { opacity: 1; }
+  .scene .tlabel { fill: var(--fg3); font: 700 9px var(--sub); letter-spacing: .14em; }
+  .tl3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .tl3 li { padding-left: 14px; border-left: 2px solid var(--hair2); transition: border-color .4s, opacity .4s; opacity: .55; }
+  .tl3 li.on { border-left-color: var(--a); opacity: 1; }
+  .tl3 .yr { display: flex; align-items: center; gap: 10px; font: 300 34px/1 var(--title); color: var(--a); }
+  .tl3 h3 { margin: 6px 0 3px; font-size: 16px; }
+  .tl3 p { font-size: 13.5px; line-height: 1.5; color: var(--fg2); }
+
+  /* ---------- PDF mode (?pdf): every build shown, nothing moving, posters instead of video ---------- */
+  body.pdf *, body.pdf *::before, body.pdf *::after { animation: none !important; transition: none !important; }
+  body.pdf video { display: none !important; }
+  body.pdf .print-poster { display: block !important; }
+  body.pdf .controls, body.pdf .notes-panel, body.pdf .compose .typed::after { display: none !important; }
+  body.pdf .mini .route, body.pdf .maz .road, body.pdf .smap .walk, body.pdf .scene .km { stroke-dashoffset: 0; }
+  body.pdf .smap .transit { opacity: 1; }
+  body.pdf .tl3 li { opacity: 1; border-left-color: var(--a); }
+
+  /* ---------- Kiko, moods, examples ---------- */
+  .kiko-orb { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 300px; flex: none; }
+  .kiko-orb .orb { --orb: 170px; margin-bottom: 26px; }
+  .kiko-name { font: 300 64px/1 var(--title); color: var(--a); text-shadow: 0 0 30px color-mix(in srgb, var(--a) 45%, transparent); }
+  .s-kiko .steps3 { gap: 16px; }
+  .s-kiko .steps3 h3 { font-size: 22px; }
+  .s-kiko .steps3 .n { font-size: 46px; }
+  .mood-orb { display: flex; justify-content: center; padding: 22px 0 10px; }
+  .mood-orb .orb { --orb: 64px; }
+  .mood-orb .orb__core, .mood-orb .orb__halo { transition: background .6s; }
+  .mpills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mpills button { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid var(--hair2); border-radius: 999px; background: rgba(255, 255, 255, .02); font: 400 14px/1 var(--body); color: var(--fg2); cursor: pointer; transition: all .3s; }
+  .mpills button i { width: 8px; height: 8px; border-radius: 50%; background: var(--m); box-shadow: 0 0 6px var(--m); }
+  .mpills button.on { color: var(--fg); border-color: color-mix(in srgb, var(--m) 70%, transparent); background: color-mix(in srgb, var(--m) 14%, transparent); box-shadow: 0 0 22px color-mix(in srgb, var(--m) 25%, transparent); }
+  .mview { width: 780px; height: 488px; }
+  .mview img { position: absolute; inset: 0; opacity: 0; transform: scale(1.02); transition: opacity .6s var(--ease-out), transform 1.2s var(--ease-out); }
+  .mview img.on { opacity: 1; transform: none; }
+  .mcap { font: 600 15px/1.4 var(--sub); color: var(--fg2); }
+  .mcap b { color: var(--a); margin-right: 8px; }
+  .six-p { grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .six-p button { min-height: 300px; padding: 18px 15px 16px; }
+  .six-p .pb { font-style: italic; }
+  .ex-grid { flex: 1; display: grid; grid-template-columns: 1fr 620px; gap: 40px; min-height: 0; }
+  .ex-who { gap: 13px; }
+  .ex h2 { font-size: 44px; line-height: 1.02; }
+  .ex .prob { font-size: 14.5px; line-height: 1.55; color: var(--fg2); }
+  .pk { display: flex; align-items: center; gap: 10px; font: 600 13px/1.3 var(--sub); color: var(--fg2); }
+  .pk b { color: var(--a); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 11px; }
+  .pk .tag { height: 19px; font-size: 9.5px; padding: 0 8px; }
+  .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 600 12.5px/1.3 var(--sub); }
+  .chain span { padding: 4px 9px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--a) 45%, transparent); background: color-mix(in srgb, var(--a) 8%, transparent); color: var(--fg); }
+  .chain .st0 { border-color: var(--hair2); background: none; color: var(--fg2); }
+  .chain i { font-style: normal; color: var(--a); }
+  .vision { font-size: 14px; line-height: 1.5; color: var(--fg2); }
+  .vision .tag { margin-right: 8px; height: 20px; font-size: 9.5px; }
+  .ex-app { gap: 12px; justify-content: center; }
+  .exv { width: 620px; height: 388px; }
+  .live { display: flex; flex-direction: column; gap: 4px; }
+  .live a { align-self: flex-start; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--a); color: #120a04; font: 700 13.5px/1 var(--sub); letter-spacing: .03em; text-decoration: none; box-shadow: 0 0 24px color-mix(in srgb, var(--a) 40%, transparent); }
+  .live span { font-size: 12.5px; color: var(--fg3); }
+  body.pdf .live a { box-shadow: none; }
+
+  /* ---------- controls, notes, menu (outside the stage) ---------- */
+  .controls { position: fixed; right: 16px; bottom: 14px; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(14, 14, 17, .86); border: 1px solid var(--hair2); z-index: 20; opacity: 0; transition: opacity .3s; }
+  body:hover .controls, .controls:focus-within { opacity: 1; }
+  .controls button { min-width: 38px; height: 38px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font: 700 13px var(--sub); letter-spacing: .06em; cursor: pointer; color: var(--fg2); }
+  .controls button:hover, .controls button[aria-pressed="true"] { background: rgba(255, 255, 255, .08); color: var(--fg); }
+  .notes { display: none; }
+  .notes-panel { position: fixed; left: 16px; right: 16px; bottom: 66px; max-height: 40vh; overflow: auto; padding: 18px 22px; border-radius: 18px; background: rgba(12, 12, 15, .96); border: 1px solid var(--hair2); box-shadow: var(--shadow); z-index: 19; display: none; font: 400 17px/1.6 var(--body); color: var(--fg); }
+  body.show-notes .notes-panel { display: block; }
+  .notes-panel .meta { display: flex; justify-content: space-between; margin-bottom: 8px; font: 700 12px/1 var(--sub); letter-spacing: .12em; text-transform: uppercase; color: var(--fg3); }
+  .menu { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(0, 0, 0, .7); }
+  body.show-menu .menu { display: grid; }
+  .menu ol { width: min(640px, 92vw); max-height: 86vh; overflow: auto; padding: 18px; border-radius: 22px; background: rgba(14, 14, 17, .98); border: 1px solid var(--hair2); counter-reset: s; }
+  .menu button { display: flex; gap: 16px; width: 100%; padding: 11px 14px; border: 0; border-radius: 12px; background: none; text-align: left; cursor: pointer; font: 400 16px/1.3 var(--body); color: var(--fg2); }
+  .menu button:hover, .menu button.on { background: rgba(255, 255, 255, .06); color: var(--fg); }
+  .menu button span { width: 28px; font: 700 13px/1.6 var(--sub); color: var(--fg3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+
+  /* ---------- PDF: one page per slide, every build shown, posters instead of video ---------- */
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html, body { height: auto; overflow: visible; background: var(--bg); }
+    .stage { position: static; transform: none; width: 1280px; height: auto; overflow: visible; perspective: none; }
+    .slide { position: relative; width: 1280px; height: 720px; visibility: visible; overflow: hidden; break-after: page; page-break-after: always; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    [data-step].pending { opacity: 1; transform: none; filter: none; }
+    video { display: none !important; }
+    .print-poster { display: block !important; }
+    .controls, .notes-panel, .menu, .trail, .compose .typed::after { display: none !important; }
+    .mini .route, .maz .road { stroke-dashoffset: 0; }
+    .sky .car { offset-distance: 100%; }
+    .sky .walk { opacity: 1; }
+    .explorer > .row { display: none !important; }
+    .print-grid { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 1120px; }
+    .print-grid figure { border: 1px solid var(--hair2); border-radius: 10px; overflow: hidden; }
+    .print-grid img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+    .print-grid figcaption { padding: 6px 9px; font: 600 11px/1.2 var(--sub); color: var(--fg2); }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14.5" fill="none" stroke="currentColor" stroke-opacity=".22"/><path d="M8.5 23.5c3.5 0 4-4.5 7.5-4.5s3.2-6.5 7.5-7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="8.5" cy="23.5" r="1.6" fill="currentColor" fill-opacity=".55"/><circle class="dot" cx="23.5" cy="11.5" r="2.6"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="6.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="7.25" r="1.1" fill="currentColor"/><circle cx="7.5" cy="16.75" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 18.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+</svg>
+
+<main class="stage" id="stage" aria-label="Find YOUR way, prezentacja">
+
+  <!-- 1 · Title: the app's own home screen, live -->
+  <section class="slide s-title" data-title="Find YOUR way" data-tr="zoom" data-nobar style="--a: var(--amber)">
+    <div class="bgv"><video data-src="assets/d-home-loop.mp4" muted loop playsinline></video><img class="print-poster" src="assets/d-home.jpg" alt=""></div>
+    <div class="veil"></div>
+    <div class="tb">
+      <p class="eyebrow rise">Warsaw Open Data Hackathon 2026 · Wyzwanie 1: Warszawa 2076</p>
+      <h1 class="rise" style="--i: 1"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span>Find <b>YOUR</b> way</span></h1>
+      <p class="lead rise" style="--i: 2">Nawigacja, która zna <em>najlepszą drogę dla ciebie</em>. A miasto rozświetla się, żeby ci ją pokazać.</p>
+    </div>
+    <p class="fine credit rise" style="--i: 4">W tle: prawdziwy ekran startowy aplikacji · mapa © OpenStreetMap, OpenFreeMap</p>
+    <aside class="notes">Dzień dobry, jesteśmy zespołem Find YOUR way. To nawigacja, która zna najlepszą drogę dla ciebie, a nie tylko najkrótszą. A miasto rozświetla się, żeby ci ją pokazać.</aside>
+  </section>
+
+  <!-- 2 · Meet Kiko: the orb, the problem it answers, how it works -->
+  <section class="slide s-kiko" id="kiko" data-title="Poznaj Kiko" data-tr="spot" style="--a: var(--amber); --ox: 24%; --oy: 52%; --gx: 24%; --gy: 52%">
+    <div class="row grow center" style="gap: 70px">
+      <div class="kiko-orb rise"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__ring"></span><span class="orb__glint"></span></span><p class="kiko-name">Kiko</p><p class="fine">twój przewodnik po mieście</p></div>
+      <div class="col grow" style="gap: 22px">
+        <p class="eyebrow">Poznaj Kiko</p>
+        <h2>Nawigacja zna najkrótszą drogę. <em>Kiko zna twoją.</em></h2>
+        <p class="lead">Napisz albo powiedz Kiko, dokąd chcesz iść albo jak się czujesz. Kiko rozświetla twoją drogę przez miasto.</p>
+        <ol class="steps3">
+          <li data-step="1" data-fx="right"><span class="n">01</span><h3>Mówisz, dokąd albo jak się czujesz</h3></li>
+          <li data-step="2" data-fx="right"><span class="n">02</span><h3>Kiko wybiera trasę z otwartych danych</h3></li>
+          <li data-step="3" data-fx="right"><span class="n">03</span><h3>Miasto rozświetla się wzdłuż twojej drogi</h3></li>
+        </ol>
+        <p class="fine" data-step="4">Bo żyjemy w „wirtualnej bliskości i fizycznej samotności” (Infuture Institute, Natalia Hatalska). Kiko daje powód, żeby wyjść.</p>
+      </div>
+    </div>
+    <aside class="notes">Poznajcie Kiko. To ta świecąca kula. Nawigacja zna najkrótszą drogę, a Kiko zna twoją. Wystarczy napisać albo powiedzieć, dokąd chcesz iść albo jak się czujesz. (klik) Mówisz. (klik) Kiko wybiera trasę z otwartych danych miasta. (klik) A miasto rozświetla się wzdłuż twojej drogi. (klik) Żyjemy w wirtualnej bliskości i fizycznej samotności, jak pisze Natalia Hatalska. Kiko daje powód, żeby wyjść z domu.</aside>
+  </section>
+
+  <!-- 3 · Different moods, different lights -->
+  <section class="slide s-moods" id="moods" data-title="Różne nastroje" data-tr="dock" style="--a: #7fd8c4; --gx: 18%; --gy: 50%">
+    <div class="row grow" style="gap: 40px">
+      <div class="col" style="width: 300px; flex: none; gap: 18px">
+        <p class="eyebrow">Różne nastroje · kliknij</p>
+        <h2>Różne nastroje, <em>różne światła.</em></h2>
+        <div class="mood-orb"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__ring"></span><span class="orb__glint"></span></span></div>
+        <div class="mpills" data-interactive><button style="--m: #7fd8c4" data-label="Spokojnie" data-cap="Przez dwa ciche parki do Muzeum Łowiectwa i Jeździectwa."><i></i>Spokojnie</button><button style="--m: #ffb35c" data-label="Szybko" data-cap="Prosto do muzeum, w niecałą godzinę, bez kluczenia."><i></i>Szybko</button><button style="--m: #a6d98a" data-label="Relaks" data-cap="Ogród Botaniczny i Obserwatorium Astronomiczne."><i></i>Relaks</button><button style="--m: #e8c27a" data-label="Historia" data-cap="Przez Park Ujazdowski do Mauzoleum Walki i Męczeństwa."><i></i>Historia</button><button style="--m: #c7a6ff" data-label="Artystycznie" data-cap="Dolina Szwajcarska, Apteka Sztuki i Centrum Sztuki Współczesnej."><i></i>Artystycznie</button><button style="--m: #7fc2ff" data-label="Rowerem" data-cap="Park Agrykola, Park Belwederski i Pałac na Wyspie, rowerem."><i></i>Rowerem</button><button style="--m: #ff9a76" data-label="Autobus i zakupy" data-cap="Autobus 131, zakupy po drodze i dalej do muzeum, z rozkładu ZTM."><i></i>Autobus i zakupy</button></div>
+      </div>
+      <div class="col grow" style="gap: 12px">
+        <div class="frame mview"><img src="assets/d-mood-0.jpg" alt="Nastrój Spokojnie w aplikacji" class="on"><img src="assets/d-mood-1.jpg" alt="Nastrój Szybko w aplikacji"><img src="assets/d-mood-2.jpg" alt="Nastrój Relaks w aplikacji"><img src="assets/d-mood-3.jpg" alt="Nastrój Historia w aplikacji"><img src="assets/d-mood-4.jpg" alt="Nastrój Artystycznie w aplikacji"><img src="assets/d-mood-5.jpg" alt="Nastrój Rowerem w aplikacji"><img src="assets/d-mood-6.jpg" alt="Nastrój Autobus i zakupy w aplikacji"><span class="label still">Prawdziwy ekran · to samo pytanie, inny nastrój</span></div>
+        <p class="mcap"></p>
+      </div>
+    </div>
+    <span data-step="1"></span><span data-step="2"></span><span data-step="3"></span><span data-step="4"></span><span data-step="5"></span><span data-step="6"></span>
+    <aside class="notes">Różne nastroje, różne światła. To samo pytanie, a Kiko prowadzi inaczej: spokojniej przez parki, szybciej prosto do celu, z historią, artystycznie przez galerie, rowerem przez zieleń albo autobusem z zakupami po drodze. Każdy nastrój ma swój kolor na mapie. (klikam kolejne nastroje)</aside>
+  </section>
+
+  <!-- 4 · Demo video -->
+  <section class="slide" data-title="Demo" data-tr="tilt" style="--a: var(--teal); --gx: 40%; --gy: 50%">
+    <div class="row grow" style="gap: 40px; align-items: center">
+      <div class="frame" style="width: 800px; height: 500px">
+        <video data-src="assets/d-flow.mp4" muted loop playsinline></video><img class="print-poster" src="assets/d-trip.jpg" alt="Spokojna trasa w aplikacji">
+        <span class="label">Nagranie z działającej aplikacji</span>
+      </div>
+      <div class="col grow" style="gap: 22px">
+        <p class="eyebrow">Tak to wygląda</p>
+        <ol class="notes-list">
+          <li data-step="1" data-fx="right"><b>Kula pyta o nastrój</b></li>
+          <li data-step="2" data-fx="right"><b>Trasa rysuje się ulicami</b></li>
+          <li data-step="3" data-fx="right"><b>Miasto rośnie wzdłuż drogi</b></li>
+          <li data-step="4" data-fx="right"><b>Inny nastrój, inna trasa</b></li>
+        </ol>
+      </div>
+    </div>
+    <aside class="notes">Tak to wygląda na żywo. (klik) Dotykam kuli i wybieram podpowiedź. (klik) Trasa rysuje się prawdziwymi ulicami. (klik) Wzdłuż niej rosną budynki, parki z drzewami, a kultura świeci na fioletowo. (klik) Zmieniam nastrój na „Artystycznie” i dostaję inną drogę, przez galerie.</aside>
+  </section>
+
+  <!-- 5 · Feature explorer -->
+  <section class="slide explorer" data-title="Co widzisz po drodze" data-tr="dock" style="--a: var(--teal); --gx: 60%; --gy: 45%">
+    <p class="eyebrow">Co widzisz po drodze · kliknij</p>
+    <div class="row grow" style="gap: 34px">
+      <div class="tabs" role="tablist" aria-label="Funkcje aplikacji" data-interactive>
+        <button class="tab" role="tab" aria-selected="true" style="--m: #7fd8c4" data-i="0"><i></i>Trasa</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #c7a6ff" data-i="1"><i></i>Kultura i historia</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #2bd47d" data-i="2"><i></i>Defibrylatory</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #ff9a76" data-i="3"><i></i>Bez samochodu</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #ffcf5c" data-i="4"><i></i>Przystanki</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #7fc2ff" data-i="5"><i></i>Wydarzenia i oferty</button>
+        <button class="tab" role="tab" aria-selected="false" style="--m: #ffd34d" data-i="6"><i></i>Zgłoszenia</button>
+      </div>
+      <div class="col grow" style="gap: 14px">
+        <div class="frame view">
+          <img class="on" src="assets/d-trip.jpg" alt="Spokojna trasa przez parki do muzeum">
+          <img src="assets/d-culture.jpg" alt="Karta zabytku: Stara Oranżeria">
+          <img src="assets/d-nearby.jpg" alt="Defibrylatory przy trasie">
+          <img src="assets/d-transit.jpg" alt="Trasa autobusem z zakupami po drodze">
+          <img src="assets/d-stop.jpg" alt="Odjazdy z przystanku">
+          <img src="assets/d-flag.jpg" alt="Flaga z ofertą, oznaczona jako demo">
+          <img src="assets/d-reports.jpg" alt="Zgłoszenia mieszkańców">
+          <span class="label still">Prawdziwy ekran</span>
+        </div>
+        <p class="tabcap"></p>
+      </div>
+    </div>
+    <div class="print-grid">
+      <figure><img src="assets/d-trip.jpg" alt=""><figcaption>Trasa</figcaption></figure>
+      <figure><img src="assets/d-culture.jpg" alt=""><figcaption>Kultura i historia</figcaption></figure>
+      <figure><img src="assets/d-nearby.jpg" alt=""><figcaption>Defibrylatory</figcaption></figure>
+      <figure><img src="assets/d-transit.jpg" alt=""><figcaption>Bez samochodu</figcaption></figure>
+      <figure><img src="assets/d-stop.jpg" alt=""><figcaption>Przystanki</figcaption></figure>
+      <figure><img src="assets/d-flag.jpg" alt=""><figcaption>Wydarzenia i oferty</figcaption></figure>
+      <figure><img src="assets/d-reports.jpg" alt=""><figcaption>Zgłoszenia</figcaption></figure>
+    </div>
+    <aside class="notes">Po drodze widzisz to, co naprawdę ważne. Kultura: najeżdżasz na fioletowy budynek i widzisz jego historię z OpenStreetMap i Wikipedii, bez tekstu wymyślonego przez AI. Defibrylatory w promieniu 300 metrów. Trasa bez samochodu: autobus 131, dwanaście minut na zakupy, autobus dalej. Odjazdy z przystanków. Wydarzenia i oferty. I żółty przycisk zgłoszeń. (Jeśli jest czas: klikam dwie, trzy zakładki.)</aside>
+  </section>
+
+  <!-- 6 · Desktop and phone -->
+  <section class="slide" data-title="Komputer i telefon" data-tr="rise" style="--a: var(--blue); --gx: 50%; --gy: 60%">
+    <p class="eyebrow">Komputer i telefon</p>
+    <h2 style="margin-top: -8px">Ta sama droga, <em>na każdym ekranie.</em></h2>
+    <div class="devices grow">
+      <div class="frame browser rise" style="--i: 1">
+        <div class="chrome"><i></i><i></i><i></i><span>KOMPUTER</span></div>
+        <video data-src="assets/d-flow.mp4" muted loop playsinline></video><img class="print-poster" src="assets/d-trip.jpg" alt="">
+      </div>
+      <div class="phone rise" style="--i: 2"><div class="scr"><video data-src="assets/p-flow.mp4" muted loop playsinline></video><img class="print-poster" src="assets/p-trip.jpg" alt=""></div></div>
+      <div class="col grow" style="gap: 16px">
+        <div class="facts rise" style="--i: 3"><span class="tag now">Przeglądarka, bez instalacji</span><span class="tag now">Polski i angielski</span><span class="tag now">docker compose up</span></div>
+        <p class="small rise" style="--i: 4">Na telefonie mapa jest u góry, a trasa wysuwa się od dołu, pod kciukiem.</p>
+        <p class="fine rise" style="--i: 5">Oba ekrany to nagrania z działającej aplikacji</p>
+      </div>
+    </div>
+    <aside class="notes">Aplikacja działa na komputerze i na telefonie, w przeglądarce, bez instalacji, po polsku i po angielsku. Na telefonie mapa jest u góry, a trasa wysuwa się od dołu, pod kciukiem. Całość uruchamia jedna komenda Dockera na dowolnym komputerze.</aside>
+  </section>
+
+  <!-- 7 · For businesses and events -->
+  <section class="slide" id="biz" data-title="Dla firm i wydarzeń" data-tr="dock" style="--a: var(--coral); --gx: 30%; --gy: 50%">
+    <div class="row grow" style="gap: 46px">
+      <div class="col" style="width: 470px; flex: none; gap: 14px">
+        <div class="crop rise" style="--i: 1; width: 470px; height: 330px; background-image: url(assets/d-flag.jpg); background-size: 1500px auto; background-position: -330px -250px"></div>
+        <p class="fine">Prawdziwy ekran: flaga z ofertą przy trasie, podpisana „Oferta · Demo”.</p>
+      </div>
+      <div class="col grow" style="gap: 16px">
+        <p class="eyebrow">Dla firm i wydarzeń</p>
+        <h2>Reklama, <em>która nie śledzi.</em></h2>
+        <ol class="pts">
+          <li data-step="1"><span class="tag vis">Wizja</span><span><b>Firma albo organizator dodaje ofertę lub wydarzenie:</b> miejsce, godziny, nastrój, do którego pasuje.</span></li>
+          <li data-step="2"><span class="tag now">Działa dziś</span><span><b>Kiko pokazuje flagę tylko na trasach obok</b> i przy pasującym nastroju. Nie na podstawie profilu, bo profili nie mamy.</span></li>
+          <li data-step="3"><span class="tag now">Działa dziś</span><span><b>Zawsze podpisane:</b> „Oferta”, „Wydarzenie”, prawdziwe albo demo.</span></li>
+          <li data-step="4"><span class="tag vis">Wizja</span><span><b>Firma widzi tylko zbiorcze liczby,</b> nigdy dane konkretnej osoby. Wydarzenia z kalendarza miasta za darmo, małe firmy za stałą, niską opłatę, bez licytacji o pozycję.</span></li>
+        </ol>
+        <p class="small end">Przykład: pracownia ceramiki w Grodzisku Mazowieckim ma puste miejsca w sobotę. Kiko pokazuje jej warsztaty osobom z Warszawy, które szukają „czegoś do zrobienia rękami”, i prowadzi je tam kolejką WKD.</p>
+      </div>
+    </div>
+    <aside class="notes">Dla firm i wydarzeń mamy reklamę, która nie śledzi. (klik) Firma albo organizator dodaje ofertę lub wydarzenie. (klik) Kiko pokazuje flagę tylko tym, których trasa przechodzi obok i których nastrój pasuje, bo profili nie mamy. (klik) Każda flaga jest podpisana. (klik) Firma widzi tylko zbiorcze liczby. Wydarzenia miejskie są za darmo, a mała firma płaci stałą, niską opłatę, bez licytacji. Na przykład pracownia ceramiki w Grodzisku dostaje gości z Warszawy, którzy szukają czegoś do zrobienia rękami.</aside>
+  </section>
+
+  <!-- 8 · Warsaw open data, dataset by dataset -->
+  <section class="slide" id="wod" data-title="Dane Warszawy" data-tr="rise" style="--a: var(--blue); --gx: 30%; --gy: 18%">
+    <p class="eyebrow">Otwarte dane Warszawy, których używamy</p>
+    <h2>Dane miasta <em>na każdym kroku trasy.</em></h2>
+    <ul class="wod">
+      <li class="rise" style="--i: 1"><p class="num" data-to="5699">0</p><p class="what">kursów w rozkładzie ZTM</p><p class="use">GTFS z 18 października: autobusy i tramwaje przy trasie, odjazdy z 69 przystanków, trasa bez samochodu.</p><span class="tag now">W aplikacji</span></li>
+      <li class="rise" style="--i: 2"><p class="num" data-to="652">0</p><p class="what">wydarzeń z kalendarza miasta</p><p class="use">352 mają punkt na mapie. Prawdziwe wydarzenie pojawia się przy trasie jako flaga.</p><span class="tag now">W aplikacji</span></li>
+      <li class="rise" style="--i: 3"><p class="num" data-to="710">0</p><p class="what">defibrylatorów AED</p><p class="use">Cała Warszawa, jako warstwa w naszym API i dla agentów AI przez MCP.</p><span class="tag api">API i MCP</span></li>
+      <li class="rise" style="--i: 4"><p class="num" data-to="695">0</p><p class="what">toalet publicznych</p><p class="use">Cała Warszawa, w API i MCP. Przy samej trasie dokładamy toalety z OpenStreetMap.</p><span class="tag api">API i MCP</span></li>
+      <li class="rise" style="--i: 5"><p class="num" data-to="141">0</p><p class="what">stacji jakości powietrza</p><p class="use">Odczyty z całego miasta w API i MCP. Następny krok: trasa, która omija smog.</p><span class="tag api">API i MCP</span></li>
+      <li class="rise" style="--i: 6"><p class="num" data-to="1227">0</p><p class="what">otwartych boisk</p><p class="use">Pobrane z portalu. Czekają na zamianę adresów na punkty na mapie.</p><span class="tag sim">Pobrane</span></li>
+      <li class="rise" style="--i: 7"><p class="num">2022</p><p class="what">mapy hałasu (WMS)</p><p class="use">Hałas drogowy, kolejowy, tramwajowy i lotniczy, w dzień i w nocy. Zastąpią nasz szacunek ciszy.</p><span class="tag vis">Następny krok</span></li>
+      <li class="rise" style="--i: 8"><p class="num">1935</p><p class="what">mapy historyczne (WMS)</p><p class="use">Lata 1935, 1939 i 1945 nałożone na dzisiejsze miasto. Przetestowane w aplikacji.</p><span class="tag est">Przetestowane</span></li>
+    </ul>
+    <p class="sources end"><span>Urząd m.st. Warszawy · dane.um.warszawa.pl (CC BY)</span><span>wms.um.warszawa.pl</span><span>ZTM Warszawa (GTFS)</span><span>pobrane 17–18.10.2026</span></p>
+    <aside class="notes">Z portalu otwartych danych Warszawy bierzemy: rozkład ZTM, czyli prawie sześć tysięcy kursów na dziś; kalendarz wydarzeń miasta, sześćset pięćdziesiąt dwa wydarzenia; siedemset dziesięć defibrylatorów i sto czterdzieści jeden stacji jakości powietrza. Te warstwy są w naszym API i dostępne dla agentów AI. Pobraliśmy też ponad tysiąc dwieście boisk, a następny krok to miejskie mapy hałasu z 2022 roku, które zastąpią nasz szacunek ciszy.</aside>
+  </section>
+
+  <!-- 9 · Six built-in examples -->
+  <section class="slide" id="who" data-title="Sześć przykładów" data-tr="spot" style="--a: var(--teal); --ox: 50%; --oy: 60%; --gx: 50%; --gy: 70%">
+    <p class="eyebrow">Sześć przykładów, wbudowanych w aplikację · kliknij</p>
+    <h2>Sześć osób. <em>Sześć świateł.</em></h2>
+    <div class="people six-p" data-interactive><button data-go="ex1" class="rise" style="--i: 1; --m: #7fd8c4"><span class="av" style="--m: #7fd8c4">K</span><b>Kuba, 27</b><span class="dist">Spokojnie</span><span class="pb">„Cichy, zielony park i małe muzeum”</span><span class="go">zobacz w aplikacji →</span></button><button data-go="ex2" class="rise" style="--i: 2; --m: #e8c27a"><span class="av" style="--m: #e8c27a">L</span><b>Lena, 29</b><span class="dist">Historia</span><span class="pb">„Historia i pamięć Warszawy”</span><span class="go">zobacz w aplikacji →</span></button><button data-go="ex3" class="rise" style="--i: 3; --m: #c7a6ff"><span class="av" style="--m: #c7a6ff">Z</span><b>Zuza i Maja, 22</b><span class="dist">Artystycznie</span><span class="pb">„Sztuka, galeria i wystawa”</span><span class="go">zobacz w aplikacji →</span></button><button data-go="ex4" class="rise" style="--i: 4; --m: #7fc2ff"><span class="av" style="--m: #7fc2ff">M</span><b>Marek, 41, i Zosia, 8</b><span class="dist">Rowerem</span><span class="pb">„Przejażdżka rowerem przez zieleń”</span><span class="go">zobacz w aplikacji →</span></button><button data-go="ex5" class="rise" style="--i: 5; --m: #ffb35c"><span class="av" style="--m: #ffb35c">T</span><b>Tomek, 35</b><span class="dist">Szybko</span><span class="pb">„Krótki i szybki spacer, mam godzinę”</span><span class="go">zobacz w aplikacji →</span></button><button data-go="ex6" class="rise" style="--i: 6; --m: #a6d98a"><span class="av" style="--m: #a6d98a">H</span><b>Halina, 76</b><span class="dist">Relaks</span><span class="pb">„Ogród botaniczny i obserwatorium”</span><span class="go">zobacz w aplikacji →</span></button></div>
+    <p class="fine end">Postacie są fikcyjne, trasy są prawdziwe: każdy prompt uruchamia jedną z sześciu tras wbudowanych w aplikację, także bez AI.</p>
+    <aside class="notes">Pokażę to na sześciu osobach. Każdy z tych przykładów jest wbudowany w aplikację i działa nawet bez AI. Kliknięcie pokazuje, co dzieje się w aplikacji.</aside>
+  </section>
+
+  <!-- Example 1 · calm -->
+  <section class="slide ex" id="ex1" data-title="Kuba, 27" data-tr="dock" style="--a: #7fd8c4; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 1 z 6 · Spokojnie</p>
+        <h2>Kuba potrzebuje <em>ciszy, nie tłumu.</em></h2>
+        <p class="persona"><span class="av">K</span><span><b>Kuba, 27</b><br>pracuje w Centrum · postać fikcyjna</span></p>
+        <p class="prob">Lęk przed tłumem. Po pracy chce się wyciszyć, ale hałas i ludzie go paraliżują. Nikogo nie zapyta o drogę.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Cichy, zielony park i małe muzeum</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="calm"><p class="pk"><b>Trasa Kiko</b>47 min · 3,5 km · pieszo<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Park Jazdów</span><i>→</i><span>Skwer Stefana Kisielewskiego "Kisiela"</span><i>→</i><span>Muzeum Łowiectwa i Jeździectwa</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Pora, kiedy w parku jest pusto, i wyjście awaryjne: jedno dotknięcie i najspokojniejsza droga do domu.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-calm.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-calm.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Cichy, zielony park i małe muzeum”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Kuba. Lęk przed tłumem. Po pracy chce się wyciszyć, ale hałas i ludzie go paraliżują. Nikogo nie zapyta o drogę. Pisze do Kiko: „Cichy, zielony park i małe muzeum”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Pora, kiedy w parku jest pusto, i wyjście awaryjne: jedno dotknięcie i najspokojniejsza droga do domu.</aside>
+  </section>
+
+  <!-- Example 2 · history -->
+  <section class="slide ex" id="ex2" data-title="Lena, 29" data-tr="dock" style="--a: #e8c27a; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 2 z 6 · Historia</p>
+        <h2>Lena chce zrozumieć <em>historię miasta.</em></h2>
+        <p class="persona"><span class="av">L</span><span><b>Lena, 29</b><br>turystka z Krakowa · postać fikcyjna</span></p>
+        <p class="prob">Pierwszy raz w Warszawie. Nie chce tylko Starego Miasta: chce zobaczyć miejsca pamięci i zrozumieć, co tu się wydarzyło.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Historia i pamięć Warszawy</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="history"><p class="pk"><b>Trasa Kiko</b>29 min · 2,2 km · pieszo<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Park Ujazdowski</span><i>→</i><span>Mauzoleum Walki i Męczeństwa</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Potem PRL po drodze: bar mleczny i Muzeum Neonów, z kartą historii każdego budynku.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-history.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-history.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Historia i pamięć Warszawy”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Lena. Pierwszy raz w Warszawie. Nie chce tylko Starego Miasta: chce zobaczyć miejsca pamięci i zrozumieć, co tu się wydarzyło. Pisze do Kiko: „Historia i pamięć Warszawy”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Potem PRL po drodze: bar mleczny i Muzeum Neonów, z kartą historii każdego budynku.</aside>
+  </section>
+
+  <!-- Example 3 · art -->
+  <section class="slide ex" id="ex3" data-title="Zuza i Maja, 22" data-tr="dock" style="--a: #c7a6ff; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 3 z 6 · Artystycznie</p>
+        <h2>Zuza i Maja szukają <em>sztuki na dziś.</em></h2>
+        <p class="persona"><span class="av">Z</span><span><b>Zuza i Maja, 22</b><br>Mokotów · postać fikcyjna</span></p>
+        <p class="prob">Kochają sztukę i vintage, ale nie wiedzą, gdzie dziś jest coś ciekawego. Nie mają auta i chcą z tego zrobić cały dzień.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Sztuka, galeria i wystawa</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="art"><p class="pk"><b>Trasa Kiko</b>40 min · 3,0 km · pieszo<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Dolina Szwajcarska</span><i>→</i><span>Park Ujazdowski</span><i>→</i><span>Apteka Sztuki</span><i>→</i><span>Park Jazdów</span><i>→</i><span>Centrum Sztuki Współczesnej</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Potem lumpeksy na Pradze i sushi po drodze, w jednym planie z metrem i tramwajem.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-art.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-art.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Sztuka, galeria i wystawa”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Zuza i Maja. Kochają sztukę i vintage, ale nie wiedzą, gdzie dziś jest coś ciekawego. Nie mają auta i chcą z tego zrobić cały dzień. Pisze do Kiko: „Sztuka, galeria i wystawa”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Potem lumpeksy na Pradze i sushi po drodze, w jednym planie z metrem i tramwajem.</aside>
+  </section>
+
+  <!-- Example 4 · bike -->
+  <section class="slide ex" id="ex4" data-title="Marek, 41, i Zosia, 8" data-tr="dock" style="--a: #7fc2ff; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 4 z 6 · Rowerem</p>
+        <h2>Marek i Zosia jadą <em>rowerem przez parki.</em></h2>
+        <p class="persona"><span class="av">M</span><span><b>Marek, 41, i Zosia, 8</b><br>weekend bez auta · postać fikcyjna</span></p>
+        <p class="prob">Zosia dopiero uczy się jeździć, więc tylko spokojne alejki. Marek chce zostawić auto w domu.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Przejażdżka rowerem przez zieleń</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="bike"><p class="pk"><b>Trasa Kiko</b>33 min · 5,2 km · rowerem<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Park Agrykola</span><i>→</i><span>Park Belwederski</span><i>→</i><span>Pałac na Wyspie</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Trasa omija ruchliwe ulice, a na końcu czeka oferta lokalnej lodziarni, oznaczona jako oferta.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-bike.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-bike.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Przejażdżka rowerem przez zieleń”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Marek. Zosia dopiero uczy się jeździć, więc tylko spokojne alejki. Marek chce zostawić auto w domu. Pisze do Kiko: „Przejażdżka rowerem przez zieleń”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Trasa omija ruchliwe ulice, a na końcu czeka oferta lokalnej lodziarni, oznaczona jako oferta.</aside>
+  </section>
+
+  <!-- Example 5 · short -->
+  <section class="slide ex" id="ex5" data-title="Tomek, 35" data-tr="dock" style="--a: #ffb35c; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 5 z 6 · Szybko</p>
+        <h2>Tomek ma <em>tylko godzinę.</em></h2>
+        <p class="persona"><span class="av">T</span><span><b>Tomek, 35</b><br>godzina przerwy · postać fikcyjna</span></p>
+        <p class="prob">Między spotkaniami siedzi cały dzień przy biurku. Chce się przejść, ale bez kluczenia i bez spóźnienia.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Krótki i szybki spacer, mam godzinę</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="short"><p class="pk"><b>Trasa Kiko</b>41 min · 3,1 km · pieszo<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Muzeum Łowiectwa i Jeździectwa</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Kiko pilnuje czasu i przypomni o powrocie, zanim zacznie się następne spotkanie.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-short.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-short.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Krótki i szybki spacer, mam godzinę”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Tomek. Między spotkaniami siedzi cały dzień przy biurku. Chce się przejść, ale bez kluczenia i bez spóźnienia. Pisze do Kiko: „Krótki i szybki spacer, mam godzinę”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Kiko pilnuje czasu i przypomni o powrocie, zanim zacznie się następne spotkanie.</aside>
+  </section>
+
+  <!-- Example 6 · botanical -->
+  <section class="slide ex" id="ex6" data-title="Halina, 76" data-tr="dock" style="--a: #a6d98a; --gx: 72%; --gy: 45%">
+    <div class="ex-grid">
+      <div class="col ex-who">
+        <p class="eyebrow">Przykład 6 z 6 · Relaks</p>
+        <h2>Halina chce wyjść <em>do zieleni i do ludzi.</em></h2>
+        <p class="persona"><span class="av">H</span><span><b>Halina, 76</b><br>Ochota · postać fikcyjna</span></p>
+        <p class="prob">Mieszka sama, bywają dni bez jednej rozmowy. Boi się długiej drogi bez ławki, żeby odpocząć.</p>
+        <div class="ask"><span class="orb"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__glint"></span></span><div><q>Ogród botaniczny i obserwatorium</q><small>pisze do Kiko</small></div></div>
+        <div class="picked" data-track="botanical"><p class="pk"><b>Trasa Kiko</b>41 min · 3,1 km · pieszo<span class="tag now">Działa dziś</span></p><p class="chain"><span class="st0">Centrum</span><i>→</i><span>Dolina Szwajcarska</span><i>→</i><span>Ogród Botaniczny</span><i>→</i><span>Skwer Stefana Kisielewskiego "Kisiela"</span><i>→</i><span>Obserwatorium Astronomiczne</span></p></div>
+        <p class="vision" data-step="1"><span class="tag vis">Wizja</span>Ławki i defibrylatory po drodze, studentka z sąsiedztwa jako towarzyszka i najbliższe zajęcia dla seniorów.</p>
+      </div>
+      <div class="col ex-app">
+        <div class="frame exv"><video data-src="assets/d-track-botanical.mp4" muted playsinline></video><img class="print-poster" src="assets/d-track-botanical.jpg" alt=""><span class="label">Nagranie z aplikacji: wpisany prompt, trasa Kiko</span></div>
+        <p class="live"><a href="http://localhost:4173/?time=11:00" target="_blank" rel="noopener" data-interactive>Otwórz na żywo w aplikacji ↗</a><span>wpisz: „Ogród botaniczny i obserwatorium”. Działa także bez AI, po słowach kluczowych.</span></p>
+      </div>
+    </div>
+    <aside class="notes">Halina. Mieszka sama, bywają dni bez jednej rozmowy. Boi się długiej drogi bez ławki, żeby odpocząć. Pisze do Kiko: „Ogród botaniczny i obserwatorium”. Kiko wybiera trasę, a miasto rozświetla się wzdłuż niej. To jest nagranie z prawdziwej aplikacji. (klik) Ławki i defibrylatory po drodze, studentka z sąsiedztwa jako towarzyszka i najbliższe zajęcia dla seniorów.</aside>
+  </section>
+
+  <!-- Summary: what it changes, today and in 2076 -->
+  <section class="slide" id="sum" data-title="Co to zmienia" data-tr="spot" style="--a: var(--violet); --ox: 50%; --oy: 55%; --gx: 60%; --gy: 75%; gap: 12px">
+    <p class="eyebrow">Co to zmienia · dziś i w przyszłości</p>
+    <h2 style="font-size: 38px">Nie kolejna mapa, <em>tylko miasto, które rozmawia z ludźmi.</em></h2>
+    <ul class="sum four">
+      <li class="rise" style="--i: 1; --m: var(--blue)"><div class="pic" style="background-image: url(assets/d-track-bike.jpg); background-size: 1083px auto; background-position: -281px -215px"></div><div class="body"><h3><span class="n">01</span>Eko</h3><p class="line">Bez auta: rower, autobus i zakupy w jednym planie. Mniej korków i spalin.</p></div></li>
+      <li class="rise" style="--i: 2; --m: var(--green)"><div class="pic"><svg viewBox="0 0 216 64" aria-hidden="true" class="seniors">
+        <path d="M0 16H216M0 48H216M54 0V64M126 0V64M190 0V64" stroke="#ff8a2a" stroke-opacity=".16"/>
+        <path d="M10 50 C 50 50, 70 22, 112 22 S 170 42, 204 30" fill="none" stroke="#a6d98a" stroke-width="3" stroke-linecap="round" style="filter: drop-shadow(0 0 4px #a6d98a)"/>
+        <rect x="34" y="40" width="10" height="4" rx="1.5" fill="#ffb35c"/><rect x="88" y="27" width="10" height="4" rx="1.5" fill="#ffb35c"/><rect x="160" y="39" width="10" height="4" rx="1.5" fill="#ffb35c"/>
+        <circle cx="66" cy="30" r="5" fill="#2bd47d"/><path d="M66 27.5v5M63.5 30h5" stroke="#0b2a19" stroke-width="1.6"/>
+        <circle cx="122" cy="22" r="4" fill="#fffaf2"/><circle cx="131" cy="24" r="4" fill="#c7a6ff"/>
+        <circle cx="204" cy="30" r="6" fill="#a6d98a" stroke="#fffaf2" stroke-width="1.5"/>
+        <text x="126" y="12" text-anchor="middle">razem</text><text x="200" y="54" text-anchor="end">klub seniora</text>
+      </svg></div><div class="body"><h3><span class="n">02</span>Seniorzy</h3><p class="line">Ławki, defibrylatory, młody towarzysz i najbliższe zajęcia dla seniorów.</p></div></li>
+      <li class="rise" style="--i: 3; --m: var(--teal)"><div class="pic" style="background-image: url(assets/d-track-calm.jpg); background-size: 1040px auto; background-position: -234px -250px"></div><div class="body"><h3><span class="n">03</span>Zdrowie</h3><p class="line">Spacer jako codzienny nawyk: ruch, zieleń i cisza zamiast hałasu.</p></div></li>
+      <li class="rise" style="--i: 4; --m: var(--violet)"><div class="pic" style="background-image: url(assets/d-culture.jpg); background-size: 1238px auto; background-position: -358px -322px"></div><div class="body"><h3><span class="n">04</span>Kultura</h3><p class="line">Historia każdego budynku na trasie, galerie, muzea i wydarzenia miasta.</p></div></li>
+    </ul>
+    <div class="scene" data-y="0">
+      <div class="years" data-interactive><button data-y="1">Osobisty agent AI</button><button data-y="2">AR</button><button data-y="3">Ładowarki EV</button><button data-y="4">Parking dla latających aut</button><button data-y="5">Teleportacja</button></div>
+      <svg viewBox="0 0 1118 250" aria-hidden="true">
+        <defs>
+          <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2b32"/><stop offset="1" stop-color="#121216"/></linearGradient>
+          <radialGradient id="padglow"><stop offset="0" stop-color="#c7a6ff" stop-opacity=".55"/><stop offset="1" stop-color="#c7a6ff" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g class="far"></g>
+        <g fill="url(#bld)">
+          <rect x="150" y="168" width="150" height="40"/><rect x="180" y="132" width="90" height="38"/><rect x="200" y="98" width="50" height="36"/>
+          <rect x="209" y="74" width="32" height="26"/><rect x="216" y="56" width="18" height="20"/><polygon points="221,56 229,56 225,12"/>
+          <rect x="150" y="158" width="9" height="12"/><rect x="291" y="158" width="9" height="12"/><rect x="180" y="124" width="7" height="10"/><rect x="263" y="124" width="7" height="10"/>
+          <rect x="330" y="70" width="46" height="138"/><rect x="388" y="104" width="36" height="104"/><rect x="436" y="134" width="64" height="74"/><rect x="512" y="150" width="88" height="58"/>
+          <rect x="626" y="66" width="74" height="142"/><rect x="712" y="176" width="44" height="32"/>
+        </g>
+        <g class="win"></g>
+        <rect x="621" y="62" width="84" height="5" rx="2" fill="#34353d"/>
+        <rect x="707" y="171" width="54" height="5" rx="2" fill="#ff9a76" opacity=".75"/>
+        <rect x="768" y="201" width="190" height="7" rx="3" fill="#1d3a26"/>
+        <g class="trees"></g>
+        <rect x="972" y="160" width="110" height="48" fill="#8d74f0" opacity=".5"/>
+        <polygon points="964,161 1027,134 1090,161" fill="#b9a6ff" opacity=".55"/>
+        <g stroke="#0b0b0d" stroke-opacity=".45" stroke-width="3"><line x1="986" y1="166" x2="986" y2="206"/><line x1="1006" y1="166" x2="1006" y2="206"/><line x1="1027" y1="166" x2="1027" y2="206"/><line x1="1048" y1="166" x2="1048" y2="206"/><line x1="1068" y1="166" x2="1068" y2="206"/></g>
+        <rect x="0" y="208" width="1118" height="1.5" fill="#ff8a2a" opacity=".55"/>
+        <rect x="0" y="226" width="1118" height="1" fill="#ff8a2a" opacity=".16"/>
+        <text class="tlabel" x="225" y="244" text-anchor="middle">PAŁAC KULTURY</text><text class="tlabel" x="663" y="244" text-anchor="middle">LĄDOWISKO NA DACHU</text><text class="tlabel" x="863" y="244" text-anchor="middle">PARK</text><text class="tlabel" x="1027" y="244" text-anchor="middle">MUZEUM</text>
+
+        <g class="lay l26">
+          <path class="walk26" d="M 62 217 L 1027 217"/>
+          <g class="bus"><rect x="250" y="211" width="30" height="11" rx="3" fill="#ff5a4e"/><rect x="254" y="213" width="22" height="3" rx="1" fill="#fff6ea" opacity=".8"/></g>
+          <circle cx="62" cy="217" r="7" fill="#ffb35c" style="filter: drop-shadow(0 0 8px #ffb35c)"/>
+          <text class="lbl76" x="46" y="196">Ty i twój agent</text>
+        </g>
+        <g class="lay l40">
+          <path class="link" d="M 70 210 C 320 120, 760 70, 960 112"/>
+          <path class="link" d="M 70 210 C 300 160, 560 150, 640 142"/>
+          <path class="link" d="M 70 210 C 180 196, 300 190, 370 186"/>
+          <g class="bub" transform="translate(930,98)"><rect width="160" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Muzeum:</tspan> teraz pusto</text></g>
+          <g class="bub" transform="translate(600,128)"><rect width="190" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Kawiarnia:</tspan> cisza, kawa −20%</text></g>
+          <g class="bub" transform="translate(350,172)"><rect width="176" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Tramwaj:</tspan> objazd o 12:10</text></g>
+        </g>
+        <g class="lay lar">
+          <path d="M225 58 L225 46" stroke="var(--a)" stroke-width="1.2"/><g class="arl" transform="translate(150,10)"><rect width="150" height="36" rx="8"/><text x="10" y="15" class="t1">Pałac Kultury i Nauki</text><text x="10" y="29">1955 · socrealizm · zabytek</text></g>
+          <path d="M1027 132 L1027 112" stroke="var(--a)" stroke-width="1.2"/><g class="arl" transform="translate(940,76)"><rect width="174" height="36" rx="8"/><text x="10" y="15" class="t1">Muzeum · otwarte do 18:00</text><text x="10" y="29">wystawa: 12 min stąd</text></g>
+          <path d="M863 186 L863 166" stroke="var(--a)" stroke-width="1.2"/><g class="arl" transform="translate(790,130)"><rect width="146" height="36" rx="8"/><text x="10" y="15" class="t1">Park · cisza 0,8</text><text x="10" y="29">ławka co 150 m</text></g>
+          <path class="arpath" d="M 62 217 L 1027 217"/>
+        </g>
+        <g class="lay lev">
+          <g class="chg" transform="translate(470,188)"><rect width="12" height="20" rx="3"/><path d="M7 4 L3 11 H6.5 L5 16 L9.5 8.5 H6 Z"/></g>
+          <g class="chg" transform="translate(760,188)"><rect width="12" height="20" rx="3"/><path d="M7 4 L3 11 H6.5 L5 16 L9.5 8.5 H6 Z"/></g>
+          <g class="chg" transform="translate(1100,188)"><rect width="12" height="20" rx="3"/><path d="M7 4 L3 11 H6.5 L5 16 L9.5 8.5 H6 Z"/></g>
+          <rect x="726" y="198" width="30" height="10" rx="4" fill="#f3f0ea" opacity=".9"/>
+          <g class="bub" transform="translate(640,150)"><rect width="226" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Ładowanie:</tspan> 30 min, gdy jesteś w kawiarni</text></g>
+        </g>
+        <g class="lay ltp">
+          <ellipse class="portal" cx="62" cy="206" rx="16" ry="26"/><ellipse class="portal" cx="1027" cy="196" rx="16" ry="26"/>
+          <path class="tparc" d="M 62 180 C 300 -40, 800 -40, 1027 170"/>
+          <g class="bub" transform="translate(410,30)"><rect width="290" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Teleport:</tspan> Centrum → Muzeum, 0 min</text></g>
+          <g class="bub" transform="translate(740,128)"><rect width="250" height="28" rx="14"/><text x="14" y="18.5">…a Kiko i tak proponuje spacer</text></g>
+        </g>
+        <g class="lay l76">
+          <path class="lane" d="M -30 40 C 200 0, 470 10, 663 52"/>
+          <ellipse cx="663" cy="60" rx="64" ry="15" fill="url(#padglow)"/>
+          <ellipse class="padring" cx="663" cy="61" rx="27" ry="5"/>
+          <g class="ev">
+            <ellipse cx="0" cy="0" rx="17" ry="5.5" fill="#f3f0ea"/><rect x="-6" y="-9.5" width="12" height="6" rx="3" fill="#f3f0ea" opacity=".85"/>
+            <line x1="-25" y1="-12" x2="-8" y2="-12" stroke="#c7a6ff" stroke-width="1.6" stroke-linecap="round"/><line x1="8" y1="-12" x2="25" y2="-12" stroke="#c7a6ff" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="15" cy="0" r="1.8" fill="#c7a6ff"/>
+            <animateMotion id="evfly" dur="2.6s" begin="indefinite" fill="freeze" path="M -30 40 C 200 0, 470 10, 663 52" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".6 0 .05 1"/>
+          </g>
+          <g class="bub" transform="translate(716,34)"><rect width="232" height="28" rx="14"/><text x="14" y="18.5"><tspan class="k">Agent miasta:</tspan> dach nr 14, 12:04</text></g>
+          <path class="km" pathLength="1" d="M 700 207 C 732 200, 760 194, 790 194 L 940 194 C 966 194, 990 203, 1027 217"/>
+          <text class="lbl76" x="780" y="172">ostatni kilometr: pieszo, przez park</text>
+        </g>
+      </svg>
+    </div>
+    <span data-step="1"></span><span data-step="2"></span><span data-step="3"></span><span data-step="4"></span><span data-step="5"></span>
+    <p class="ycap"></p>
+    <aside class="notes">Co to zmienia? Eko: bez auta, rowerem, autobusem i z zakupami po drodze. Seniorzy: ławki, defibrylatory, młody towarzysz i zajęcia obok. Zdrowie: spacer jako codzienny nawyk, w zieleni i ciszy. Kultura: historia każdego budynku na trasie. A przyszłość? (klik) Osobisty agent AI, który rozmawia z miastem już dziś. (klik) AR: historia budynku na ulicy, w okularach. (klik) Ładowarki EV tam, gdzie i tak spędzasz pół godziny. (klik) Parking dla latających aut na dachach. (klik) I teleportacja. A Kiko i tak zaproponuje spacer przez park, bo człowiek potrzebuje spaceru.</aside>
+  </section>
+
+  <!-- 16 · Close -->
+  <section class="slide s-end" data-title="Gdzie się dzisiaj czujesz?" data-tr="spot" style="--a: var(--amber); --ox: 50%; --oy: 38%; --gx: 50%; --gy: 38%">
+    <span class="orb rise"><span class="orb__halo"></span><span class="orb__core"></span><span class="orb__ring"></span><span class="orb__glint"></span></span>
+    <h2 class="rise" style="--i: 1">Gdzie się dzisiaj czujesz?</h2>
+    <p class="lead rise" style="--i: 2; max-width: 40em">Dziś: spacer, który pasuje do nastroju. W 2076: sposób, w jaki Warszawa i całe Mazowsze rozmawiają z mieszkańcami, żebyśmy znów spotykali się w prawdziwym mieście.</p>
+    <ul class="team rise" style="--i: 3">
+      <li><b>Delta</b><span>@Delta-43</span></li><li><b>Sonia</b><span>@zoey-so</span></li><li><b>Alban</b><span>@kaveOO</span></li><li><b>Ola</b><span>@unicorn-alex</span></li><li><b>Aryna</b><span>@Rysia</span></li>
+    </ul>
+    <p class="repo rise" style="--i: 4">github.com/<b>Delta-43/1_ft_ddos_waw_open_data_hackathon</b></p>
+    <aside class="notes">Dziś to spacer, który pasuje do twojego nastroju. W 2076 to sposób, w jaki Warszawa i całe Mazowsze rozmawiają ze swoimi mieszkańcami, żebyśmy znów spotykali się w prawdziwym mieście, a nie tylko w telefonie. Dziękujemy. Gdzie się dzisiaj czujecie?</aside>
+  </section>
+
+
+
+  <div class="trail" aria-hidden="true"><svg viewBox="0 0 1280 56"><path class="base"/><path class="done" pathLength="1"/><g class="stops"></g><circle class="walker" r="5"/></svg></div>
+</main>
+
+<div class="notes-panel" aria-live="polite"><div class="meta"><span id="notesMeta"></span><span id="timer">00:00</span></div><div id="notesText"></div></div>
+<div class="menu" id="menu"><ol id="menuList"></ol></div>
+<nav class="controls" aria-label="Sterowanie prezentacją">
+  <button id="prev" aria-label="Wstecz">←</button>
+  <button id="menuBtn" aria-label="Spis slajdów">SPIS</button>
+  <button id="notesBtn" aria-pressed="false" aria-label="Notatki mówcy">N</button>
+  <button id="fsBtn" aria-label="Pełny ekran">⤢</button>
+  <button id="next" aria-label="Dalej">→</button>
+</nav>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const slides = [...document.querySelectorAll('.slide')];
+  const total = slides.length;
+  const pad = n => String(n).padStart(2, '0');
+  const params = new URLSearchParams(location.search);
+  const pdf = params.has('pdf');
+  const showAll = params.has('all') || pdf;
+  if (pdf) document.body.classList.add('pdf');
+
+  // Videos: the single-file build stores them as base64 and turns them into blob URLs.
+  const videoUrl = src => {
+    const holder = document.querySelector(`script[data-asset="${src}"]`);
+    if (!holder) return src;
+    if (!holder.blobUrl) {
+      const bin = atob(holder.textContent.trim()); const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      holder.blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'video/mp4' }));
+    }
+    return holder.blobUrl;
+  };
+
+  // The app's title bar on every slide but the first.
+  slides.forEach((s, i) => {
+    if (s.hasAttribute('data-nobar')) return;
+    s.insertAdjacentHTML('afterbegin', `<header class="bar"><span class="brand"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><span class="name">Find <b>YOUR</b> way</span></span><button class="pg" data-interactive aria-label="Spis slajdów"><strong>${pad(i + 1)}</strong> / ${pad(total)}</button></header>`);
+  });
+
+  const fit = () => document.documentElement.style.setProperty('--k', Math.min(innerWidth / 1280, innerHeight / 720));
+  addEventListener('resize', fit); fit();
+
+  // ---- the progress route ----
+  const trail = stage.querySelector('.trail');
+  const base = trail.querySelector('.base'), done = trail.querySelector('.done'), walker = trail.querySelector('.walker'), stopsG = trail.querySelector('.stops');
+  let d = 'M 60 30';
+  const segs = 8, x0 = 60, x1 = 1220;
+  for (let k = 0; k < segs; k++) {
+    const a = x0 + (x1 - x0) * k / segs, b = x0 + (x1 - x0) * (k + 1) / segs, m = (a + b) / 2, up = k % 2 ? 9 : -9;
+    d += ` C ${a + (b - a) * .3} ${30 + up}, ${m + (b - a) * .2} ${30 - up}, ${b} 30`;
+  }
+  base.setAttribute('d', d); done.setAttribute('d', d);
+  const len = base.getTotalLength();
+  const at = i => base.getPointAtLength(len * i / (total - 1));
+  slides.forEach((s, i) => {
+    const p = at(i), c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('class', 'stop'); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 4.5);
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'title'); t.textContent = `${i + 1}. ${s.dataset.title}`; c.append(t);
+    c.addEventListener('click', e => { e.stopPropagation(); go(i); });
+    stopsG.append(c);
+  });
+  done.style.strokeDasharray = '1'; done.style.strokeDashoffset = '1';
+
+  // ---- builds, videos, counters, typing ----
+  const maxStep = s => Math.max(0, ...[...s.querySelectorAll('[data-step]')].map(e => +e.dataset.step));
+  const fmt = n => n >= 1000 ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(n);
+  function countUp(s) {
+    if (pdf) return;
+    s.querySelectorAll('.num[data-to]').forEach(el => {
+      const to = +el.dataset.to, t0 = performance.now(), dur = 1400 + Math.min(to, 3000) / 6;
+      const tick = t => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 4); el.textContent = fmt(Math.round(to * e)); if (p < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
+  }
+  let typing;
+  function type(s) {
+    const el = s.querySelector('.typed'); if (!el || pdf) return;
+    clearInterval(typing); const text = el.dataset.text; let n = 0; el.textContent = '';
+    setTimeout(() => { typing = setInterval(() => { el.textContent = text.slice(0, ++n); if (n >= text.length) clearInterval(typing); }, 48); }, 700);
+  }
+  function media(s, on) {
+    if (pdf) return;
+    s.querySelectorAll('video').forEach(v => {
+      if (on) { if (!v.src) v.src = videoUrl(v.dataset.src); try { v.currentTime = 0; } catch (e) {} v.play().catch(() => {}); }
+      else v.pause();
+    });
+  }
+
+  // ---- explorer tabs ----
+  const caps = [
+    ['Spokojna trasa przez dwa parki do muzeum', '47 minut, 3,5 km pieszo. Przystanki po drodze, a każda liczba z etykietą źródła.'],
+    ['Kultura i historia', 'Najedź na fioletowy budynek: nazwa, rok, zabytek z OpenStreetMap i krótki opis z Wikipedii. Tu: Stara Oranżeria w Łazienkach, od 1788 roku.'],
+    ['Defibrylatory przy trasie', 'Każdy AED w promieniu 300 m od trasy, z OpenStreetMap: gdzie wisi, godziny i dostęp.'],
+    ['Bez samochodu, z zakupami', 'Pieszo 7 min, autobus 131, 12 minut w sklepie, autobus dalej, przyjazd 11:42. Przykład z dzisiejszego rozkładu ZTM.'],
+    ['Przystanki i odjazdy', 'Dotknij przystanku: najbliższe odjazdy z rozkładu. Planowe, nie na żywo, i tak to podpisujemy.'],
+    ['Wydarzenia i oferty po drodze', 'Niebieskie flagi. Prawdziwe wydarzenie z danych miasta oznaczone jako prawdziwe; oferty w demo jako „Demo”.'],
+    ['Zgłoszenia mieszkańców', 'Brak ławki, zepsute poidełko, za krótkie zielone. Zgłoszenia zostają w przeglądarce (przykłady w demo są wymyślone).'],
+  ];
+  const ex = document.querySelector('.explorer');
+  const showTab = i => {
+    ex.querySelectorAll('.tab').forEach((t, k) => t.setAttribute('aria-selected', String(k === i)));
+    ex.querySelectorAll('.view img').forEach((im, k) => im.classList.toggle('on', k === i));
+    ex.querySelector('.tabcap').innerHTML = `<b>${caps[i][0]}</b>${caps[i][1]}`;
+    ex.style.setProperty('--a', ex.querySelectorAll('.tab')[i].style.getPropertyValue('--m'));
+    paintTrail();
+  };
+  ex.querySelectorAll('.tab').forEach((t, i) => t.addEventListener('click', e => { e.stopPropagation(); showTab(i); }));
+
+  // ---- Mazovia: a schematic of towns around Warsaw (km east, km north, roughly) ----
+  if (document.querySelector('.maz')) {
+  // l: label placement, r = right, l = left, b = below, a = above
+  const towns = [
+    { n: 'Pruszków', x: -15, y: -3, l: 'b', t: 'Muzeum Dulag 121: historia, która zaczyna się w Warszawie w 1944 roku. Do tego muzeum hutnictwa i kawa w centrum.', how: 'pociąg z Warszawy, kilkanaście minut' },
+    { n: 'Piaseczno', x: -1, y: -17, l: 'l', t: 'Kolejka wąskotorowa, rynek i lokalne kawiarnie. Dzień dla rodzin, bez auta.', how: 'pociąg albo autobus' },
+    { n: 'Konstancin-Jeziorna', x: 6, y: -18, l: 'b', t: 'Tężnia i park zdrojowy: trasa na spokojny dzień, z ławkami po drodze.', how: 'autobus' },
+    { n: 'Otwock', x: 21, y: -18, l: 'r', t: 'Drewniane wille w stylu świdermajer i sosnowe lasy.', how: 'pociąg' },
+    { n: 'Czersk', x: 9, y: -36, l: 'l', t: 'Ruiny zamku książąt mazowieckich nad doliną Wisły.', how: 'pociąg i autobus' },
+    { n: 'Grodzisk Mazowiecki', x: -29, y: -10, l: 'l', t: 'Po drodze miasto-ogród Podkowa Leśna. Kolejka WKD prosto z centrum Warszawy.', how: 'WKD albo pociąg' },
+    { n: 'Żyrardów', x: -44, y: -15, l: 'b', t: 'XIX-wieczna osada fabryki lnu: spacer po historii przemysłu.', how: 'pociąg' },
+    { n: 'Żelazowa Wola', x: -50, y: 6, l: 'a', t: 'Dom urodzenia Fryderyka Chopina i park. Dzień poza miastem.', how: 'pociąg i autobus' },
+    { n: 'Legionowo', x: -3, y: 24, l: 'l', t: 'Nad Zalew Zegrzyński: rower, woda i lokalne smażalnie.', how: 'pociąg' },
+  ];
+  const maz = document.querySelector('.maz'), S = 5, cx = 290, cy = 210;
+  const roads = maz.querySelector('.roads'), tg = maz.querySelector('.towns'), card = maz.querySelector('.tcard');
+  const NS = 'http://www.w3.org/2000/svg';
+  towns.forEach((tw, i) => {
+    const x = cx + tw.x * S, y = cy - tw.y * S, mx = (cx + x) / 2 + (y - cy) * .12, my = (cy + y) / 2 - (x - cx) * .12;
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('class', 'road'); p.setAttribute('pathLength', 1); p.setAttribute('d', `M ${cx} ${cy} Q ${mx} ${my} ${x} ${y}`); p.style.setProperty('--i', i); roads.append(p);
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'town'); g.setAttribute('tabindex', '0');
+    const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 6);
+    const t = document.createElementNS(NS, 'text');
+    const [dx, dy, anchor] = { r: [12, 5, 'start'], l: [-12, 5, 'end'], b: [0, 24, 'middle'], a: [0, -14, 'middle'] }[tw.l];
+    t.setAttribute('x', x + dx); t.setAttribute('y', y + dy); t.setAttribute('text-anchor', anchor); t.textContent = tw.n;
+    g.append(c, t); tg.append(g);
+    const show = () => { tg.querySelectorAll('.town').forEach(o => o.classList.toggle('on', o === g)); card.innerHTML = `<h3>${tw.n}</h3><p>${tw.t}</p><p class="fine">${tw.how} · wizja</p>`; };
+    g.addEventListener('mouseenter', show); g.addEventListener('focus', show); g.addEventListener('click', e => { e.stopPropagation(); show(); });
+  });
+  const w = document.createElementNS(NS, 'g'); w.setAttribute('class', 'town waw');
+  w.innerHTML = `<circle cx="${cx}" cy="${cy}" r="10"/><text x="${cx + 14}" y="${cy - 14}">Warszawa</text>`; tg.append(w);
+  }
+
+
+
+  // ---- scenario mini-maps: schematic, drawn from a few points ----
+  const NS2 = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs, parent, text) => { const e = document.createElementNS(NS2, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.append(e); return e; };
+  const poly = pts => pts.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ');
+  const smooth = pts => { let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`; for (let i = 1; i < pts.length - 1; i++) { const m = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; d += ` Q${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)} ${m[0].toFixed(1)} ${m[1].toFixed(1)}`; } const l = pts.at(-1); return `${d} L${l[0].toFixed(1)} ${l[1].toFixed(1)}`; };
+  // km east and north of the Palace of Culture, roughly
+  const RIVER_CITY = [[-3, 8.5], [-0.6, 4.6], [1.0, 2.8], [2.2, 1.0], [2.45, -0.5], [3.3, -3], [4.6, -6], [6.4, -9]];
+  const RIVER_REGION = [[9, -36], [4, -14], [2.3, 0], [-3, 8], [-12, 20]];
+  const DISTRICTS = [['ŚRÓDMIEŚCIE', -0.9, 1.0], ['WOLA', -3.6, 0.8], ['OCHOTA', -3, -2.4], ['MOKOTÓW', -0.9, -3.7], ['PRAGA-PÓŁNOC', 3.2, 4.3], ['PRAGA-POŁUDNIE', 4.4, -0.9], ['ŻOLIBORZ', -1.8, 4.6], ['POWIŚLE', 1.25, 0.15]];
+  const COL = { start: '#fffaf2', stop: 'rgba(243,240,234,.75)', end: 'var(--a)', shop: '#c7a6ff', food: '#ff9a76', wc: '#5fc4ff', buddy: '#c7a6ff', aed: '#2bd47d', place: '#c7a6ff', cross: '#ffd34d', biz: '#ff9a76', town: 'rgba(243,240,234,.6)' };
+  const MAPS = {
+    halina: { kind: 'local', grid: [20, 40, 60], greens: [[86, 166, 48, 48], [206, 166, 48, 48]],
+      segs: [{ m: 'walk', p: [[80, 280], [80, 220], [140, 220], [140, 160], [200, 160], [200, 100], [232, 100]] }, { m: 'walk', p: [[232, 100], [260, 100], [260, 160]] }],
+      benches: [[80, 250], [110, 220], [170, 160], [200, 130]],
+      pts: [[80, 280, 'dom', 'start', 'r'], [140, 214, 'studentka', 'buddy', 'r'], [168, 172, 'AED', 'aed', 'b'], [260, 160, 'klub seniora', 'end', 'b']] },
+    wola: { kind: 'local', grid: [0, 0, 40], arts: [[[0, 120], [300, 120]], [[200, 0], [200, 300]]], crowds: [[200, 120, 30], [252, 212, 20]], greens: [[44, 164, 72, 72], [44, 4, 152, 112]],
+      segs: [{ m: 'walk', p: [[40, 280], [40, 240], [60, 200], [80, 164], [120, 160], [140, 120], [120, 84], [100, 52], [176, 36]] }],
+      labels: [[262, 112, 'ARTERIA'], [228, 154, 'TŁUM']],
+      pts: [[40, 280, 'dom', 'start', 'r'], [140, 120, 'przejście', 'cross', 'r'], [176, 36, 'kawiarnia', 'end', 'b']] },
+    praga: { kind: 'city', c: [1.5, -0.2], s: 28,
+      segs: [{ m: 'transit', p: [[0.9, -4.4], [0.6, -2.6], [0.2, -1.0], [0, 0.3]] }, { m: 'transit', p: [[0, 0.3], [1.5, 0.9], [2.6, 1.7], [2.0, 2.5]] }, { m: 'walk', p: [[2.0, 2.5], [2.6, 2.9], [3.1, 3.5], [2.6, 3.9], [2.1, 3.4]] }, { m: 'back', p: [[2.1, 3.4], [1.3, 2.4], [0.6, -0.4], [0.9, -4.4]] }],
+      pts: [[0.9, -4.4, 'Mokotów', 'start', 'r'], [0, 0.3, 'Świętokrzyska', 'stop', 'l'], [2.0, 2.5, 'Dw. Wileński', 'stop', 'l'], [2.6, 2.9, '', 'shop'], [3.1, 3.5, 'second-handy', 'shop', 'r'], [2.6, 3.9, '', 'shop'], [2.1, 3.4, 'sushi', 'end', 'l']] },
+    prl: { kind: 'city', c: [1.7, 0.4], s: 45,
+      segs: [{ m: 'walk', p: [[0, 0], [-0.2, -0.6], [-0.4, -1.3]] }, { m: 'walk', p: [[-0.4, -1.3], [0.1, -1.0], [0.5, -0.5]] }, { m: 'transit', p: [[0.5, -0.5], [1.6, -0.6], [2.6, -0.5], [3.3, 0.8], [3.7, 2.0]] }],
+      pts: [[0, 0, 'Pałac Kultury', 'start', 't'], [-0.4, -1.3, 'MDM', 'place', 'l'], [0.5, -0.5, 'bar mleczny', 'food', 'r'], [3.7, 2.0, 'Muzeum Neonów', 'end', 'l']] },
+    ewa: { kind: 'region', c: [-13, -4], s: 6,
+      segs: [{ m: 'transit', p: [[0, 0], [-8, -3], [-15, -4.5], [-24, -8]] }, { m: 'walk', p: [[-24, -8], [-25.8, -6.4], [-27, -8.4], [-24.6, -9.4]] }, { m: 'transit', p: [[-24.6, -9.4], [-30, -9.5]] }],
+      pts: [[0, 0, 'Warszawa', 'start', 'r'], [-15, -3, 'Pruszków', 'town', 't'], [-24, -8, 'Podkowa Leśna', 'stop', 't'], [-30, -9.5, 'pracownia Ewy', 'end', 'b'], [-1, -17, 'piekarnia, Piaseczno', 'biz', 'b']] },
+  };
+  function drawMap(el) {
+    const m = MAPS[el.dataset.map]; if (!m) return;
+    const svg = document.createElementNS(NS2, 'svg'); svg.setAttribute('viewBox', '0 0 300 300'); svg.setAttribute('aria-hidden', 'true'); el.prepend(svg);
+    const P = m.kind === 'local' ? (q => q) : (q => [150 + (q[0] - m.c[0]) * m.s, 150 - (q[1] - m.c[1]) * m.s]);
+    if (m.kind === 'local') {
+      const [x0, y0, st] = m.grid, inset = st > 50 ? 6 : 4;
+      for (let x = x0 - st; x < 300; x += st) for (let y = y0 - st; y < 300; y += st) mk('rect', { class: 'blk', x: x + inset, y: y + inset, width: st - 2 * inset, height: st - 2 * inset, rx: 3 }, svg);
+      for (let x = x0; x < 300; x += st) mk('path', { class: 'st', d: `M${x} 0 L${x} 300` }, svg);
+      for (let y = y0; y < 300; y += st) mk('path', { class: 'st', d: `M0 ${y} L300 ${y}` }, svg);
+      (m.greens || []).forEach(([x, y, w, h]) => {
+        mk('rect', { class: 'grn', x, y, width: w, height: h, rx: 6 }, svg);
+        for (let tx = x + 8; tx < x + w - 4; tx += 12) for (let ty = y + 8; ty < y + h - 4; ty += 12) mk('circle', { class: 'tree', cx: tx + ((ty / 12) % 2) * 4, cy: ty, r: 2.6 }, svg);
+      });
+      (m.arts || []).forEach(a => mk('path', { class: 'art', d: poly(a) }, svg));
+      (m.crowds || []).forEach(([x, y, r]) => mk('circle', { class: 'crowd', cx: x, cy: y, r }, svg));
+      (m.labels || []).forEach(([x, y, t]) => mk('text', { class: 'dlab', x, y, 'text-anchor': 'middle' }, svg, t));
+    } else {
+      mk('path', { class: 'river', d: smooth((m.kind === 'city' ? RIVER_CITY : RIVER_REGION).map(P)) }, svg);
+      if (m.kind === 'city') DISTRICTS.forEach(([t, x, y]) => { const q = P([x, y]); if (q[0] > 10 && q[0] < 290 && q[1] > 14 && q[1] < 286) mk('text', { class: 'dlab', x: q[0], y: q[1], 'text-anchor': 'middle' }, svg, t); });
+      else [[100, 30], [200, 60]].forEach(([r]) => mk('circle', { cx: P([0, 0])[0], cy: P([0, 0])[1], r, fill: 'none', stroke: 'rgba(255,255,255,.06)', 'stroke-dasharray': '2 6' }, svg));
+    }
+    m.segs.forEach((sg, i) => {
+      const d = poly(sg.p.map(P));
+      if (sg.m === 'walk') mk('path', { class: 'walk', d, pathLength: 1, style: `--i: ${i}` }, svg);
+      else mk('path', { class: `transit${sg.m === 'back' ? ' back' : ''}`, d, style: `--i: ${i}` }, svg);
+    });
+    (m.benches || []).forEach(([x, y]) => mk('rect', { x: x - 5, y: y - 2, width: 10, height: 4, rx: 1.5, fill: '#ffb35c', opacity: .85 }, svg));
+    m.pts.forEach(([x, y, t, k, at]) => {
+      const [px, py] = P([x, y]);
+      mk('circle', { class: 'pt', cx: px, cy: py, r: k === 'end' ? 6.5 : k === 'start' ? 5.5 : 4.5, fill: COL[k] || COL.stop, ...(k === 'end' ? { stroke: '#fffaf2' } : {}) }, svg);
+      if (!t) return;
+      const [dx, dy, anchor] = { r: [10, 4, 'start'], l: [-10, 4, 'end'], t: [0, -10, 'middle'], b: [0, 18, 'middle'] }[at || 'r'];
+      mk('text', { class: `pl${k === 'end' || k === 'start' ? ' hi' : ''}`, x: px + dx, y: py + dy, 'text-anchor': anchor }, svg, t);
+    });
+  }
+  document.querySelectorAll('.smap[data-map]').forEach(drawMap);
+
+  // ---- 2076: the skyline, one layer per year ----
+  const scene = document.querySelector('.scene');
+  const sv = scene.querySelector('svg');
+  let seed = 7; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let x = -10; x < 1120; x += 18 + rnd() * 16) mk('rect', { x, y: 208 - (40 + rnd() * 90), width: 14 + rnd() * 18, height: 300, fill: '#15161b' }, sv.querySelector('.far'));
+  [[330, 70, 46, 138], [388, 104, 36, 104], [436, 134, 64, 74], [512, 150, 88, 58], [626, 72, 74, 136], [180, 136, 90, 32]].forEach(([x, y, w, h]) => {
+    for (let wy = y + 8; wy < y + h - 8; wy += 9) for (let wx = x + 6; wx < x + w - 6; wx += 8) if (rnd() > .72) mk('rect', { x: wx, y: wy, width: 3, height: 4, fill: '#ffb35c', opacity: (.25 + rnd() * .45).toFixed(2) }, sv.querySelector('.win'));
+  });
+  for (let x = 780; x < 952; x += 12 + rnd() * 6) mk('circle', { cx: x, cy: 194 - rnd() * 6, r: 6 + rnd() * 4, fill: '#3f8f58', opacity: .9 }, sv.querySelector('.trees'));
+  const CAPS = ['Warszawa nocą. Kliknij przyszłość albo naciśnij dalej.',
+    '<b>Osobisty agent AI</b>Twój agent pyta nasz planer przez MCP, to działa już dziś. Potem muzeum, kawiarnia i tramwaj odpowiadają mu same.',
+    '<b>AR</b>Podnosisz telefon albo okulary, a historia budynku, godziny otwarcia i trasa pojawiają się na ulicy.',
+    '<b>Ładowarki EV</b>Kiko planuje ładowanie tam, gdzie i tak spędzasz pół godziny: w kawiarni albo w muzeum.',
+    '<b>Parking dla latających aut</b>Agent miasta przydziela lądowisko na dachu i godzinę, a ostatni kilometr idziesz pieszo, przez park.',
+    '<b>Teleportacja</b>Centrum → muzeum w 0 minut. A Kiko i tak zaproponuje spacer przez park, bo człowiek potrzebuje spaceru.'];
+  let year = -1;
+  function setYear(y) {
+    if (y === year) return; year = y;
+    scene.dataset.y = y;
+    scene.querySelectorAll('.years button').forEach(b => b.classList.toggle('on', +b.dataset.y === y));
+    document.querySelectorAll('.tl3 li').forEach(li => li.classList.toggle('on', +li.dataset.y <= y));
+    const yc = document.querySelector('.ycap'); if (yc) yc.innerHTML = pdf ? '<b>Przyszłość</b>Osobisty agent AI · AR · ładowarki EV · parking dla latających aut · teleportacja' : CAPS[y];
+    const ev = scene.querySelector('.ev');
+    if (y === 4) { if (pdf) { ev.querySelector('animateMotion')?.remove(); ev.setAttribute('transform', 'translate(663 52)'); } else { try { document.getElementById('evfly').beginElement(); } catch (e) {} } }
+  }
+  scene.querySelectorAll('.years button').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); step = +b.dataset.y; render(); }));
+
+  // ---- moods: one request, every mood; Kiko takes the mood's colour ----
+  const ms = document.querySelector('.s-moods');
+  let moodIdx = -1;
+  function setMood(i) {
+    if (!ms || i === moodIdx) return;
+    const pills = ms.querySelectorAll('.mpills button'); if (!pills.length) return;
+    moodIdx = i = Math.max(0, Math.min(i, pills.length - 1));
+    pills.forEach((b, k) => b.classList.toggle('on', k === i));
+    ms.querySelectorAll('.mview img').forEach((im, k) => im.classList.toggle('on', k === i));
+    const m = pills[i].style.getPropertyValue('--m');
+    ms.style.setProperty('--a', m);
+    ms.querySelector('.mcap').innerHTML = `<b>${pills[i].dataset.label}</b>${pills[i].dataset.cap}`;
+    paintTrail();
+  }
+  ms?.querySelectorAll('.mpills button').forEach((b, k) => b.addEventListener('click', e => { e.stopPropagation(); step = k; render(); }));
+
+  // ---- navigation ----
+  let cur = 0, step = 0, prevIdx = -1, startTime = null;
+  const fromHash = () => { const n = parseInt(location.hash.slice(1), 10); return n >= 1 && n <= total ? n - 1 : 0; };
+  cur = fromHash();
+  if (showAll) step = 99;
+
+  function paintTrail() {
+    const s = slides[cur];
+    trail.style.setProperty('--ta', getComputedStyle(s).getPropertyValue('--a').trim() || '#ffb35c');
+  }
+
+  function render() {
+    const changed = prevIdx !== cur;
+    slides.forEach((s, i) => {
+      const on = i === cur;
+      s.classList.toggle('active', on);
+      s.setAttribute('aria-hidden', on ? 'false' : 'true');
+      s.inert = !on;
+      if (changed) {
+        s.classList.remove('enter', 'leave');
+        if (on && prevIdx >= 0) { void s.offsetWidth; s.classList.add('enter'); }
+        if (i === prevIdx) { void s.offsetWidth; s.classList.add('leave'); setTimeout(() => s.classList.remove('leave'), 650); }
+      }
+    });
+    const s = slides[cur];
+    s.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('pending', +e.dataset.step > step));
+    if (changed) {
+      if (prevIdx >= 0) media(slides[prevIdx], false);
+      media(s, true);
+      countUp(s); type(s);
+      if (s.querySelector('.maz')) { maz.classList.remove('go'); void maz.offsetWidth; maz.classList.add('go'); }
+    }
+    if (s.contains(scene)) setYear(Math.min(step, pdf ? 4 : 5));
+    if (ms && s === ms) setMood(step);
+    // the route walks to this slide's stop
+    const p = at(cur);
+    walker.style.transform = `translate(${p.x}px, ${p.y}px)`;
+    done.style.strokeDashoffset = String(1 - cur / (total - 1));
+    stopsG.querySelectorAll('.stop').forEach((c, i) => c.classList.toggle('past', i <= cur));
+    paintTrail();
+    document.getElementById('notesMeta').textContent = `${pad(cur + 1)} / ${pad(total)} · ${s.dataset.title}${cur < total - 1 ? ' → ' + slides[cur + 1].dataset.title : ''}`;
+    document.getElementById('notesText').textContent = s.querySelector('.notes')?.textContent ?? '';
+    document.querySelectorAll('#menuList button').forEach((b, i) => b.classList.toggle('on', i === cur));
+    prevIdx = cur;
+    try { history.replaceState(null, '', `${location.search}#${cur + 1}`); } catch (e) { /* sandboxed */ }
+  }
+  function next() { if (!startTime) startTime = Date.now(); if (step < maxStep(slides[cur])) step++; else if (cur < total - 1) { cur++; step = showAll ? 99 : 0; } render(); }
+  function prev() { if (step > 0 && !showAll) step--; else if (cur > 0) { cur--; step = showAll ? 99 : maxStep(slides[cur]); } render(); }
+  function go(i) { cur = Math.max(0, Math.min(total - 1, i)); step = showAll ? 99 : 0; closeMenu(); render(); }
+
+  // ---- menu, notes, fullscreen ----
+  const list = document.getElementById('menuList');
+  slides.forEach((s, i) => { const li = document.createElement('li'); li.innerHTML = `<button><span>${pad(i + 1)}</span>${s.dataset.title}</button>`; li.firstChild.addEventListener('click', e => { e.stopPropagation(); go(i); }); list.append(li); });
+  const openMenu = () => document.body.classList.add('show-menu');
+  const closeMenu = () => document.body.classList.remove('show-menu');
+  document.getElementById('menu').addEventListener('click', e => { if (e.target.id === 'menu') closeMenu(); });
+  document.getElementById('menuBtn').addEventListener('click', openMenu);
+  stage.querySelectorAll('.pg').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openMenu(); }));
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); go(slides.indexOf(document.getElementById(b.dataset.go))); }));
+  const notesBtn = document.getElementById('notesBtn');
+  const toggleNotes = () => { const on = document.body.classList.toggle('show-notes'); notesBtn.setAttribute('aria-pressed', String(on)); };
+  notesBtn.addEventListener('click', toggleNotes);
+  setInterval(() => { if (!startTime) return; const t = Math.floor((Date.now() - startTime) / 1000); document.getElementById('timer').textContent = `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }, 500);
+  const fs = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {} };
+  document.getElementById('fsBtn').addEventListener('click', fs);
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+
+  addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const k = e.key;
+    if (document.body.classList.contains('show-menu') && k === 'Escape') return closeMenu();
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(k)) { if (k === 'Enter' && e.target.closest('button, [tabindex]')) return; e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); prev(); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(total - 1);
+    else if (k === 'n' || k === 'N') toggleNotes();
+    else if (k === 'f' || k === 'F') fs();
+    else if (k === 'm' || k === 'M' || k === 'Escape') document.body.classList.toggle('show-menu');
+  });
+  let tx = null;
+  addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) (dx < 0 ? next : prev)(); tx = null; });
+  stage.addEventListener('click', e => { if (!e.target.closest('a, button, [data-interactive], .town')) next(); });
+  addEventListener('hashchange', () => { const i = fromHash(); if (i !== cur) go(i); });
+
+  // Final values up front, so the PDF and slides seen out of order show them; entering a slide replays them.
+  document.querySelectorAll('.num[data-to]').forEach(el => { el.textContent = fmt(+el.dataset.to); });
+  document.querySelectorAll('.typed').forEach(el => { el.textContent = el.dataset.text; });
+  showTab(0);
+  render();
+})();
+</script>
+</body>
+</html>
