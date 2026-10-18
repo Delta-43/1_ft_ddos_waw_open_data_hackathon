@@ -1,6 +1,6 @@
 # Module ownership
 
-Shared business logic. REST and MCP both call these services.
+Delta owns shared business logic here. REST and MCP should both call these services.
 
 ## Predefined outings (tracks.py)
 
@@ -73,6 +73,6 @@ arrival is used to filter the pool, so a later stop can still be flagged closed.
 - `GET /api/tracks` lists them.
 - `POST /api/tracks/run {"query": "...", "track_id": null}` makes **one** model call that returns only a track id (enum schema) and a short reason, then runs the track through `planner.plan(..., use_model=False)` as an explicit itinerary. `track_id` skips the model.
 - Fallbacks: unknown id or model failure picks by keywords (English and Polish), then the first track. `track.picked_by` says `user`, `model` or `keywords`.
-- The response is a normal routes response plus a `track` object. `contracts/api.schema.json` does not list `track` yet; add it before the frontend depends on it.
+- The response is a normal routes response plus a `track` object. `contracts/api.schema.json` does not list `track` yet; add it with Delta and Alban's sign-off before the frontend depends on it.
 - Geometry for all six tracks is in `data/fixtures/osrm-cache` (`python -m app.services.demo_cache` refreshes it), so `ROUTING_SOURCE=cache` serves street geometry offline.
 - `GET /api/health` reports `capabilities.simulated_tracks`.

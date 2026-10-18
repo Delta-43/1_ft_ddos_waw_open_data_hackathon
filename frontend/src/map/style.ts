@@ -2,7 +2,7 @@ import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl';
 import { TILES } from './config';
 
 /**
- * Every colour used by the map, after a dark city reference image.
+ * Every colour used by the map: Delta's dark reference (docs/design-review/map-reference-dark.png).
  * Flat dark-grey ground and water, dark-grey blocks lit softly from above, and streets as thin
  * amber lines with a glow. The glow runs well below the reference so a selected route leads.
  * Tweak these to restyle the whole map; the layers below only reference the palette.
@@ -19,10 +19,10 @@ export const palette = {
   rail: '#4a4640',
   district: '#3a3b40',
   neighbourhood: '#2c2d31',
-  buildingLow: '#1d1e22',
-  buildingHigh: '#2c2e34',
+  buildingLow: '#1e1e21',
+  buildingHigh: '#2e2e32',
   // Slightly lighter roof slab: the "soft top light" of the reference.
-  buildingRoof: '#3b3d45',
+  buildingRoof: '#3d3d42',
   buildingRim: '#0b0b0c',
   // Warm, near-white: MapLibre adds (1 - light colour) as ambient light.
   light: '#fff4e8',

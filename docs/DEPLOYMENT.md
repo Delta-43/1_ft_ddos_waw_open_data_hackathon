@@ -1,6 +1,6 @@
 # Container stack
 
-Any machine with Docker can host the app. Viewers need only a browser and the link.
+Delta runs this on shared hosts (silver-storm now, delta-server for the demo). Teammates do not need Docker: they use the URL Delta supplies.
 
 One image (`Dockerfile`) serves both processes. `compose.yaml` starts them:
 
@@ -44,8 +44,11 @@ docker compose --profile mcp up -d --build   # update after `git pull`
 - The frontend runs in the `web` container (`frontend/Dockerfile`): an unprivileged nginx serves the built app with gzip and forwards `/api` to `api`. For the live demo on any team machine, see `docs/DEMO.md`.
 - Full Warsaw open-data caches (`data/local/warsaw_open_data_raw.json`) are not in the image. To use them, copy the file into the volume. Without it the layers serve the committed 8-feature samples.
 
-## Verified
+## Verified and not verified
 
-On 18 October 2026 the full stack (`web`, `api`, `mcp`) was built and run with `docker compose` on a Linux host;
-the page, `/api` through nginx, gzip, fonts and a model-picked outing answered from another machine on the same
-private network. The backend image also served all six outings with no network at all (`ROUTING_SOURCE=cache`).
+18 October 2026: the full stack (`web`, `api`, `mcp`) was built and run on silver-storm with `docker compose`; the page, `/api` through nginx, gzip, fonts and a model-picked outing answered from another tailnet machine. The backend image also served all six outings with no network at all (`ROUTING_SOURCE=cache`).
+
+Earlier note:
+
+Verified: `docker compose config` accepts the files, and the app plus MCP start and answer from a directory that contains only `backend/app` and `data/fixtures` (the same layout as the image), with an empty writable `data/local`.
+Not verified: `docker build` and `docker compose up`. The author's account cannot reach the Docker daemon on silver-storm, so the first build on a host with Docker access is the real test. Fix anything it finds before relying on it.

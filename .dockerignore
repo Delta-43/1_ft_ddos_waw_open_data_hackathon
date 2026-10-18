@@ -6,11 +6,12 @@
 !.env.example
 node_modules
 frontend
+mockups
 tests
+team
 docs
 data/local
 **/__pycache__
 .pytest_cache
 .ruff_cache
 backend/tests
-

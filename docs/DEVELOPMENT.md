@@ -50,7 +50,7 @@ pnpm dev                              # http://127.0.0.1:5173, /api is proxied t
 
 To use another backend: `API_PROXY_TARGET=http://HOST:8000 pnpm dev` (PowerShell:
 `$env:API_PROXY_TARGET="http://HOST:8000"; pnpm dev`). Browser code always uses relative `/api` URLs.
-To reach the dev server by another host name, list it in `DEV_ALLOWED_HOSTS` (comma-separated); never set `allowedHosts` to true.
+The dev server keeps an explicit host allow-list in `vite.config.ts`; never set `allowedHosts` to true.
 
 URL options:
 

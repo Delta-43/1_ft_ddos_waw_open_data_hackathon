@@ -1,3 +1,5 @@
+import { getLang } from '../i18n/language';
+import { localise, type Localised } from '../i18n/localised';
 import { CONTRACT_VERSION, type Place, type Route, type RouteResponse } from './contract';
 
 /**
@@ -9,9 +11,9 @@ export const MOCK_ROUTES_ENABLED = new URLSearchParams(window.location.search).h
 
 const SOURCE_ID = 'mock-demo';
 
-const place = (id: string, name: string, longitude: number, latitude: number, category: Place['category']): Place => ({
+const place = (id: string, name: Localised, longitude: number, latitude: number, category: Place['category']): Place => ({
   id: `mock:${id}`,
-  name,
+  name: localise(name, getLang()),
   longitude,
   latitude,
   category,
@@ -19,15 +21,15 @@ const place = (id: string, name: string, longitude: number, latitude: number, ca
   source_id: SOURCE_ID,
 });
 
-function route(id: string, rank: number, name: string, explanation: string, places: Place[], metrics: [number, number, number, number]): Route {
+function route(id: string, rank: number, name: Localised, explanation: Localised, places: Place[], metrics: [number, number, number, number]): Route {
   const [distance, duration, green, quiet] = metrics; // distance ≈ straight-line length
   return {
     id,
-    name,
+    name: localise(name, getLang()),
     rank,
     recommended: rank === 1,
     travel_mode: 'walk',
-    explanation,
+    explanation: localise(explanation, getLang()),
     geometry: { type: 'LineString', coordinates: places.map(stop => [stop.longitude, stop.latitude]) },
     geometry_kind: 'straight_line',
     metrics: {
@@ -43,30 +45,31 @@ function route(id: string, rank: number, name: string, explanation: string, plac
 
 /**
  * Every mock route starts here, so the three candidates are comparable.
- * The live backend follows the same rule: the start comes
+ * Requirement for the live backend (Ola, 2026-10-18, needs Delta's agreement): the start comes
  * from the user's prompt (`preferences.start`) and is the same for every candidate route. If the
  * user also names an end point (`destination_place_id`), every candidate ends there too; only
  * the way between them may differ.
  */
 const START = place('start', 'Start: Rondo de Gaulle’a', 21.0222, 52.2318, 'generic');
 
-const ROUTES: Route[] = [
-  route('mock-a', 1, 'Quiet park walk', 'Mock: through Ujazdów and Łazienki parks, away from main roads.', [
+/** Built on each request, so names and notes are in the language chosen at the time. */
+const routes = (): Route[] => [
+  route('mock-a', 1, { en: 'Quiet park walk', pl: 'Cichy spacer przez parki' }, { en: 'Mock: through Ujazdów and Łazienki parks, away from main roads.', pl: 'Makieta: przez Park Ujazdowski i Łazienki, z dala od głównych ulic.' }, [
     START,
-    place('national-museum', 'National Museum', 21.0247, 52.2317, 'museum'),
-    place('ujazdow', 'Ujazdów Castle', 21.0316, 52.2185, 'museum'),
-    place('lazienki', 'Łazienki Park', 21.0355, 52.215, 'park'),
+    place('national-museum', { en: 'National Museum', pl: 'Muzeum Narodowe' }, 21.0247, 52.2317, 'museum'),
+    place('ujazdow', { en: 'Ujazdów Castle', pl: 'Zamek Ujazdowski' }, 21.0316, 52.2185, 'museum'),
+    place('lazienki', { en: 'Łazienki Park', pl: 'Łazienki Królewskie' }, 21.0355, 52.215, 'park'),
   ], [2200, 1800, 0.7, 0.9]),
-  route('mock-b', 2, 'Riverside greenery', 'Mock: down to the Vistula boulevards, the greenest stretch.', [
+  route('mock-b', 2, { en: 'Riverside greenery', pl: 'Zieleń nad Wisłą' }, { en: 'Mock: down to the Vistula boulevards, the greenest stretch.', pl: 'Makieta: w dół na bulwary wiślane, najbardziej zielony odcinek.' }, [
     START,
-    place('chopin', 'Chopin Museum', 21.0236, 52.2365, 'museum'),
-    place('copernicus', 'Copernicus Science Centre', 21.0286, 52.2419, 'museum'),
-    place('vistula', 'Vistula Boulevards', 21.0225, 52.2465, 'park'),
+    place('chopin', { en: 'Chopin Museum', pl: 'Muzeum Fryderyka Chopina' }, 21.0236, 52.2365, 'museum'),
+    place('copernicus', { en: 'Copernicus Science Centre', pl: 'Centrum Nauki Kopernik' }, 21.0286, 52.2419, 'museum'),
+    place('vistula', { en: 'Vistula Boulevards', pl: 'Bulwary Wiślane' }, 21.0225, 52.2465, 'park'),
   ], [1900, 1560, 0.9, 0.6]),
-  route('mock-c', 3, 'Short Saxon Garden hop', 'Mock: the shortest walk, but along busier streets.', [
+  route('mock-c', 3, { en: 'Short Saxon Garden hop', pl: 'Krótki skok do Ogrodu Saskiego' }, { en: 'Mock: the shortest walk, but along busier streets.', pl: 'Makieta: najkrótszy spacer, ale ruchliwszymi ulicami.' }, [
     START,
-    place('zacheta', 'Zachęta Gallery', 21.0117, 52.239, 'museum'),
-    place('saxon-garden', 'Saxon Garden', 21.0085, 52.24, 'park'),
+    place('zacheta', { en: 'Zachęta Gallery', pl: 'Zachęta – Narodowa Galeria Sztuki' }, 21.0117, 52.239, 'museum'),
+    place('saxon-garden', { en: 'Saxon Garden', pl: 'Ogród Saski' }, 21.0085, 52.24, 'park'),
   ], [1300, 1080, 0.5, 0.3]),
 ];
 
@@ -76,11 +79,11 @@ export function mockRoutes(signal?: AbortSignal): Promise<RouteResponse> {
     const timer = window.setTimeout(() => resolve({
       contract_version: CONTRACT_VERSION,
       mode: 'mock',
-      notice: 'MOCK DATA for the route switch demo: made-up scores and straight lines, not walking directions.',
+      notice: localise({ en: 'MOCK DATA for the route switch demo: made-up scores and straight lines, not walking directions.', pl: 'DANE TESTOWE do demo przełączania tras: zmyślone oceny i linie proste, a nie wskazówki dojścia.' }, getLang()),
       generated_at: new Date().toISOString(),
       preferences: { interests: ['museums'], travel_mode: 'walk', max_duration_s: 3600, priorities: { quiet: 0.7, green: 0.7 }, interpreted_by: 'fixture' },
-      routes: ROUTES,
-      sources: [{ id: SOURCE_ID, name: 'Mock route switch demo', mode: 'simulated', attribution: 'Made-up demo data' }],
+      routes: routes(),
+      sources: [{ id: SOURCE_ID, name: localise({ en: 'Mock route switch demo', pl: 'Testowe demo przełączania tras' }, getLang()), mode: 'simulated', attribution: localise({ en: 'Made-up demo data', pl: 'Zmyślone dane demo' }, getLang()) }],
       applied_itinerary: null,
     }), 600);
     signal?.addEventListener('abort', () => {

@@ -14,7 +14,7 @@ interface PlacePopupProps {
 }
 
 /**
- * The place card as a pop-up above its marker.
+ * The place card as a pop-up above its numbered marker (IDEA.md: "pop-up cards above locations").
  * MapLibre owns the pop-up's position; React renders the card into it through a portal.
  */
 export function PlacePopup({ map, route, placeId, sources, onClose }: PlacePopupProps) {

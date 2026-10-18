@@ -20,10 +20,10 @@ Built in 24 hours for the Warsaw Open Data Hackathon 2026 (Challenge 1: Warsaw 2
 - **Switch the mood.** Calmer, Faster, Relaxing, Curious, Artsy, By bike, or **Bus + groceries**: a car-free
   example that uses only buses and trams from today's timetable, with a grocery stop on the way.
 - **A quiet map that lights up your way.** A dark city with amber streets. Along the route, and only there:
-  3D buildings, parks with trees, culture and history in violet. Hover a violet building for its name, age and a
+  3D buildings, parks with trees, culture and history in clay orange. Hover a clay-orange building for its name, age and a
   short Wikipedia summary.
 - **What is on the way.** Public transport stops, with buses and trams heading your way moving by their
-  timetable; toilets and defibrillators on request; events, offers and tickets as small blue flags.
+  timetable; toilets and defibrillators on request; events, offers and tickets as small dark flags.
 - **Have your say.** A yellow button collects reports about missing benches, water, toilets or safer crossings.
   Your reports stay in your browser.
 - **English and Polish**, on a computer or a phone. An AI agent can use the same planner through MCP.
@@ -106,12 +106,11 @@ Urząd m.st. Warszawy (CC BY); fonts under the SIL Open Font License. Full list:
 The backend stores no profiles, preferences or trip history; each request stands alone. Requests are not logged.
 Reports and the language choice stay in the visitor's browser.
 
-## Roadmap
+<!-- team-only:start -->
+## Team and process
 
-City announcements that answer residents' reports; heritage cards everywhere; live vehicle positions;
-free itineraries with ordered stops (the backend already supports them); accessibility and cool-route modes;
-personal context shared per request with a short-lived scoped token, never stored.
-
-## Team
-
-Built by Delta, Sonia, Alban, Ola and Aryna at the Warsaw Open Data Hackathon 2026, 42 Warsaw.
+Delta (backend, integration, pitch), Sonia (data), Alban (map, presentation), Ola (forms, states), Aryna (place
+cards, labels). Process documents: [AGENTS.md](AGENTS.md), [PLAN.md](PLAN.md), [docs/DECISIONS.md](docs/DECISIONS.md),
+[docs/GITHUB.md](docs/GITHUB.md), [docs/PITCH.md](docs/PITCH.md), [docs/Build_State_For_Pitch.md](docs/Build_State_For_Pitch.md).
+Tasks are GitHub issues. The concept and roadmap are in [IDEA.md](IDEA.md).
+<!-- team-only:end -->

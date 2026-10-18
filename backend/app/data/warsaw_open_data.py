@@ -6,7 +6,8 @@ key. Every dataset resource does: POST to /api/action/<endpoint> with a raw
 .env as DANE_WWA_API_KEY and is never committed or logged.
 
 Of the 23 catalogued datasets, five fit a quiet/green museum-and-park outing
-and cover places and city data (not routing or transit): air quality (environmental score input), AED locations,
+and stay inside Sonia's place/data ownership (not routing or transit, which
+are Delta's): air quality (environmental score input), AED locations,
 public toilets, the cultural events calendar, and open sports fields. See
 docs/DATA.md for the full 23-dataset catalogue, including datasets
 intentionally not fetched here.

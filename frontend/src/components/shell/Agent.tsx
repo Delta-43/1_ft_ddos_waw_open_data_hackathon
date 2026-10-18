@@ -9,12 +9,17 @@ import { formatDistance, formatDuration } from '../places/format';
 import { DataModeBadge } from '../provenance/DataModeBadge';
 import { SourceLabel } from '../provenance/SourceLabel';
 import { SourcesDrawer } from '../provenance/SourcesDrawer';
-import { useT } from '../../i18n/useT';
+import { localTrack } from '../../i18n/tracks';
+import { useLang, useT } from '../../i18n/useT';
 import type { Key } from '../../i18n/translations';
 import { MOODS, SUGGESTIONS, moodForTrack } from './moods';
 import { Orb } from './Orb';
 
 export type AgentPhase = 'home' | 'compose' | 'result';
+
+/** Backend route names the frontend knows by id, so they follow the language; others arrive in English. */
+const ROUTE_NAMES: Record<string, Key> = { 'itinerary-direct': 'routeItineraryDirect', 'itinerary-via-park': 'routeItineraryViaPark' };
+const routeName = (route: Route, t: ReturnType<typeof useT>) => (ROUTE_NAMES[route.id] ? t(ROUTE_NAMES[route.id]) : route.name);
 
 interface AgentProps {
   phase: AgentPhase;
@@ -191,10 +196,11 @@ interface TripProps extends AgentProps {
 
 function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, aiTrackId, selectedRouteId, selectedPlaceId, sourcesOpen, amenities, amenityCounts, ...actions }: TripProps) {
   const t = useT();
+  const lang = useLang();
   const [details, setDetails] = useState(false);
   const [tweak, setTweak] = useState('');
   const route = result.routes.find(candidate => candidate.id === selectedRouteId) ?? result.routes[0];
-  const track = result.track;
+  const track = localTrack(result.track, lang);
   const activeMood = moodForTrack(track?.id);
 
   if (!route) {
@@ -207,9 +213,9 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
 
   if (minimised) {
     return (
-      <button type="button" className="trip-pill" onClick={() => onMinimise(false)} aria-label={t('shellShowTrip', { title: track?.title ?? route.name })}>
+      <button type="button" className="trip-pill" onClick={() => onMinimise(false)} aria-label={t('shellShowTrip', { title: track?.title ?? routeName(route, t) })}>
         <Orb state={orbState} accent={accent} />
-        <span className="trip-pill__text">{track?.title ?? route.name}</span>
+        <span className="trip-pill__text">{track?.title ?? routeName(route, t)}</span>
         <span className="trip-pill__meta">{formatDuration(route.metrics.duration_s.value)}</span>
       </button>
     );
@@ -233,7 +239,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
   return (
     <div className="trip" aria-busy={busy}>
       <TripHeader
-        title={legs ? t('transitTitle', { place: route.name }) : track?.title ?? route.name}
+        title={legs ? t('transitTitle', { place: routeName(route, t) }) : track?.title ?? routeName(route, t)}
         sub={legs ? t('transitSub', { depart: result.depart ?? '', arrive: result.arrive ?? '' }) : track?.reason && track.picked_by === 'model' ? track.reason : track?.summary}
         tag={legs ? t('transitExampleTag') : pickedBy}
         orbState={orbState}
@@ -421,7 +427,7 @@ function RoutePicker({ routes, selectedId, onSelect }: { routes: Route[]; select
           onClick={() => onSelect(route.id)}
         >
           <span className="route-picker__letter" aria-hidden="true">{routeLetter(ranked, route.id)}</span>
-          <span className="route-picker__name">{route.name}</span>
+          <span className="route-picker__name">{routeName(route, t)}</span>
           <span className="route-picker__meta">{formatDuration(route.metrics.duration_s.value)}</span>
         </button>
       ))}

@@ -1,3 +1,3 @@
 # Module ownership
 
-Normalisation and data access for city data. Keep generated databases in data/local.
+Sonia owns normalisation and data access here, reviewed by Delta. Keep generated databases in data/local.

@@ -19,7 +19,7 @@ enum (museum, landmark, park, generic — "matches the frontend pin icons").
   on historic ground). Not hand-curated further; see docs/DATA.md.
 - OSM "gallery"/"artwork"/"attraction"/"information" -> "generic" rather
   than stretched into "museum" or "landmark" without the contract owners
-  agreeing to a wider enum.
+  (Delta+Alban) agreeing to a wider enum.
 """
 import json
 from datetime import datetime, timezone

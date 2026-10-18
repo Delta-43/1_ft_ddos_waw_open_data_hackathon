@@ -5,5 +5,5 @@ The shell (`shell/`) is the app's layout since the "Find YOUR way" rebuild: titl
 Agreed folders, so names do not collide:
 
 - `shell/`: `TitleBar`, `Agent` (orb, prompt and trip panel), `Orb`, `Reports`, moods.
-- `places/`: `PlaceCard`, `PlacePopup`.
-- `provenance/`: `DataModeBadge`, `SourceLabel`, `SourcesStrip`, `SourcesDrawer` (DATA-08). Use `SourceLabel` with `sourceFor(sources, id)` from `src/api/contract.ts` to label any metric or place.
+- `places/` (Aryna): `PlaceCard`, `PlacePopup`.
+- `provenance/` (Aryna): `DataModeBadge`, `SourceLabel`, `SourcesStrip`, `SourcesDrawer` (DATA-08). Use `SourceLabel` with `sourceFor(sources, id)` from `src/api/contract.ts` to label any metric or place.

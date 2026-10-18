@@ -1,6 +1,6 @@
 # Module ownership
 
-External routing, AI and MCP adapters. Keep provider credentials server-side.
+Delta owns external routing, AI, and MCP adapters. Keep provider credentials server-side.
 
 ## Language models (AI-01)
 

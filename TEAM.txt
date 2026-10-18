@@ -1,0 +1,10 @@
+Project name: Find YOUR way
+Team name: ft_ddos
+Team number: 2
+
+Team members:
+- Debadeep Chaudhury
+- Sonya Milch
+- Aryna Bobryk
+- Aleksandra Kacsperek
+- Alban Biliette

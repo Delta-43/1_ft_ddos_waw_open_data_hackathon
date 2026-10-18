@@ -4,7 +4,7 @@ import type { RouteColour } from './routeColours';
 import { BUILDING_MINZOOM, BUILDING_SOURCE } from './style';
 
 /**
- * Route focus (the fallback when the corridor cache does not cover a route): while a route is selected, only the
+ * Route focus, after Delta's mockup (mockups/warsaw-2076): while a route is selected, only the
  * buildings in a corridor around it stay 3D, tinted in the route's colour; every other building
  * sinks to a dark flat footprint and a veil mutes the rest of the map.
  * Buildings are marked with feature-state in short slices when the map settles, so panning

@@ -1,6 +1,6 @@
 /**
  * Types for API contract 1.0 (contracts/api.schema.json). Keep in sync with the schema;
- * change both in the same pull request.
+ * change both in the same PR, approved by Delta and Alban.
  * Coordinates are [longitude, latitude]; distances in metres; durations in seconds.
  */
 export const CONTRACT_VERSION = '1.0';
