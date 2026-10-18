@@ -12,6 +12,7 @@ import { initRouteFocus } from './routeFocus';
 import { initTransit, showTransit } from './transit';
 import { fitRoute, holdOnRoute, onStopClick, showRoutes } from './routes';
 import { showFlags } from './flags';
+import { showAmenities, type AmenityKind } from './amenities';
 import { useLang } from '../i18n/useT';
 
 interface MapViewProps {
@@ -35,13 +36,15 @@ interface MapViewProps {
   fitKey?: string;
   /** The trip view: the camera stays on the route, and offers and events show along it. */
   explore?: boolean;
+  /** Toilets and defibrillators to show near the route (trip view only). */
+  amenities?: Set<AmenityKind>;
 }
 
 // Stable default, so the route effects don't rerun (and refit the camera) on every render.
 const NO_ROUTES: Route[] = [];
 
 /** Thin React wrapper: the map itself lives in framework-free modules. */
-export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent, fitKey, explore = false }: MapViewProps) {
+export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroStart, onIntroDone, onMapReady, onStopClick: onStop, locate = true, accent, fitKey, explore = false, amenities }: MapViewProps) {
   const lang = useLang();
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -98,6 +101,12 @@ export function MapView({ routes = NO_ROUTES, selectedRouteId, padding, onIntroS
     showCorridor(map, selected, selected && (accent ? accentColour(accent) : routeColour(routes, selected.id)));
     showTransit(map, selected);
   }, [routes, selectedRouteId, accent]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    showAmenities(map, explore ? routes.find(route => route.id === selectedRouteId) : undefined, amenities ?? new Set());
+  }, [routes, selectedRouteId, explore, amenities, lang]);
 
   // Offer and event flags along the route, rebuilt in the current language.
   useEffect(() => {

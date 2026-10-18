@@ -1,4 +1,6 @@
-import type { ExpressionSpecification, GeoJSONSource, Map } from 'maplibre-gl';
+import { Popup, type ExpressionSpecification, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
+import { getLang } from '../i18n/language';
+import { translate, type Key } from '../i18n/translations';
 import type { Route } from '../api/contract';
 import type { RouteColour } from './routeColours';
 import { focusRoute } from './routeFocus';
@@ -24,33 +26,35 @@ const GREEN_FILL = '#1d3a26';
 const GREEN_EDGE = '#3f9a5f';
 const TREE = '#3f8f58';
 
-type Point = [number, number];
-interface CacheFeature {
+export type Point = [number, number];
+export interface CacheFeature {
   type: 'Feature';
-  properties: { k: 'b' | 'g' | 't'; h?: number; mh?: number; est?: boolean; c?: boolean };
+  /** k: b building, g green space, t tree, a amenity (toilets or AED), s shop. */
+  properties: { k: 'b' | 'g' | 't' | 'a' | 's'; h?: number; mh?: number; est?: boolean; c?: boolean; [key: string]: unknown };
   geometry: { type: 'Polygon'; coordinates: Point[][] } | { type: 'Point'; coordinates: Point };
 }
-interface Cache { bbox: [number, number, number, number]; features: CacheFeature[] }
+export interface Cache { bbox: [number, number, number, number]; features: CacheFeature[] }
 
 const M_PER_DEG_LAT = 110_540;
 const M_PER_DEG_LNG = 111_320 * Math.cos((52.22 * Math.PI) / 180);
-const toMetres = ([lng, lat]: Point): Point => [lng * M_PER_DEG_LNG, lat * M_PER_DEG_LAT];
+export const toMetres = ([lng, lat]: Point): Point => [lng * M_PER_DEG_LNG, lat * M_PER_DEG_LAT];
 
 let cache: Promise<Cache | null> | undefined;
-function loadCache(): Promise<Cache | null> {
+/** The cached OSM extract, fetched once and shared (also by amenities.ts). */
+export function loadCache(): Promise<Cache | null> {
   cache ??= fetch(CACHE_URL)
     .then(response => (response.ok ? (response.json() as Promise<Cache>) : null))
     .catch(() => null);
   return cache;
 }
 
-type Segment = [number, number, number, number];
-function segmentsOf(route: Route): Segment[] {
+export type Segment = [number, number, number, number];
+export function segmentsOf(route: Route): Segment[] {
   const points = route.geometry.coordinates.map(toMetres);
   return points.slice(1).map((point, i) => [points[i][0], points[i][1], point[0], point[1]]);
 }
 
-function near([x, y]: Point, segments: Segment[], limit: number): boolean {
+export function near([x, y]: Point, segments: Segment[], limit: number): boolean {
   for (const [ax, ay, bx, by] of segments) {
     // Cheap box test first: most segments are far away.
     if (x < Math.min(ax, bx) - limit || x > Math.max(ax, bx) + limit || y < Math.min(ay, by) - limit || y > Math.max(ay, by) + limit) continue;
@@ -102,10 +106,89 @@ function covers(bbox: Cache['bbox'], route: Route): boolean {
 
 const empty = () => ({ type: 'FeatureCollection' as const, features: [] });
 
+// ---------- Culture buildings: a card on hover (tap on touch screens) ----------
+const KIND_KEYS: Record<string, Key> = {
+  museum: 'cultureMuseum', gallery: 'cultureGallery', attraction: 'cultureAttraction', theatre: 'cultureTheatre',
+  'place of worship': 'cultureWorship', 'arts centre': 'cultureArts', library: 'cultureLibrary', castle: 'cultureCastle',
+  palace: 'culturePalace', monument: 'cultureMonument', church: 'cultureChurch', cathedral: 'cultureChurch', chapel: 'cultureChurch',
+  manor: 'cultureManor', fort: 'cultureFort', 'city gate': 'cultureGate', ruins: 'cultureRuins', tower: 'cultureTower', synagogue: 'cultureSynagogue',
+};
+
+function cultureCard(props: Record<string, unknown>): HTMLElement | null {
+  const lang = getLang();
+  const t = (key: Key, vars?: Record<string, string | number>) => translate(lang, key, vars);
+  const text = (key: string) => (typeof props[key] === 'string' ? (props[key] as string) : undefined);
+  const name = (lang === 'pl' ? text('npl') : text('n')) ?? text('n') ?? text('npl');
+  if (!name) return null;
+  const root = document.createElement('div');
+  root.className = 'culture-card';
+  const title = document.createElement('p');
+  title.className = 'culture-card__title';
+  title.textContent = name;
+  root.append(title);
+  const facts = [
+    text('ck') && KIND_KEYS[text('ck')!] ? t(KIND_KEYS[text('ck')!]) : text('ck'),
+    text('sd') ? t('cultureSince', { year: text('sd')! }) : undefined,
+    text('arch') ? t('cultureArchitect', { name: text('arch')! }) : undefined,
+  ].filter(Boolean);
+  if (facts.length) {
+    const line = document.createElement('p');
+    line.className = 'culture-card__facts';
+    line.textContent = facts.join(' · ');
+    root.append(line);
+  }
+  if (props.her === true || props.her === 'true') {
+    const badge = document.createElement('span');
+    badge.className = 'culture-card__badge';
+    badge.textContent = t('cultureHeritage');
+    root.append(badge);
+  }
+  // The summary in the interface language when Wikipedia has it, otherwise the other one.
+  const own = lang === 'pl' ? 'pl' : 'en';
+  const other = own === 'pl' ? 'en' : 'pl';
+  const summaryLang = text(`s${own}`) ? own : text(`s${other}`) ? other : null;
+  if (summaryLang) {
+    const summary = document.createElement('p');
+    summary.className = 'culture-card__summary';
+    summary.textContent = text(`s${summaryLang}`)!;
+    root.append(summary);
+  }
+  const source = document.createElement('p');
+  source.className = 'culture-card__source';
+  source.textContent = summaryLang ? t('cultureSourceWiki') : t('cultureSourceOsm');
+  root.append(source);
+  return root;
+}
+
+function initCultureCards(map: Map): void {
+  const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 12, className: 'culture-popup', maxWidth: '19rem' });
+  let shown: unknown;
+  const show = (event: MapLayerMouseEvent) => {
+    const feature = event.features?.find(f => f.properties?.c === true || f.properties?.c === 'true');
+    if (!feature) return hide();
+    map.getCanvas().style.cursor = 'help';
+    if (shown === feature.id && popup.isOpen()) return popup.setLngLat(event.lngLat), undefined;
+    const card = cultureCard(feature.properties ?? {});
+    if (!card) return hide();
+    shown = feature.id;
+    popup.setLngLat(event.lngLat).setDOMContent(card).addTo(map);
+  };
+  const hide = () => {
+    shown = undefined;
+    map.getCanvas().style.cursor = '';
+    popup.remove();
+  };
+  map.on('mousemove', 'corridor-3d', show);
+  map.on('mouseleave', 'corridor-3d', hide);
+  // Touch screens have no hover: a tap opens the card, a tap elsewhere closes it.
+  map.on('click', 'corridor-3d', show);
+  map.on('movestart', hide);
+}
+
 /** Adds the corridor layers once, under the route lines. Call after the style loads. */
 export function initCorridor(map: Map): void {
   void loadCache();
-  map.addSource(SOURCE, { type: 'geojson', data: empty() });
+  map.addSource(SOURCE, { type: 'geojson', data: empty(), generateId: true });
   map.addSource(TREE_SOURCE, { type: 'geojson', data: empty() });
   const isKind = (kind: string): ExpressionSpecification => ['==', ['get', 'k'], kind];
   const groundLayer = ['road-glow', 'road-minor'].find(id => map.getLayer(id));
@@ -158,6 +241,7 @@ export function initCorridor(map: Map): void {
       'fill-extrusion-height': ['+', ['get', 'h'], 0.5],
     },
   }, above);
+  initCultureCards(map);
 }
 
 function setCity3d(map: Map, visible: boolean): void {

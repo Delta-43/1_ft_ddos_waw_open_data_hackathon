@@ -945,7 +945,6 @@
 .shell--trip .maplibregl-ctrl-top-right { right: calc(var(--dock) + 32px); }
 .shell .maplibregl-ctrl-group { border: 1px solid var(--hair); border-radius: 12px; background: rgba(16, 16, 19, 0.92); overflow: hidden; }
 .shell--home .stop-marker { pointer-events: none; }
-.shell .historical-attribution { bottom: calc(60px + env(safe-area-inset-bottom)); left: 76px; }
 
 /* Stops on the map are lit circles without numbers; the panel lists them in order. */
 .shell .stop-marker__badge {
@@ -1104,3 +1103,103 @@
 .report-kind,
 .tweak__input,
 .compose__input { line-height: 1.6; }
+
+/* ---------- Nearby: toilets and defibrillators along the route ---------- */
+.nearby { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.nearby__label { margin-right: 4px; font-family: var(--font-sub); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-3); }
+.nearby__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: none;
+  color: var(--fg-2);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.nearby__toggle:disabled { opacity: 0.4; cursor: default; }
+.nearby__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fg-3); }
+.nearby__toggle--toilets { --kind: #5fc4ff; }
+.nearby__toggle--aed { --kind: #2bd47d; }
+.nearby__toggle[aria-pressed='true'] { color: var(--fg); border-color: color-mix(in srgb, var(--kind) 55%, transparent); background: color-mix(in srgb, var(--kind) 12%, transparent); }
+.nearby__toggle[aria-pressed='true'] .nearby__dot { background: var(--kind); box-shadow: 0 0 6px var(--kind); }
+.nearby__count { font-size: 11px; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+
+.amenity-marker {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1.5px solid #0e1013;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  animation: flag-in 0.25s var(--ease-out) both;
+}
+.amenity-marker svg { width: 16px; height: 16px; }
+.amenity-marker--toilets { background: #5fc4ff; color: #062033; }
+.amenity-marker--aed { background: #2bd47d; color: #0b2a19; border-radius: 50%; }
+.amenity-popup .maplibregl-popup-content,
+.culture-popup .maplibregl-popup-content {
+  padding: 12px 14px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 14px;
+  background: rgba(16, 16, 19, 0.97);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+  font: 12.5px/1.45 var(--font-body);
+}
+.amenity-popup .maplibregl-popup-tip,
+.culture-popup .maplibregl-popup-tip { border-top-color: rgba(16, 16, 19, 0.97) !important; border-bottom-color: rgba(16, 16, 19, 0.97) !important; }
+.amenity-popup .maplibregl-popup-close-button { color: var(--fg-3); font-size: 16px; padding: 2px 6px; }
+.amenity-popup__title { margin: 0 16px 6px 0; font-family: var(--font-sub); font-size: 14px; font-weight: 700; }
+.amenity-popup dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.amenity-popup dt { color: var(--fg-3); }
+.amenity-popup dd { margin: 0; }
+.amenity-popup__source { margin: 8px 0 0; font-size: 10.5px; color: var(--fg-3); }
+
+/* ---------- Culture card on hover ---------- */
+.culture-popup { pointer-events: none; }
+.culture-card__title { margin: 0; font-family: var(--font-sub); font-size: 15px; font-weight: 700; line-height: 1.25; color: #d9ccff; text-wrap: balance; }
+.culture-card__facts { margin: 3px 0 0; color: var(--fg-2); }
+.culture-card__badge { display: inline-block; margin-top: 6px; padding: 0 7px; border-radius: 5px; background: rgba(141, 116, 240, 0.2); color: #cbbcff; font-family: var(--font-sub); font-size: 11px; font-weight: 600; }
+.culture-card__summary { margin: 8px 0 0; font-weight: 300; line-height: 1.5; }
+.culture-card__source { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid var(--hair); font-size: 10.5px; color: var(--fg-3); }
+
+/* ---------- Car-free example: leg by leg ---------- */
+.legs { position: relative; display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.legs::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 16px;
+  bottom: 16px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--hair-strong), var(--accent));
+}
+.leg { position: relative; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; min-height: 44px; }
+.leg__icon { z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #17171b; border: 1.5px solid var(--hair-strong); color: var(--fg-2); }
+.leg__icon svg { width: 16px; height: 16px; }
+.leg--bus .leg__icon, .leg--tram .leg__icon, .leg--metro .leg__icon, .leg--rail .leg__icon { border-color: var(--accent); color: var(--fg); }
+.leg--shop .leg__icon { border-color: #ffc93c; color: #ffd770; }
+.leg__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.leg__main { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--fg); }
+.leg__sub { font-size: 11.5px; font-weight: 300; color: var(--fg-3); }
+.leg__line { padding: 0 6px; border-radius: 5px; background: #ff7a6b; color: #1a0705; font-family: var(--font-sub); font-size: 11.5px; font-weight: 700; }
+.leg__line--tram { background: #ffcf5c; }
+.leg__time { font-size: 12px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+
+@media (hover: hover) and (pointer: fine) {
+  .nearby__toggle:not(:disabled):hover { color: var(--fg); border-color: var(--hair-strong); }
+  .amenity-marker:hover { scale: 1.12; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nearby__toggle:not(:disabled):active { scale: 0.96; transition: scale 150ms ease-out; }
+}

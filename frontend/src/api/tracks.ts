@@ -4,6 +4,7 @@
  * routes it. The response is a normal routes response plus `track`.
  */
 import type { RouteResponse } from './contract';
+import type { Leg } from './transitExamples';
 
 export interface TrackInfo {
   id: string;
@@ -17,7 +18,8 @@ export interface TrackInfo {
   reason: string;
 }
 
-export type TrackResponse = RouteResponse & { track?: TrackInfo };
+/** A car-free example (transitExamples.ts) adds its legs and times. */
+export type TrackResponse = RouteResponse & { track?: TrackInfo; legs?: Leg[]; depart?: string; arrive?: string };
 
 export async function runTrack(query: string, trackId?: string, signal?: AbortSignal): Promise<TrackResponse> {
   const response = await fetch('/api/tracks/run', {
