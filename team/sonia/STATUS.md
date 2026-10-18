@@ -1,10 +1,10 @@
 # Handover
 
-- Current issue: none open and unblocked for me right now. SIM-01 (#24) and SIM-02 (#25) fixtures are done, PRs open. #85 (explicit destination/via stops) and #84 (catalogue search) are fully merged to `main`, across my PRs #93/#95/#102/#103 and #87.
-- Branch / PR: open from me: [PR #105](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/105) (SIM-01) and [PR #106](https://github.com/Delta-43/1_ft_ddos_waw_open_data_hackathon/pull/106) (SIM-02), both ready for review, both fixture-only (`data/fixtures/`), not wired into any API — no contract field exists yet for noise/traffic/incidents/roadworks and that needs Delta+Alban's sign-off first.
-- Last verified result: both new fixtures are valid JSON; `ruff check backend` and `pytest backend/tests` pass unaffected (fixtures aren't imported by any code). The #85 stack (merged) is covered by its own tests: 133 backend tests passed at the time of the last PR in that stack, `tsc --noEmit` clean.
-- Blocker: none for my own open work. #29 (DATA-10) and #17 (QA-01), also assigned to me, are blocked on #14 (INT-01), still open.
-- Next action: pick up #29/#17 once #14 unblocks, or #76 (historical overlay) just needs Delta to confirm and close — attribution, reuse terms and `.claude/launch.json` removal are all done on `main` (PR #74, #90).
-- Updated at (include timezone): 2026-10-18 01:45 Europe/Warsaw
+- Current issue: #110 (fixed start point, shared by every candidate route). Implemented directly on the user's instruction, without waiting for Delta's formal sign-off round the issue originally asked for - the rule itself was uncontroversial (see docs/DECISIONS.md, 2026-10-18 02:00).
+- Branch / PR: `sonia/110-fixed-start-and-destination`, PR open against `main`.
+- Last verified result: rule 1 (shared start across museum-outing candidates) was already true in the existing code - added a test proving it. Rule 2 (shared start+destination for an explicit itinerary, #85) is new: `_itinerary_candidates()` now returns up to 3 candidates between the same two fixed points, varying only by an optional park detour, same pattern as the museum-outing candidates' own variety. 143 backend tests pass (6 new/changed for #110), `ruff check backend` clean, frontend `tsc --noEmit` clean (no frontend files touched - response shape is unchanged, `routes` already allowed 1-3 entries).
+- Blocker: none for this issue. #29 (DATA-10) and #17 (QA-01), also assigned to me, are still blocked on #14 (INT-01).
+- Next action: pick up #29/#17 once #14 unblocks.
+- Updated at (include timezone): 2026-10-18 02:10 Europe/Warsaw
 
 Keep this short. GitHub issues own task status. Update on your own branch; resolve any handover conflict explicitly.
