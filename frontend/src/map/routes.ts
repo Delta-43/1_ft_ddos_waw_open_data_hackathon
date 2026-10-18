@@ -3,9 +3,9 @@ import type { Route } from '../api/contract';
 import { routeColour, routeLetter } from './routeColours';
 
 /**
- * Candidate routes in the style of Delta's mockup (mockups/warsaw-2076): the selected route is a
- * thick dashed line in its own colour on a white casing; the others are thin and muted; stops are
- * numbered circles on a stem with a soft halo.
+ * Candidate routes: the selected one like Google Maps' (a darker edge in its own colour around a
+ * lighter centre); the others thin, dimmed lines in their lighter colour; stops are numbered
+ * circles on a stem with a soft halo.
  */
 const ROUTE_SOURCE = 'candidate-routes';
 
@@ -13,27 +13,41 @@ const ROUTE_SOURCE = 'candidate-routes';
 type Feature = { type: 'Feature'; properties: Record<string, unknown>; geometry: Route['geometry'] };
 type Collection = { type: 'FeatureCollection'; features: Feature[] };
 const empty = (): Collection => ({ type: 'FeatureCollection', features: [] });
+type PointFeature = { type: 'Feature'; properties: Record<string, unknown>; geometry: { type: 'Point'; coordinates: [number, number] } };
+
+/** Stops of the routes that are not selected, as plain points; the selected route has numbered markers. */
+const OTHER_STOPS_SOURCE = 'candidate-route-stops';
+
+function otherStopFeatures(routes: Route[], selectedId: string | undefined): { type: 'FeatureCollection'; features: PointFeature[] } {
+  return {
+    type: 'FeatureCollection',
+    features: routes.filter(route => route.id !== selectedId).flatMap(route => {
+      const { fill } = routeColour(routes, route.id);
+      const places = new globalThis.Map(route.places.map(place => [place.id, place]));
+      return route.stops.flatMap((stop): PointFeature[] => {
+        const place = places.get(stop.place_id);
+        if (!place) return [];
+        return [{ type: 'Feature', properties: { fill }, geometry: { type: 'Point', coordinates: [place.longitude, place.latitude] } }];
+      });
+    }),
+  };
+}
 
 /** Line features for every candidate; the selected one draws last. */
 function routeFeatures(routes: Route[], selectedId: string | undefined): Collection {
   const sorted = [...routes].sort((a, b) => Number(a.id === selectedId) - Number(b.id === selectedId));
   return {
     type: 'FeatureCollection',
-    features: sorted.map((route): Feature => ({
-      type: 'Feature',
-      properties: { id: route.id, selected: route.id === selectedId, colour: routeColour(routes, route.id).line },
-      geometry: route.geometry,
-    })),
+    features: sorted.map((route): Feature => {
+      const colour = routeColour(routes, route.id);
+      return {
+        type: 'Feature',
+        properties: { id: route.id, selected: route.id === selectedId, casing: colour.casing, fill: colour.fill },
+        geometry: route.geometry,
+      };
+    }),
   };
 }
-
-// Dash patterns that, played in order, make the dash appear to travel along the line.
-const DASH_STEPS: number[][] = [
-  [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
-  [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
-];
-/** The resting dash, like the mockup's. */
-const DASH_REST = [2, 1.2];
 
 /** Adds the route layers once. */
 function ensureLayers(map: Map): void {
@@ -41,13 +55,26 @@ function ensureLayers(map: Map): void {
   map.addSource(ROUTE_SOURCE, { type: 'geojson', data: empty() });
   const isSelected = ['==', ['get', 'selected'], true] as FilterSpecification;
   const notSelected = ['==', ['get', 'selected'], false] as FilterSpecification;
+  // The others: a thin, dimmed line in the route's lighter colour, no edge, so the selected one leads.
   map.addLayer({
-    id: 'route-other',
+    id: 'route-other-fill',
     type: 'line',
     source: ROUTE_SOURCE,
     filter: notSelected,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#8f9a94', 'line-width': 3, 'line-opacity': 0.7 },
+    paint: { 'line-color': ['get', 'fill'], 'line-width': 2.5, 'line-opacity': 0.7 },
+  });
+  // Their stops as small circles: no numbers and no mouse handlers, so they only show where the route goes.
+  map.addSource(OTHER_STOPS_SOURCE, { type: 'geojson', data: empty() });
+  map.addLayer({
+    id: 'route-other-stops',
+    type: 'circle',
+    source: OTHER_STOPS_SOURCE,
+    paint: {
+      'circle-radius': 3.5,
+      'circle-color': ['get', 'fill'],
+      'circle-opacity': 0.7,
+    },
   });
   map.addLayer({
     id: 'route-casing',
@@ -55,53 +82,23 @@ function ensureLayers(map: Map): void {
     source: ROUTE_SOURCE,
     filter: isSelected,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.9 },
+    paint: { 'line-color': ['get', 'casing'], 'line-width': 8 },
   });
   map.addLayer({
-    id: 'route-dash',
+    id: 'route-fill',
     type: 'line',
     source: ROUTE_SOURCE,
     filter: isSelected,
-    layout: { 'line-cap': 'butt', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'colour'], 'line-width': 6, 'line-dasharray': DASH_REST },
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'fill'], 'line-width': 4.5 },
   });
-}
-
-// ---------- Brief "travelling dash" after selecting a route ----------
-const FRAME_MS = 80;
-// Only briefly: continuous repaints would keep MapLibre from ever reaching 'idle', which the
-// building-outline scan relies on.
-const ANIMATION_MS = 4000;
-const animations = new WeakMap<Map, number>();
-const animatedKeys = new WeakMap<Map, string>();
-
-function stopAnimation(map: Map): void {
-  const running = animations.get(map);
-  if (running !== undefined) window.clearInterval(running);
-  animations.delete(map);
-  if (map.getLayer('route-dash')) map.setPaintProperty('route-dash', 'line-dasharray', DASH_REST);
-}
-
-function animateSelected(map: Map, active: boolean): void {
-  stopAnimation(map);
-  if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let step = 0;
-  const started = performance.now();
-  const timer = window.setInterval(() => {
-    if (!map.getLayer('route-dash') || performance.now() - started > ANIMATION_MS) {
-      stopAnimation(map);
-      return;
-    }
-    step = (step + 1) % DASH_STEPS.length;
-    map.setPaintProperty('route-dash', 'line-dasharray', DASH_STEPS[step]);
-  }, FRAME_MS);
-  animations.set(map, timer);
-  map.once('remove', () => window.clearInterval(timer));
 }
 
 // ---------- Stop markers: numbered circles on a stem ----------
 const stopHandlers = new WeakMap<Map, (placeId: string) => void>();
 const stopMarkers = new WeakMap<Map, Marker[]>();
+/** Which selection the stop markers show, so they're only rebuilt when it changes. */
+const shownStops = new WeakMap<Map, string>();
 
 /** Calls `handler` with the place id when a numbered stop is clicked (or activated by keyboard). */
 export function onStopClick(map: Map, handler: (placeId: string) => void): void {
@@ -177,13 +174,13 @@ export function showRoutes(map: Map, routes: Route[], selectedId: string | undef
   const apply = () => {
     ensureLayers(map);
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
+    (map.getSource(OTHER_STOPS_SOURCE) as GeoJSONSource).setData(otherStopFeatures(routes, selectedId));
     showLetters(map, routes, selectedId);
     const selected = routes.find(route => route.id === selectedId);
     const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
-    if (animatedKeys.get(map) !== key) {
-      animatedKeys.set(map, key);
+    if (shownStops.get(map) !== key) {
+      shownStops.set(map, key);
       showStops(map, selected, routeColour(routes, selectedId).line);
-      animateSelected(map, key !== '');
     }
   };
   // Once our layers exist, update at once. isStyleLoaded() is false while any source is still

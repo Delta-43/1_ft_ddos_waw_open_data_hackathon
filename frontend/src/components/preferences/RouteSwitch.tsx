@@ -76,10 +76,11 @@ export function RouteSwitch({ routes, sources, selectedId, onSelect }: RouteSwit
                     <span className="visually-hidden">Route {letter}: </span>{route.name}
                   </span>
                   <span className="route-switch__summary">
-                    {traits.get(route.id) ?? 'Balanced'} · {formatDistance(route.metrics.distance_m.value)} · {formatDuration(route.metrics.duration_s.value)}
+                    {traits.get(route.id) ?? 'Balanced'} · {formatDistance(route.metrics.distance_m.value)} · {formatDuration(route.metrics.duration_s.value)} · {dataLabel(route, sources)}
                   </span>
                 </span>
-                <span className="route-switch__chip">{dataLabel(route, sources)}</span>
+                {/* Part of the option's button, so clicking it or pressing Enter on the option selects the route. */}
+                <span className="route-switch__choose" aria-hidden="true">{selected ? 'Chosen' : 'Choose'}</span>
               </button>
             </li>
           );

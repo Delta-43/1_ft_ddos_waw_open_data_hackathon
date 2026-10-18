@@ -157,4 +157,6 @@
 .route-switch__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .route-switch__name { font-weight: 600; font-size: 0.9rem; }
 .route-switch__summary { font-size: 0.78rem; color: var(--muted); }
-.route-switch__chip { flex: none; padding: 0.1rem 0.4rem; border: 1px solid var(--rim-faint); border-radius: 999px; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.route-switch__choose { flex: none; padding: 0.15rem 0.6rem; border: 1px solid var(--rim-faint); border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: var(--text); }
+.route-switch__option:hover .route-switch__choose { border-color: var(--rim); }
+.route-switch__option--selected .route-switch__choose { border-color: var(--route); background: var(--route); color: #fff; }
