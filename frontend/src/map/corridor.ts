@@ -6,17 +6,15 @@ import type { RouteColour } from './routeColours';
 import { focusRoute } from './routeFocus';
 
 /**
- * The 3D corridor (#91 D4, option A): buildings, green spaces and trees from a cached OSM
+ * The 3D corridor (#91 D4, option A): buildings and green spaces from a cached OSM
  * extract (public/corridor-cache.json, built by scripts/build_corridor_cache.py) are drawn only
  * near the selected route; the rest of the city lies flat. The geometry is fixed, so nothing
  * changes or rescans with zoom, pan or tilt. Routes outside the cache fall back to routeFocus.ts.
  */
 const CACHE_URL = '/corridor-cache.json';
 const CORRIDOR_M = 200;
-const TREE_RADIUS_M = 3.2;
 
 const SOURCE = 'corridor';
-const TREE_SOURCE = 'corridor-trees';
 /** Base-map layers that a corridor replaces with flat footprints. */
 const CITY_3D = ['building-3d', 'building-roof', 'building-outline'];
 
@@ -24,7 +22,6 @@ const CULTURE = '#63432c';
 const CULTURE_TOP = '#92663f';
 const GREEN_FILL = '#1d3a26';
 const GREEN_EDGE = '#3f9a5f';
-const TREE = '#3f8f58';
 
 export type Point = [number, number];
 export interface CacheFeature {
@@ -87,16 +84,6 @@ function centroid(ring: Point[]): Point {
   let y = 0;
   for (const [px, py] of ring) { x += px; y += py; }
   return [x / ring.length, y / ring.length];
-}
-
-/** A small octagon around a tree point, extruded into a low-poly crown. */
-function crown([lng, lat]: Point): Point[][] {
-  const ring: Point[] = [];
-  for (let i = 0; i <= 8; i++) {
-    const a = (i % 8) * (Math.PI / 4);
-    ring.push([lng + (Math.cos(a) * TREE_RADIUS_M) / M_PER_DEG_LNG, lat + (Math.sin(a) * TREE_RADIUS_M) / M_PER_DEG_LAT]);
-  }
-  return [ring];
 }
 
 function covers(bbox: Cache['bbox'], route: Route): boolean {
@@ -189,7 +176,6 @@ function initCultureCards(map: Map): void {
 export function initCorridor(map: Map): void {
   void loadCache();
   map.addSource(SOURCE, { type: 'geojson', data: empty(), generateId: true });
-  map.addSource(TREE_SOURCE, { type: 'geojson', data: empty() });
   const isKind = (kind: string): ExpressionSpecification => ['==', ['get', 'k'], kind];
   const groundLayer = ['road-glow', 'road-minor'].find(id => map.getLayer(id));
   map.addLayer({ id: 'corridor-green', type: 'fill', source: SOURCE, filter: isKind('g'), paint: { 'fill-color': GREEN_FILL, 'fill-opacity': 0.9 } }, groundLayer);
@@ -209,12 +195,6 @@ export function initCorridor(map: Map): void {
     'source-layer': 'building',
     layout: { visibility: 'none' },
     paint: { 'fill-color': '#202125', 'fill-outline-color': '#141416' },
-  }, above);
-  map.addLayer({
-    id: 'corridor-trees',
-    type: 'fill-extrusion',
-    source: TREE_SOURCE,
-    paint: { 'fill-extrusion-color': TREE, 'fill-extrusion-base': 1.5, 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-vertical-gradient': true },
   }, above);
   map.addLayer({
     id: 'corridor-3d',
@@ -249,7 +229,7 @@ function setCity3d(map: Map, visible: boolean): void {
   if (map.getLayer('building-flat')) map.setLayoutProperty('building-flat', 'visibility', visible ? 'none' : 'visible');
 }
 
-// ---------- Reveal: buildings, parks and trees rise in a wave that follows the route ----------
+// ---------- Reveal: buildings and parks rise in a wave that follows the route ----------
 const REVEAL_MS = 1900;
 /** How much of the route the wave front spans; wider is softer. */
 const WAVE = 0.18;
@@ -267,7 +247,6 @@ function paintAt(map: Map, front: number | null): void {
   map.setPaintProperty('corridor-3d', 'fill-extrusion-base', h(['coalesce', ['get', 'mh'], 0]));
   map.setPaintProperty('corridor-roof', 'fill-extrusion-base', h(['get', 'h']));
   map.setPaintProperty('corridor-roof', 'fill-extrusion-height', h(['+', ['get', 'h'], 0.5]));
-  map.setPaintProperty('corridor-trees', 'fill-extrusion-height', h(['get', 'h']));
   map.setPaintProperty('corridor-green', 'fill-opacity', front === null ? 0.9 : ['*', 0.9, g as ExpressionSpecification]);
   map.setPaintProperty('corridor-green-edge', 'line-opacity', front === null ? 0.35 : ['*', 0.35, g as ExpressionSpecification]);
 }
@@ -302,10 +281,7 @@ let request = 0;
  */
 export function showCorridor(map: Map, route: Route | undefined, colour?: RouteColour): void {
   const ticket = ++request;
-  const clear = () => {
-    (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData(empty());
-    (map.getSource(TREE_SOURCE) as GeoJSONSource | undefined)?.setData(empty());
-  };
+  const clear = () => (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData(empty());
   if (!route) {
     clear();
     setCity3d(map, true);
@@ -327,18 +303,9 @@ export function showCorridor(map: Map, route: Route | undefined, colour?: RouteC
     for (const [ax, ay, bx, by] of segments) { starts.push(total); total += Math.hypot(bx - ax, by - ay); }
     const along = (point: Point) => progressAlong(toMetres(point), segments, starts, total);
     const shapes: unknown[] = [];
-    const trees: unknown[] = [];
     for (const feature of data.features) {
       const { k } = feature.properties;
-      if (feature.geometry.type === 'Point') {
-        if (k === 't' && near(toMetres(feature.geometry.coordinates), segments, CORRIDOR_M)) {
-          // Stable pseudo-random height per tree, 6–10 m.
-          const [lng, lat] = feature.geometry.coordinates;
-          const h = 6 + (Math.abs(Math.sin(lng * 9137 + lat * 4271)) * 4);
-          trees.push({ type: 'Feature', properties: { h, d: along(feature.geometry.coordinates) }, geometry: { type: 'Polygon', coordinates: crown(feature.geometry.coordinates) } });
-        }
-        continue;
-      }
+      if (feature.geometry.type === 'Point') continue;
       const ring = feature.geometry.coordinates[0];
       const withProgress = (point: Point) => ({ ...feature, properties: { ...feature.properties, d: along(point) } });
       if (k === 'b') {
@@ -353,7 +320,6 @@ export function showCorridor(map: Map, route: Route | undefined, colour?: RouteC
       }
     }
     (map.getSource(SOURCE) as GeoJSONSource).setData({ type: 'FeatureCollection', features: shapes } as never);
-    (map.getSource(TREE_SOURCE) as GeoJSONSource).setData({ type: 'FeatureCollection', features: trees } as never);
     if (colour && map.getLayer('corridor-3d')) {
       map.setPaintProperty('corridor-3d', 'fill-extrusion-color', ['case', ['get', 'c'], CULTURE, colour.tint]);
       map.setPaintProperty('corridor-roof', 'fill-extrusion-color', ['case', ['get', 'c'], CULTURE_TOP, colour.roof]);
