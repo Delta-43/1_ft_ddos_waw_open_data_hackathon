@@ -497,7 +497,7 @@ const pl: Record<keyof typeof en, string> = {
   readingCachedUnknown: 'Zapisany odczyt, czas aktualizacji nieznany',
 
   // Find YOUR way shell: first Polish pass by Delta's agent; Sonia to review and complete.
-  shellGreeting: 'Na co masz dziś ochotę?',
+  shellGreeting: 'Gdzie się dzisiaj czujesz?',
   shellGreetingHint: 'Powiedz, jaki masz nastrój, dokąd chcesz iść albo ile masz czasu',
   shellResumePick: 'Wróć do',
   shellResumeOr: ' albo spróbuj czegoś nowego',
