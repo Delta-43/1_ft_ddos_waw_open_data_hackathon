@@ -1,7 +1,8 @@
 import { Marker, type Map } from 'maplibre-gl';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { EXAMPLE_REPORTS, type CityReport, type ReportKind } from '../../data/cityNotes';
-import { useT } from '../../i18n/useT';
+import { localise } from '../../i18n/localised';
+import { useLang, useT } from '../../i18n/useT';
 import type { Key } from '../../i18n/translations';
 
 /**
@@ -43,6 +44,7 @@ const triangle = (
 
 export function Reports({ map, explore }: { map: Map | null; explore: boolean }) {
   const t = useT();
+  const lang = useLang();
   const [open, setOpen] = useState(false);
   const [mine, setMine] = useState<CityReport[]>(loadMine);
   const [agreed, setAgreed] = useState<Set<string>>(new Set());
@@ -60,7 +62,7 @@ export function Reports({ map, explore }: { map: Map | null; explore: boolean })
       const el = document.createElement('button');
       el.type = 'button';
       el.className = `report-marker${report.id === active ? ' report-marker--active' : ''}`;
-      el.setAttribute('aria-label', `${t(KIND_TEXT[report.kind])}: ${report.text}`);
+      el.setAttribute('aria-label', `${t(KIND_TEXT[report.kind])}: ${localise(report.text, lang)}`);
       el.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.8 18.2 17H1.8z" fill="currentColor"/><path d="M10 8v4.2M10 14.6v.1" stroke="#1d1503" stroke-width="1.8" stroke-linecap="round"/></svg>';
       el.addEventListener('click', event => {
         event.stopPropagation();
@@ -70,7 +72,7 @@ export function Reports({ map, explore }: { map: Map | null; explore: boolean })
       return new Marker({ element: el }).setLngLat([report.longitude, report.latitude]).addTo(map);
     });
     return () => markers.forEach(marker => marker.remove());
-  }, [map, open, reports, active, t]);
+  }, [map, open, reports, active, t, lang]);
 
   useEffect(() => {
     if (!open) return;
@@ -128,8 +130,8 @@ export function Reports({ map, explore }: { map: Map | null; explore: boolean })
                 <li key={report.id} data-report={report.id} className={`report${report.id === active ? ' report--active' : ''}`}>
                   <button type="button" className="report__main" onClick={() => show(report)}>
                     <span className={`report__kind report__kind--${report.kind}`}>{t(KIND_TEXT[report.kind])}</span>
-                    <span className="report__text">{report.text}</span>
-                    <span className="report__meta">{report.place} · {ago(report.reported_at, t)}{report.origin === 'mine' ? ` · ${t('reportYours')}` : ''}</span>
+                    <span className="report__text">{localise(report.text, lang)}</span>
+                    <span className="report__meta">{localise(report.place, lang)} · {ago(report.reported_at, t)}{report.origin === 'mine' ? ` · ${t('reportYours')}` : ''}</span>
                   </button>
                   <div className="report__actions">
                     {report.origin === 'mine' ? (

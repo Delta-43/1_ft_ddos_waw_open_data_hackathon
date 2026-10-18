@@ -11,7 +11,8 @@ import { amenitiesNear, type AmenityKind } from './map/amenities';
 import { MapView } from './map/MapView';
 import { startParallax } from './map/parallax';
 import { startRouteLight } from './map/routeLight';
-import { useT } from './i18n/useT';
+import { localTrack } from './i18n/tracks';
+import { useLang, useT } from './i18n/useT';
 import { useOuting } from './useOuting';
 import './fonts.css';
 import './components/shell/shell.css';
@@ -62,6 +63,7 @@ type Curtain = 'down' | 'lifting' | 'up';
 
 export function App() {
   const t = useT();
+  const lang = useLang();
   const outing = useOuting();
   const { result, status } = outing;
   const [composing, setComposing] = useState(false);
@@ -245,7 +247,7 @@ export function App() {
         sourcesOpen={sourcesOpen}
         onOpen={() => setComposing(true)}
         onClose={() => setComposing(false)}
-        resumeTitle={parked && result ? result.track?.title ?? selectedRoute?.name : undefined}
+        resumeTitle={parked && result ? localTrack(result.track, lang)?.title ?? selectedRoute?.name : undefined}
         onResume={resume}
         onAsk={outing.ask}
         onChooseTrack={outing.chooseTrack}
