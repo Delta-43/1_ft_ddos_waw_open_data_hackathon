@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Preferences, RouteResponse } from './api/contract';
+import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 
 export type ChatMessage = { role: 'user' | 'assistant'; text: string };
@@ -12,12 +13,11 @@ function messageFor(error: unknown): string {
   return 'Could not reach the route service. Try again.';
 }
 
-/** Reply grounded only in the response: names, counts and the backend's own explanation. */
+/** Short reply that introduces the route list; says so when nothing matched. */
 function replyFor(response: RouteResponse): string {
-  const best = response.routes.find(route => route.recommended) ?? response.routes[0];
-  if (!best) return 'No routes match. Try a longer time or fewer stops.';
-  const count = response.routes.length;
-  return `I found ${count} ${count === 1 ? 'route' : 'routes'}. Recommended: ${best.name}. ${best.explanation}`;
+  if (response.routes.length === 0) return 'No routes match. Try a longer time or fewer stops.';
+  // The routes themselves are listed under the prompt bar (RouteSwitch).
+  return response.routes.length === 1 ? 'Recommended route' : 'Recommended routes';
 }
 
 /**
@@ -38,7 +38,9 @@ export function useOuting() {
     lastQuery.current = query;
     setStatus({ state: 'loading' });
     try {
-      const response = await requestRoutes({ query, ...(preferences && { preferences }) }, abort.signal);
+      const response = MOCK_ROUTES_ENABLED
+        ? await mockRoutes(abort.signal)
+        : await requestRoutes({ query, ...(preferences && { preferences }) }, abort.signal);
       if (abort.signal.aborted) return;
       setResult(response);
       setStatus({ state: 'success' });

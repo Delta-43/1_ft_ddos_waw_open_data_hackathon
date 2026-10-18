@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import type { Route, Source } from '../../api/contract';
 import type { ChatMessage, RequestStatus } from '../../useOuting';
 import { PromptForm } from './PromptForm';
+import { RouteSwitch } from './RouteSwitch';
 import './preferences.css';
 
 interface AssistantWidgetProps {
@@ -9,13 +11,18 @@ interface AssistantWidgetProps {
   messages: ChatMessage[];
   status: RequestStatus;
   onAsk: (prompt: string) => void;
+  /** Candidate routes of the current response; shown as the A/B/C route switch. */
+  routes?: Route[];
+  sources?: Source[];
+  selectedRouteId?: string;
+  onSelectRoute: (id: string) => void;
 }
 
 /**
- * The outing assistant: a chat only. What it understood appears as chips in the top bar,
- * and the routes appear in the page panels, so nothing here overlaps them.
+ * The outing assistant: the chat, the route switch (A, B, C) under the "Recommended routes" reply, then the prompt bar. What it understood appears
+ * as chips in the top bar.
  */
-export function AssistantWidget({ open, onOpenChange, messages, status, onAsk }: AssistantWidgetProps) {
+export function AssistantWidget({ open, onOpenChange, messages, status, onAsk, routes, sources, selectedRouteId, onSelectRoute }: AssistantWidgetProps) {
   const [query, setQuery] = useState('');
   const started = messages.length > 0;
 
@@ -44,6 +51,9 @@ export function AssistantWidget({ open, onOpenChange, messages, status, onAsk }:
             ))}
             {status.state === 'loading' && <li className="chat-message chat-message--assistant chat-message--pending">Looking for routes…</li>}
           </ol>
+        )}
+        {routes && routes.length > 0 && (
+          <RouteSwitch routes={routes} sources={sources ?? []} selectedId={selectedRouteId} onSelect={onSelectRoute} />
         )}
         <PromptForm compact={!started} value={query} onChange={setQuery} onSubmit={ask} busy={status.state === 'loading'} />
       </section>

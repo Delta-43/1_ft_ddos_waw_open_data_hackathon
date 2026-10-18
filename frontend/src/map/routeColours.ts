@@ -12,9 +12,17 @@ const PALETTE = [
 
 export type RouteColour = (typeof PALETTE)[number];
 
+function rankIndex(routes: Route[], routeId: string | undefined): number {
+  const ranked = [...routes].sort((a, b) => a.rank - b.rank);
+  return Math.max(0, ranked.findIndex(route => route.id === routeId));
+}
+
 /** Colour for `routeId` by rank (rank 1 = first colour), stable while the response is shown. */
 export function routeColour(routes: Route[], routeId: string | undefined): RouteColour {
-  const ranked = [...routes].sort((a, b) => a.rank - b.rank);
-  const index = Math.max(0, ranked.findIndex(route => route.id === routeId));
-  return PALETTE[index % PALETTE.length];
+  return PALETTE[rankIndex(routes, routeId) % PALETTE.length];
+}
+
+/** Letter for `routeId` by rank (rank 1 = A), the same on the map and in the route switch. */
+export function routeLetter(routes: Route[], routeId: string | undefined): string {
+  return String.fromCharCode(65 + rankIndex(routes, routeId));
 }

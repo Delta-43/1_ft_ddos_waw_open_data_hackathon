@@ -1,6 +1,6 @@
 import { Marker, type FilterSpecification, type GeoJSONSource, type LngLatBoundsLike, type Map, type PaddingOptions } from 'maplibre-gl';
 import type { Route } from '../api/contract';
-import { routeColour } from './routeColours';
+import { routeColour, routeLetter } from './routeColours';
 
 /**
  * Candidate routes in the style of Delta's mockup (mockups/warsaw-2076): the selected route is a
@@ -139,11 +139,45 @@ function showStops(map: Map, route: Route | undefined, colour: string): void {
   stopMarkers.set(map, markers);
 }
 
+// ---------- Route letters: A, B, C halfway along each candidate ----------
+const letterMarkers = new WeakMap<Map, Marker[]>();
+
+/** The point halfway along a line, by length, so the letter doesn't sit on a stop. */
+function halfway(coordinates: [number, number][]): [number, number] | undefined {
+  const lengths = coordinates.slice(1).map((point, index) => Math.hypot(point[0] - coordinates[index][0], point[1] - coordinates[index][1]));
+  let remaining = lengths.reduce((sum, length) => sum + length, 0) / 2;
+  for (const [index, length] of lengths.entries()) {
+    if (remaining <= length && length > 0) {
+      const [[x1, y1], [x2, y2]] = [coordinates[index], coordinates[index + 1]];
+      const t = remaining / length;
+      return [x1 + (x2 - x1) * t, y1 + (y2 - y1) * t];
+    }
+    remaining -= length;
+  }
+  return coordinates[0];
+}
+
+function showLetters(map: Map, routes: Route[], selectedId: string | undefined): void {
+  for (const marker of letterMarkers.get(map) ?? []) marker.remove();
+  const markers = routes.flatMap(route => {
+    const point = halfway(route.geometry.coordinates);
+    if (!point) return [];
+    const badge = document.createElement('span');
+    badge.className = `route-letter${route.id === selectedId ? ' route-letter--selected' : ''}`;
+    badge.style.setProperty('--route', routeColour(routes, route.id).line);
+    badge.setAttribute('aria-hidden', 'true'); // the route switch names the routes for screen readers
+    badge.textContent = routeLetter(routes, route.id);
+    return [new Marker({ element: badge }).setLngLat(point).addTo(map)];
+  });
+  letterMarkers.set(map, markers);
+}
+
 /** Draws the candidates and highlights `selectedId`. Safe to call before the style loads. */
 export function showRoutes(map: Map, routes: Route[], selectedId: string | undefined): void {
   const apply = () => {
     ensureLayers(map);
     (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatures(routes, selectedId));
+    showLetters(map, routes, selectedId);
     const selected = routes.find(route => route.id === selectedId);
     const key = selected ? `${selectedId}|${routes.map(route => route.id).join(',')}` : '';
     if (animatedKeys.get(map) !== key) {
