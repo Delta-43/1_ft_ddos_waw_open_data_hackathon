@@ -193,6 +193,26 @@ def candidate_stops(start, prefs: Interpreted, when: datetime | None = None) -> 
     return unique
 
 
+def _itinerary_candidates(start, stops: list[dict]) -> list[tuple[str, str, list[dict]]]:
+    """Up to 3 ways to visit the user's own stops (#85), in the given order, ending at
+    the same destination - #110 rule 2: start and destination are fixed across every
+    candidate, only the path (an optional short park detour before a stop) differs.
+    Never substitutes or drops a requested stop; a detour only adds to the route,
+    the same way candidate_stops()'s "green"/"park-museums" variants do for museum
+    outings. Deduped like candidate_stops() if a detour finds nothing worth adding."""
+    candidates = [
+        ("itinerary-direct", "Your requested itinerary", stops),
+        ("itinerary-via-park", "Your itinerary, via a nearby park", _with_parks(start, stops)),
+    ]
+    seen, unique = set(), []
+    for key, name, cand_stops in candidates:
+        ids = tuple(s["id"] for s in cand_stops)
+        if ids not in seen:
+            seen.add(ids)
+            unique.append((key, name, cand_stops))
+    return unique
+
+
 def _geometry(mode: str, start, stops: list[dict]):
     waypoints = [start] + [(s["longitude"], s["latitude"]) for s in stops]
     try:
@@ -371,15 +391,21 @@ def plan(request: RouteRequest, use_model: bool = True) -> dict:
     start = (start_pt.longitude, start_pt.latitude) if start_pt else DEFAULT_START
     is_itinerary = request.destination_place_id is not None
     routes, origins = [], set()
-    itinerary_total_s = None
+    total_s_by_route_id = {}
     if is_itinerary:
-        # #85 step 2: the user named exact stops, so plan one route that visits them
-        # in the given order and ends at the destination - never a museum template.
+        # #85 step 2 / #110 rule 2: the user named exact stops, so every candidate
+        # visits them in the given order and ends at the same destination - never a
+        # museum template, never a different endpoint. Candidates can still vary (an
+        # optional park detour), same as the museum-outing candidates below.
         stops = _resolve_itinerary_stops(request.destination_place_id, request.via_place_ids)
-        route, origin, itinerary_total_s = _build_route("itinerary", "Your requested itinerary", start, stops, prefs)
-        origins.add(origin)
-        routes.append(route)
+        for key, name, cand_stops in _itinerary_candidates(start, stops):
+            route, origin, total_s = _build_route(key, name, start, cand_stops, prefs)
+            origins.add(origin)
+            routes.append(route)
+            total_s_by_route_id[route["id"]] = total_s
     else:
+        # #110 rule 1: every museum-outing candidate shares the same start - candidate_stops()
+        # and _build_route() both take the one `start` computed above, never their own.
         for key, name, stops in candidate_stops(start, prefs, departure + timedelta(seconds=FIRST_STOP_LEAD_S)):
             route, origin, _ = _build_route(key, name, start, stops, prefs)
             origins.add(origin)
@@ -398,12 +424,15 @@ def plan(request: RouteRequest, use_model: bool = True) -> dict:
         route["explanation"] += _hours_note(route, departure, categories=None if is_itinerary else {"museum"})
     # #85 step 3: an explicit itinerary isn't dropped or rejected just for running long -
     # it's reported honestly, same spirit as _hours_note never guessing instead of hiding.
-    if is_itinerary and prefs.max_duration_s and itinerary_total_s > prefs.max_duration_s:
-        over_min = round((itinerary_total_s - prefs.max_duration_s) / 60)
-        routes[0]["explanation"] += (
-            f" This itinerary takes about {round(itinerary_total_s / 60)} min including stops, "
-            f"{over_min} min over the requested {round(prefs.max_duration_s / 60)} min budget."
-        )
+    if is_itinerary and prefs.max_duration_s:
+        for route in routes:
+            total_s = total_s_by_route_id[route["id"]]
+            if total_s > prefs.max_duration_s:
+                over_min = round((total_s - prefs.max_duration_s) / 60)
+                route["explanation"] += (
+                    f" This itinerary takes about {round(total_s / 60)} min including stops, "
+                    f"{over_min} min over the requested {round(prefs.max_duration_s / 60)} min budget."
+                )
     if "straight_line" in origins:
         mode = "mock"
         notice = ("Routing service unavailable: some routes are straight lines, not street directions. "

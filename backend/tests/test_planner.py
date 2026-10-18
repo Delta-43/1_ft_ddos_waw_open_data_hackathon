@@ -113,31 +113,60 @@ def test_itinerary_visits_destination_and_via_stops_in_order(monkeypatch):
                             via_place_ids=[SKWER, UJAZDOWSKI])
     data = planner.plan(request)
     check_consistent(data)
-    assert len(data["routes"]) == 1
-    route = data["routes"][0]
-    assert route["recommended"] is True
-    assert [p["id"] for p in route["places"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
-    assert [s["place_id"] for s in route["stops"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
-    assert {p["source_id"] for p in route["places"]} == {"osm-places-demo"}
+    assert 1 <= len(data["routes"]) <= 3
+    assert sum(r["recommended"] for r in data["routes"]) == 1
+    direct = next(r for r in data["routes"] if r["id"] == "itinerary-direct")
+    assert [p["id"] for p in direct["places"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
+    assert [s["place_id"] for s in direct["stops"]] == [SKWER, UJAZDOWSKI, MAUZOLEUM]
+    assert {p["source_id"] for p in direct["places"]} == {"osm-places-demo"}
     assert any(s["id"] == "osm-places-demo" for s in data["sources"])
     assert "requested" in data["notice"]
 
 
 def test_itinerary_destination_only_has_no_via_stops():
     data = planner.plan(RouteRequest(query="go there", destination_place_id=MAUZOLEUM))
-    route = data["routes"][0]
-    assert [p["id"] for p in route["places"]] == [MAUZOLEUM]
-    assert "Goes directly to" in route["explanation"]
+    direct = next(r for r in data["routes"] if r["id"] == "itinerary-direct")
+    assert [p["id"] for p in direct["places"]] == [MAUZOLEUM]
+    assert "Goes directly to" in direct["explanation"]
 
 
 def test_itinerary_stop_order_changes_the_route(monkeypatch):
     monkeypatch.setattr(routing, "_fetch_live", fake_osrm)
-    forward = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM,
-                                         via_place_ids=[SKWER, UJAZDOWSKI]))["routes"][0]
-    backward = planner.plan(RouteRequest(query="x", destination_place_id=MAUZOLEUM,
-                                          via_place_ids=[UJAZDOWSKI, SKWER]))["routes"][0]
+    forward = next(r for r in planner.plan(RouteRequest(
+        query="x", destination_place_id=MAUZOLEUM, via_place_ids=[SKWER, UJAZDOWSKI]
+    ))["routes"] if r["id"] == "itinerary-direct")
+    backward = next(r for r in planner.plan(RouteRequest(
+        query="x", destination_place_id=MAUZOLEUM, via_place_ids=[UJAZDOWSKI, SKWER]
+    ))["routes"] if r["id"] == "itinerary-direct")
     assert [p["id"] for p in forward["places"]] != [p["id"] for p in backward["places"]]
     assert forward["metrics"]["distance_m"]["value"] != backward["metrics"]["distance_m"]["value"]
+
+
+def test_itinerary_candidates_share_the_same_start_and_destination(monkeypatch):
+    # #110 rule 2: every candidate starts and ends at the same two points; only the
+    # way between them (e.g. an inserted park detour) differs.
+    monkeypatch.setattr(routing, "_fetch_live", fake_osrm)
+    data = planner.plan(RouteRequest(
+        query="x", destination_place_id=MAUZOLEUM, via_place_ids=[SKWER],
+        preferences={"start": {"longitude": 21.0122, "latitude": 52.2297}},
+    ))
+    assert len(data["routes"]) >= 1
+    for route in data["routes"]:
+        coords = route["geometry"]["coordinates"]
+        assert coords[0] == [21.0122, 52.2297]
+        assert route["places"][-1]["id"] == MAUZOLEUM
+
+
+def test_museum_outing_candidates_share_the_same_start(monkeypatch):
+    # #110 rule 1: the start comes from the request and is identical across A/B/C.
+    monkeypatch.setattr(routing, "_fetch_live", fake_osrm)
+    data = planner.plan(RouteRequest(
+        query="A quiet, green museum afternoon",
+        preferences={"start": {"longitude": 21.0122, "latitude": 52.2297}},
+    ))
+    assert len(data["routes"]) >= 2
+    for route in data["routes"]:
+        assert route["geometry"]["coordinates"][0] == [21.0122, 52.2297]
 
 
 CELE_BEZPIEKI = "osm:node/12862698273"  # museum, "Mo-Fr 09:00-17:00" - closed on fixed_clock's Sunday
