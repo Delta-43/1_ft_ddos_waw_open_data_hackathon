@@ -1,5 +1,7 @@
 # Warsaw 2076 clickable mockup
 
+> **Historical (18 October 2026).** An early isometric mock-up with mock data, kept as a reference. The real app is in frontend/.
+
 Open `index.html` directly, or serve this folder from the repository root:
 
 ```bash

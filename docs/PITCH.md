@@ -1,29 +1,27 @@
 # Pitch preparation
 
-Feature work stops at submission minus five hours. See PLAN.md for the absolute stop and grace conditions.
-
 ## Ownership
 
 - Delta: concept, narrative, delivery, demo narration, and answers.
 - Alban: presentation design, visual consistency, slides, and demo transitions.
 - Sonia: data provenance, limitations, supporting evidence, and backup fixtures.
 - Ola: screenshots, recording, device checks, and rehearsal timing.
-- Aryna: place-card and data-label screenshots, second-device check, and rehearsal support.
+- Aryna: card and data-label screenshots, second-device check, and rehearsal support.
 
-## Suggested narrative
+## Narrative
 
-1. One person, one concrete Warsaw problem.
-2. Show the request, route comparison, and place cards.
-3. Explain which open data changed the recommendation.
-4. Explain how agents access the same services through MCP.
-5. Connect today's decisions to greener, quieter Warsaw in 2076.
-6. State what works, what is mocked, and the next step.
-7. Privacy: personal data stays on the user's device and is shared per request with a scoped token. Present this as the planned design; the demo stores no user data.
-8. Optional: milestones and achievements as the engagement roadmap, only as a labelled mock-up.
-9. Optional roadmap: "then and now" cultural layer (curated, labelled), simulated social walking, and the accessibility and cool-route modes. Present them as next steps, not working features. Cite trends as direction only and verify every figure first (IDEA.md, Research evidence).
+1. One person, one concrete Warsaw problem: getting somewhere is easy; getting there calmly, with what you
+   need on the way, is not.
+2. Live demo (script in [DEMO.md](DEMO.md)): the orb, a calm outing, the city rising along the way, culture
+   cards, the car-free example with groceries, transit your way, reports.
+3. The open data behind it: OpenStreetMap, ZTM timetable, Warsaw open data, Wikipedia, and how each is labelled.
+4. Agents: the same planner through MCP.
+5. Warsaw 2076: calmer, greener, car-free choices made easy today; a city that answers residents' reports.
+6. Honest scope ([Build_State_For_Pitch.md](Build_State_For_Pitch.md)): predefined outings, estimates,
+   one-day timetable, central Warsaw.
+7. Privacy: no user data on the backend; personal context per request with a scoped token is the planned design.
+8. Roadmap: city announcements answering reports, heritage summaries everywhere, live vehicle positions, free
+   itineraries, accessibility and cool-route modes.
 
-The submission deadline is confirmed (11:00 Sunday). Confirm pitch duration and format with organisers. Rehearse to that limit.
-Save editable slides, exported presentation, demo recording, and screenshots under an agreed team location.
-Do not claim environmental benefits were measured unless evidence supports the claim.
-
-Onboarding: STACK.md and SETUP.md contain the shared prerequisites. No personal agent skills or private infrastructure are required. Fresh Saturday implementation must be validated separately from the reference scaffold.
+Do not claim environmental benefits were measured. Keep the recording, screenshots and slides in the agreed team
+location.

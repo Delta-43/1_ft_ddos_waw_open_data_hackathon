@@ -4,8 +4,24 @@ Start here with AGENTS.md, SETUP.md, PLAN.md, and your team/<name>/PROMPT.md.
 These instructions work with any coding agent or a normal editor. No personal skills, paid agent subscription, private server, or owner's tool bundle is required.
 The organisers approved building on this starter (17 October). Fetch data fresh during the event. Do not claim starter files as event work, and do not import earlier projects.
 
-## Agreed stack
+## Stack as built (18 October 2026)
 
+| Layer | Choice |
+| --- | --- |
+| UI | React 19, TypeScript 5, Vite 6; plain CSS; self-hosted fonts (Barlow Condensed, Titillium Web, Biryani); EN/PL dictionary |
+| Map | MapLibre GL JS 6.11.2, OpenFreeMap vector tiles, a custom dark style; 3D corridor from a committed OSM cache |
+| API | Python 3.12, FastAPI, Pydantic, Uvicorn, HTTPX |
+| Storage | SQLite (backend-local `data/local/city.db`) for city layers; no user data |
+| AI | OpenRouter, one structured call that picks a predefined outing; keyword fallback without a key |
+| Agent interface | Official MCP Python SDK, Streamable HTTP, bearer token |
+| Routing | FOSSGIS OSRM (routing.openstreetmap.de), foot and bike, with committed responses for the demo |
+| Transit | ZTM GTFS (mkuran.pl) processed into a one-day cache; no live positions |
+| Containers | Docker Compose: `web` (nginx with the built app) and `api` (plus `mcp` on demand) |
+| Collaboration | Git, GitHub issues and PRs, GitHub Actions CI |
+
+The table below is the Saturday plan, kept for the record.
+
+## Agreed stack (Saturday plan)
 | Layer | Choice | Responsibility / status |
 | --- | --- | --- |
 | UI | React, TypeScript, Vite | Alban + Ola + Aryna; starter reference exists |
@@ -23,7 +39,7 @@ The organisers approved building on this starter (17 October). Fetch data fresh 
 
 Use Node.js 22 and pnpm 11.25.0 for the reference frontend. Its exact dependencies are in frontend/package.json and pnpm-lock.yaml.
 Python dependency ranges are in backend/requirements.txt. Delta locks the event's tested versions before provider integration.
-Do not install MapLibre, GIS stacks, MCP clients, Docker, a vector database, Postgres, or Redis merely to read these docs.
+Do not install GIS stacks, a vector database, Postgres, or Redis. Docker is optional and only needed to run the container stack.
 For a small place catalogue, structured tags and filters come before embeddings/vector search.
 
 ## Tools each member needs

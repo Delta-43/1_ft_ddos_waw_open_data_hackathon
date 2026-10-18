@@ -76,3 +76,10 @@ Additive changes (new optional fields) need agreement but no version bump. Remov
 - `GET /api/layers/{layer}?bbox=min_lon,min_lat,max_lon,max_lat&limit=200` returns a GeoJSON `FeatureCollection` (lon, lat) that MapLibre can use as a source directly. Source `mode` is a contract SourceMode (`real`); the envelope `mode` stays `cached`. Each feature has `properties.name`, `layer`, `source_id` plus layer-specific fields; `sources[]` carries attribution, mode (`cached`) and retrieval time for the source label.
 - Until the full Warsaw cache exists in `data/local`, layers hold only the committed samples (8 features each); `sources[].method` says so.
 - Needs Delta + Alban sign-off before being added to `api.schema.json`.
+
+## Beyond contract 1.0: predefined outings
+
+`POST /api/tracks/run` takes `{query, track_id?}` and returns a normal routes response plus `track`
+(`id`, `title`, `summary`, `travel_mode`, `simulated: true`, `picked_by`: `model` | `keywords` | `user`, `reason`).
+`GET /api/tracks` lists the outings. The frontend's car-free examples add `legs`, `depart` and `arrive` on the
+client only (`frontend/src/api/transitExamples.ts`); they never come from the backend.

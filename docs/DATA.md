@@ -128,6 +128,8 @@ DATA-10's full acceptance ("stop each provider in turn and run the demo") needs 
 
 ## Historical map layers (1930s–40s Warsaw)
 
+> **18 October 2026:** the overlay toggle was removed from the app (DECISIONS.md). The backend still builds the layer URLs and `data/fixtures/historical-layers.json`; nothing in the current UI shows them.
+
 Checked 2026-10-17 in response to a "could we show the historic city shape" question. The same `wms.um.warszawa.pl/serwis` WMS server already catalogued above (DATA-02, noise/greenery) also carries a rich set of historical layers, confirmed reachable and real:
 
 | Layer | What it is |
@@ -168,6 +170,21 @@ Work on this paused here, handed to the frontend pair rather than debugged furth
 - Not yet isolated as a code bug versus environment/resource exhaustion from many repeated test reloads in one long session (a plausible alternative: MapLibre/WebGL context accumulation across dozens of navigations). A clean A/B test (same session, same restart, control registered vs. commented out) was started but not completed before this work was paused.
 - **Next step for whoever picks this up**: in `frontend/src/map/createMap.ts`, comment out the `map.addControl(new HistoricalOverlayControl(), 'top-right')` line, hard-restart the dev server and browser (not just hot-reload), and confirm the map loads normally without it. If it does, the bug is somewhere in `historicalOverlayControl.ts`/`historicalOverlay.ts` (candidates: the `map.on('error', ...)` listener, or `HistoricalAttributionLabel`'s `map.getContainer().append(...)` call interacting badly with MapLibre's resize/canvas handling) and needs further isolation line by line. If the map also fails to load without the control, this isn't caused by this PR at all and is worth raising separately.
 - All backend code, docs and tests in this PR are verified working and unaffected by this; the three fixes already made are real fixes, not reverted. It's specifically "does the map ever finish loading with this control present" that's unresolved.
+
+## Frontend data caches (Find YOUR way)
+
+Committed under `frontend/public/` so the app needs no build-time fetching. All are rebuildable with the
+scripts named; see `docs/DEVELOPMENT.md`, Rebuilding the data.
+
+| File | Built by | Source, date | Contents and limits |
+| --- | --- | --- | --- |
+| `corridor-cache.json` (2.5 MB, gzip about 0.4 MB) | `scripts/build_corridor_cache.py` | OpenStreetMap via Overpass, 18 Oct 2026; Wikipedia REST summaries (CC BY-SA 4.0) linked by OSM `wikipedia`/`wikidata` tags | Within 260 m of the six outings: 2,441 buildings (heights from `height`, else `building:levels` × 3.2 m, else 10 m; flagged `est`), 2,471 green areas, 1,685 generated tree points (26 m grid inside parks), 106 toilets and AEDs, 197 named grocery shops, culture facts (name, kind, start date, architect, heritage) for 46 buildings and Wikipedia summaries for 18. Culture = museums, galleries, theatres, places of worship, palaces, castles, monuments and similar; not every heritage-listed tenement |
+| `transit-cache.json` (2 MB) | `scripts/build_transit_cache.py` | ZTM Warsaw GTFS by Mikołaj Kuranowski, feed of 18 Oct 2026 00:15 | 69 stops within 320 m of the outings and the 5,699 trips through them on 18 Oct; the app moves vehicles by schedule (interpolated along the line shape), not live GPS. One service day only |
+| `transit-examples.json` (9 KB) | `scripts/build_transit_examples.py` | Same GTFS feed; shops from `corridor-cache.json` | Earliest car-free itinerary from the Centrum start at 11:00 to three outing destinations with a 12-minute grocery stop. Walking legs are straight lines (labelled). Examples, not a journey planner |
+| `fonts/` | downloaded once from Google Fonts | SIL OFL 1.1 (`fonts/OFL.txt`) | Barlow Condensed, Titillium Web, Biryani; Latin and Latin Extended |
+
+Street routes for the six outings are committed in `data/fixtures/osrm-cache/` (38 FOSSGIS OSRM responses),
+so `ROUTING_SOURCE=cache` serves them with no network; verified on 18 Oct 2026 in a container without network.
 
 ## Fresh event-time data
 

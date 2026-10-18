@@ -1,105 +1,112 @@
-# Local development and shared testing
+# Development
 
-Read SETUP.md for installation and Windows alternatives. The organisers approved the starter. Commands below assume the agreed reference layout.
+How to run Find YOUR way without Docker, check it, and rebuild its data. To just run it, use Docker:
+see the [README](../README.md#run-it-with-docker).
 
 ## Prerequisites
 
-Use Python 3.12, Node.js 22, and pnpm 11.25.0. Run `npm install --global pnpm@11.25.0` once if needed.
-Use your own installed runtimes. No Codex runtime bundle or owner-specific filesystem path is needed.
-Do not commit machine-specific runtime paths. Never run installation as root unless the owner explicitly agrees.
+Python 3.12, Node.js 22 and pnpm 11.25.0 (`npm install --global pnpm@11.25.0`). On Windows, use WSL2 or the
+PowerShell variants below.
 
-## Backend: terminal one
+## Backend
 
-From the project root:
+From the repository root:
 
 ```bash
 python3.12 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate            # PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -r backend/requirements.txt
-cp .env.example .env
+cp .env.example .env                 # optional settings, see below
 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 ```
 
-The backend loads `.env` at start-up (existing environment variables win). Without an `OPENROUTER_API_KEY` it uses keyword rules and template explanations.
-Delta must explicitly load settings when adding providers. Keep keys on the backend.
-The API documentation is at `http://127.0.0.1:8000/docs`.
+API documentation: http://127.0.0.1:8000/docs. The backend reads `.env` at start-up; existing environment
+variables win. Keys stay on the backend; never put them in `VITE_` variables.
 
-## Frontend: terminal two
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | Status, contract version and capabilities |
+| `POST /api/tracks/run` | `{query}`: one model call picks a predefined outing, the planner routes it. `{query, track_id}` forces one |
+| `GET /api/tracks` | The six predefined outings |
+| `POST /api/routes` | Plans from a request and preferences directly (contract 1.0), with optional destination and ordered stops |
+| `GET /api/places?q=` | Searches the place catalogue |
+| `GET /api/layers`, `/api/layers/{layer}` | City data layers (Warsaw open-data samples) |
+
+| Setting (`.env`) | Default | Effect |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | empty | Without it, outings are picked by keyword match and explanations come from templates |
+| `LLM_MODEL` | `anthropic/claude-haiku-5.5` | OpenRouter model; per-task overrides `LLM_MODEL_INTERPRET`, `LLM_MODEL_EXPLAIN` |
+| `LLM_DATA_COLLECTION` | `deny` | Free OpenRouter models need `allow` (the provider may train on the query text) |
+| `ROUTING_SOURCE` | `live` (Docker: `cache`) | `cache` serves the committed street routes in `data/fixtures/osrm-cache` first |
+| `MCP_TOKEN` | empty | Bearer token for the MCP server (required to start it) |
+
+## Frontend
 
 ```bash
 cd frontend
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm dev                              # http://127.0.0.1:5173, /api is proxied to 127.0.0.1:8000
 ```
 
-Open `http://127.0.0.1:5173`. The starter calls relative `/api/routes`; Vite forwards `/api` to the backend.
-No CORS configuration is needed for this path. Never hard-code the developer's localhost into browser-side API URLs.
+To use another backend: `API_PROXY_TARGET=http://HOST:8000 pnpm dev` (PowerShell:
+`$env:API_PROXY_TARGET="http://HOST:8000"; pnpm dev`). Browser code always uses relative `/api` URLs.
+The dev server keeps an explicit host allow-list in `vite.config.ts`; never set `allowedHosts` to true.
 
-## Shared integration: teammate instructions
+URL options:
 
-Delta publishes the demo URL and confirms it is reachable through Tailscale. Use your own Tailscale login and accept Delta's invitation.
-Do not SSH to the host, request its service account, or restart its servers. Delta operates the shared host; Alban coordinates frontend updates with Delta.
-Personal work stays in your local checkout. After review and merge, Delta updates the integration checkout and runs its smoke check.
+| Option | Effect |
+| --- | --- |
+| `?time=HH:MM` | Pins the clock for buses, trams and departures (the timetable cache is for 18 October 2026) |
+| `?mock` | A labelled mock response with three straight-line routes, no backend needed |
 
-If testing your local frontend against the shared backend, first ask Delta for the approved backend URL and confirm it is reachable.
-In Bash, run `API_PROXY_TARGET=http://APPROVED_HOST:8000 pnpm dev` from frontend; replace APPROVED_HOST with the supplied name/address.
-In PowerShell, set `$env:API_PROXY_TARGET="http://APPROVED_HOST:8000"`, then run `pnpm dev`.
-The proxy target is resolved on the Vite host. Browser code still uses relative `/api` URLs.
-If remote access is unavailable, continue with a local backend or labelled fixture. Local setup does not depend on shared services.
+In development, `window.warsawMap` exposes the MapLibre map in the browser console.
 
-Do not change network rules or expose a development server publicly. Keep explicit Vite hostname allowlists; never set allowedHosts to true.
-SQLite stays backend-local. Keys stay backend-only. PWA installation over a network needs a secure context, so defer it until HTTPS is deliberately configured.
-
-## Staying up to date (optional)
-
-`scripts/git-autosync.sh` fetches from GitHub and fast-forwards your local `main` every time it runs. It never merges, rebases or resets your feature branch, and it skips the update if you are on `main` with uncommitted changes. To bring new `main` work into your branch, run `git rebase main` or `git merge main` yourself.
-
-Run it every 10 minutes with cron (Linux, macOS, or WSL2). Replace the path with your own checkout:
-
-```bash
-chmod +x scripts/git-autosync.sh
-( crontab -l 2>/dev/null; echo "*/10 * * * * $PWD/scripts/git-autosync.sh $PWD >> $HOME/.git-autosync.log 2>&1" ) | crontab -
-```
-
-To turn it off, run `crontab -e` and delete the line. Git must be able to fetch without a prompt, for example after `gh auth setup-git`. Check `~/.git-autosync.log` if `main` stops updating.
-
-On Windows without WSL, run `git fetch origin main:main` from your checkout when you need fresh changes, or ask Alban or Delta for help with Task Scheduler.
-
-## Automated checks
-
-From the project root with the virtual environment active:
+## Checks
 
 ```bash
 ruff check backend
 PYTHONPATH=backend python -m pytest backend/tests -q
-cd frontend
-pnpm run check
-pnpm run build
+cd frontend && pnpm run check && pnpm run build
+docker compose config --quiet          # the container files
 ```
 
-`pnpm install --frozen-lockfile` must succeed on a clean clone. If dependencies change, commit the updated lockfile in the same PR.
+CI runs the backend and frontend checks on every pull request. `pnpm install --frozen-lockfile` must pass on a
+clean clone; commit lockfile changes with the dependency change.
 
-## Live service checks
+## Rebuilding the data
+
+The frontend's map data is committed, so nothing needs rebuilding to run the app. To refresh it, start the
+backend first: the scripts ask it for the six outings.
 
 ```bash
-curl --fail http://127.0.0.1:8000/api/health
-curl --fail -H 'Content-Type: application/json' -d '{"query":"A quiet museum outing"}' http://127.0.0.1:8000/api/routes
-curl --fail -H 'Content-Type: application/json' -d '{"query":"A quiet museum outing"}' http://127.0.0.1:5173/api/routes
+# 3D corridor, parks, trees, toilets, AEDs, shops, culture facts and Wikipedia summaries (Overpass + Wikipedia)
+python scripts/build_corridor_cache.py http://127.0.0.1:8000
+python scripts/build_corridor_cache.py --wiki-only      # summaries only
+
+# Timetable for one day, then the car-free examples (download https://mkuran.pl/gtfs/warsaw.zip first)
+python scripts/build_transit_cache.py warsaw.zip http://127.0.0.1:8000 2026-10-18
+python scripts/build_transit_examples.py warsaw.zip http://127.0.0.1:8000 2026-10-18 11:00
+
+# Street routes for every candidate and outing, written to data/fixtures/osrm-cache
+PYTHONPATH=backend python -m app.services.demo_cache
 ```
 
-For the shared server, use the demo URL supplied by Delta from a teammate device.
-Also check: empty input, unavailable backend, repeated submissions, selected-route change, loading/error display, and honest data labels.
-The starter offers one synthetic route and JSON output. Map rendering and multiple candidates are assigned tasks, not completed features.
+The timetable cache covers one service day: rebuild both transit files for another date.
 
-When real providers are added, verify one known request per provider, record freshness/coverage, apply a timeout, and test fallback without credentials.
-AI should return structured preferences and grounded explanations. Street routing supplies geometry; do not ask the model to invent it.
-For MCP, Delta chooses and pins a compatible official Python SDK and client, exposes shared services, and records a successful client tool call.
-MCP is not implemented by this scaffold. Do not expose an unauthenticated MCP endpoint outside the restricted development network.
+## MCP
 
-## Pitch reliability
+The MCP server exposes the same planner to AI agents (tools: `plan_outing`, `search_places`, `list_layers`,
+`get_layer`). It refuses to start without `MCP_TOKEN`; keep it on a private network.
 
-Tag or record the final verified commit before the freeze. Keep fixture mode, screenshots, and a recorded end-to-end demo.
-Online tiles may fail even when API fixtures work. A PWA service worker needs a secure context outside localhost; plain HTTP over Tailscale is not enough.
-Treat PWA installation as stretch work with HTTPS configured deliberately, not as a requirement for the core demo.
+```bash
+MCP_TOKEN=... PYTHONPATH=backend python -m app.adapters.mcp_server --host 127.0.0.1 --port 8001
+# or with Docker: docker compose --profile mcp up -d --build   (MCP_TOKEN in .env)
+MCP_URL=http://127.0.0.1:8001/mcp MCP_TOKEN=... python scripts/mcp_client_demo.py "a quiet museum outing"
+```
 
-References: [Vite server and proxy options](https://vite.dev/config/server-options), [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/).
+## Rules worth keeping
+
+- Coordinates are `[longitude, latitude]`; distances in metres; durations in seconds; dates with offsets.
+- The model interprets requests and words explanations; it never invents geometry, places or opening hours.
+- Every number in the UI keeps its source label (Real, Proxy, Simulated, Cached, Historical).
+- The backend stores no user data. Personal state (reports, language) stays in the browser.

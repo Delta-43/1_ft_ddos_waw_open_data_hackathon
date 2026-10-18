@@ -1,6 +1,6 @@
 # Set up your own computer
 
-## Before Saturday
+## Tools
 
 Install Git, Node.js 22 (with npm), and Python 3.12 using the official installers or your normal package manager.
 Official downloads: https://git-scm.com/downloads , https://nodejs.org/en/download , https://www.python.org/downloads/ .
@@ -33,41 +33,11 @@ git switch -c YOURNAME/ISSUE-short-task
 Use a unique directory and branch for each person. Read AGENTS.md → STACK.md → PLAN.md → your personal PROMPT.md → assigned issue.
 No private filesystem paths, SSH access, or custom tools are needed. Create issues/PRs using github.com if gh is unavailable.
 
-## Saturday: fresh build
+## Run it
 
-Build on the starter in this repository. Do not import earlier application code or snapshots.
-
-Backend pair: create `backend/app`, `backend/tests`, and a virtual environment; install FastAPI, Uvicorn, Pydantic, HTTPX, Pytest, jsonschema and Ruff.
-Record dependencies in backend/requirements.txt. Implement health and mocked route endpoints against the agreed contract before adding sources.
-Frontend pair: scaffold React/TypeScript with `pnpm create vite frontend --template react-ts` **only in an empty frontend directory**.
-Agree the generated Vite version, scripts and lockfile with Alban/Delta. Adapt CI to actual scripts; never report the reference CI as validated against newly generated code.
-Then add MapLibre and choose a tile provider once the thin flow works.
-
-## Running the reference layout or event equivalent
-
-From the repository root, Bash:
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r backend/requirements.txt
-python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
-```
-
-PowerShell virtual environment: `py -3.12 -m venv .venv`, then `.venv\Scripts\Activate.ps1`.
-If activation is unavailable, invoke `.venv\Scripts\python.exe` directly instead of weakening system policy.
-
-In a second terminal:
-
-```bash
-cd frontend
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-Open http://127.0.0.1:5173 and http://127.0.0.1:8000/docs .
-Frontend requests use relative `/api` paths. Configure Vite to proxy them to http://127.0.0.1:8000 .
-SQLite needs no server, account or port. No API keys are needed for fixture mode.
+The quickest way is Docker: `docker compose up -d --build`, then http://localhost:4173 (see README.md).
+For development without Docker (backend with Uvicorn, frontend with `pnpm dev`, checks and data rebuilds),
+follow docs/DEVELOPMENT.md. No API keys are needed: without a model key, outings are picked by keyword match.
 
 ## Check and hand over
 

@@ -1,5 +1,7 @@
 # Map redesign: decisions for review
 
+> **Historical (18 October 2026).** D1 (dark map), D3 (route leads) and D4 option A (cached corridor) were built in #118; MapLibre stayed (D5). The layout sections are superseded by the shell. See docs/DECISIONS.md.
+
 **Written:** 2026-10-17 23:30 (Europe/Warsaw) by Delta's agent, from Delta's instructions after the rejected rebuild (`docs/FRONTEND_REDESIGN_REVIEW.md`). **Reviewers: Aryna (`@Rysia`) and Ola (`@unicorn-alex`).** Please review the decisions in section 3 and the rules in section 4 by commenting on the PR. Freeze is 06:00 Sunday (PLAN.md); a redesign does not extend it.
 
 Status words: **Decided** = Delta decided it. **Proposed** = my suggestion, Delta has not approved. **Open** = missing information.

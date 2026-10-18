@@ -1,5 +1,7 @@
 # Warsaw 2076: Personalised city navigation
 
+> **Historical (18 October 2026).** Pre-event plan. The product shipped as "Find YOUR way"; see README.md.
+
 Team concept notes for the Warsaw Open Data Hackathon 2026.
 
 ## Event and challenge

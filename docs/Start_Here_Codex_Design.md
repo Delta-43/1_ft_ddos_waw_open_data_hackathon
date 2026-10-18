@@ -1,5 +1,7 @@
 # Start here: frontend design handover (for Codex)
 
+> **Historical (18 October 2026).** Superseded: the app is now the "Find YOUR way" shell (#118, #120). See README.md and frontend/README.md for the current design.
+
 You are taking over the **design polish of the live Warsaw 2076 frontend** for Delta (`@Delta-43`). Issue: **#80**. Branch name: `delta/80-<short-task>`. Written 2026-10-17 evening by Delta's other agent after running the app and reading the code. Facts below were checked on `main` at that time; re-check anything that matters.
 
 > **Update 2026-10-17 23:35:** the Moon direction below is superseded. The overlay UI is back to Aryna's dark design (#89; DECISIONS.md 23:35 row). Do not restyle toward Moon; polish the dark design instead.
