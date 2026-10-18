@@ -65,6 +65,11 @@ export function App() {
 
   const selectedRoute = result?.routes.find(route => route.id === selectedId);
 
+  function selectRoute(id: string) {
+    setSelectedId(id);
+    setPopupPlaceId(undefined);
+  }
+
   const chromeClass = ['app-chrome', introDone && 'app-chrome--in', assistantOpen && 'app-chrome--assistant-open'].filter(Boolean).join(' ');
 
   return (
@@ -103,7 +108,7 @@ export function App() {
           <ResultsPanels
             result={result}
             selectedId={selectedId}
-            onSelect={id => { setSelectedId(id); setPopupPlaceId(undefined); }}
+            onSelect={selectRoute}
             selectedPlaceId={popupPlaceId}
             onShowPlace={setPopupPlaceId}
           />
@@ -129,6 +134,10 @@ export function App() {
           messages={outing.messages}
           status={status}
           onAsk={outing.ask}
+          routes={result?.routes}
+          sources={result?.sources}
+          selectedRouteId={selectedId}
+          onSelectRoute={selectRoute}
         />
       </div>
     </>
