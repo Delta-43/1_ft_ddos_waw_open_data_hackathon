@@ -1,0 +1,57 @@
+{
+  "notice": "SIM-02 (#25). Every record in this file is fictional demo data, not a real listing, booking or account. Events here are additional invented listings, kept deliberately distinct from the REAL Warsaw open-data events already committed in warsaw-open-data-sample.json (DATA-04, waw:event/* ids, real venues) - do not merge or confuse the two. demo_profile is a fictional demo persona for walkthroughs, not a real user's calendar, habits or account: the backend holds city data only and never stores real user profiles or trip history (see docs/DATA.md, Privacy and security). charging_stations are invented example records; Warsaw's real EV charging dataset was not checked this event. None of this is wired into backend/app - nothing reads this file.",
+  "generated_at": "2026-10-18T01:30:00+02:00",
+  "mode": "mock",
+  "events": [
+    {
+      "id": "sim:event/0",
+      "name": "Fictional pop-up sculpture walk - demo only",
+      "longitude": 21.0300, "latitude": 52.2190,
+      "category": "event",
+      "starts_at": "2026-10-19T17:00:00+02:00",
+      "ends_at": "2026-10-19T19:00:00+02:00",
+      "mode": "mock",
+      "label": "Invented venue and listing, for demo variety only - no such event exists"
+    },
+    {
+      "id": "sim:event/1",
+      "name": "Fictional evening courtyard concert - demo only",
+      "longitude": 21.0245, "latitude": 52.2225,
+      "category": "event",
+      "starts_at": "2026-10-20T19:30:00+02:00",
+      "ends_at": "2026-10-20T21:00:00+02:00",
+      "mode": "mock",
+      "label": "Invented"
+    }
+  ],
+  "demo_profile": {
+    "id": "sim:profile/demo-visitor",
+    "display_name": "Demo visitor (fictional persona)",
+    "mode": "mock",
+    "interests": ["museums", "parks"],
+    "preferred_travel_mode": "walk",
+    "note": "Fictional walkthrough persona only. Never a real account: no login, no stored trip history, no real calendar or habit data - see docs/DATA.md, Privacy and security. If a real preference-memory feature is ever built, it is on-device per IDEA.md, not this kind of server-held record."
+  },
+  "charging_stations": [
+    {
+      "id": "sim:charging/0",
+      "name": "Fictional EV charging bay - demo only",
+      "longitude": 21.0150, "latitude": 52.2280,
+      "connector_type": "Type 2",
+      "total_bays": 4,
+      "occupied_bays": 1,
+      "mode": "mock",
+      "label": "Invented occupancy. Not derived from any real EV charging feed; none was checked this event."
+    },
+    {
+      "id": "sim:charging/1",
+      "name": "Fictional EV charging bay - demo only",
+      "longitude": 21.0330, "latitude": 52.2205,
+      "connector_type": "CCS",
+      "total_bays": 2,
+      "occupied_bays": 2,
+      "mode": "mock",
+      "label": "Invented occupancy - shown full to demo a 'no availability' state"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ every query sent without an explicit start. Run before the pitch:
 """
 import itertools
 
-from app.services import planner, routing
+from app.services import planner, routing, tracks
 
 
 def main() -> None:
@@ -20,6 +20,13 @@ def main() -> None:
             if url not in urls:
                 urls.add(url)
                 routing.street_route(mode, waypoints)
+    for track in tracks.load():
+        stops = planner._resolve_itinerary_stops(track["destination_place_id"], track["via_place_ids"])
+        waypoints = [planner.DEFAULT_START] + [(s["longitude"], s["latitude"]) for s in stops]
+        url = routing.route_url(track["travel_mode"], waypoints)
+        if url not in urls:
+            urls.add(url)
+            routing.street_route(track["travel_mode"], waypoints)
     print(f"{len(urls)} routes cached in {routing.DEMO_CACHE}")
 
 
