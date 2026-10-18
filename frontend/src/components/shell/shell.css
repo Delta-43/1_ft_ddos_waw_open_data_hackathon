@@ -752,9 +752,9 @@
   gap: 5px;
   max-width: 170px;
   padding: 3px 8px 3px 6px;
-  border: 1px solid rgba(120, 180, 255, 0.55);
+  border: 1px solid rgb(42 79 46 / 55%);
   border-radius: 8px 8px 8px 2px;
-  background: linear-gradient(180deg, #2f7fe8, #1f63c4);
+  background: linear-gradient(180deg, #d31f15, #401e18);
   color: #fff;
   font: 600 11px/1.3 var(--font-body);
   white-space: nowrap;
@@ -766,7 +766,7 @@
 .city-flag__pill span { overflow: hidden; text-overflow: ellipsis; }
 .city-flag__pill svg { flex: none; width: 13px; height: 13px; }
 
-.city-flag--real .city-flag__pill { background: linear-gradient(180deg, #3f8cff, #2b6fd6); border-color: #cfe2ff; }
+.city-flag--real .city-flag__pill { background: linear-gradient(180deg, #d31f15, #401e18); border-color: #cfe2ff; }
 .city-flag__stem { width: 1.5px; height: 14px; background: linear-gradient(#4b95f5, transparent); }
 .city-flag__card {
   position: absolute;
