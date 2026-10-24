@@ -150,7 +150,7 @@ const en: Bundle = {
   },
   aboutDialog: {
     title: 'About this demo',
-    intro: 'Find YOUR way, project “Warsaw 2076”: a calm, guided way through Warsaw built on open data. Made in 24 hours for the Warsaw Open Data Hackathon 2026 (Challenge 1: Warsaw 2076); it placed first in its track and second overall.',
+    intro: 'Find YOUR way, project “Warsaw 2076”: a calm, guided way through Warsaw built on open data. Made in 24 hours for the Warsaw Open Data Hackathon 2026 (Challenge 1: Warsaw 2076); it finished in the top 10.',
     team: 'Team',
     teamNote: 'Roles as listed in the repository (AGENTS.md).',
     people: [
@@ -265,7 +265,7 @@ const pl: Bundle = {
   },
   aboutDialog: {
     title: 'O tym demo',
-    intro: 'Find YOUR way, projekt „Warsaw 2076”: spokojny, prowadzony spacer po Warszawie oparty na otwartych danych. Zbudowany w 24 godziny na Warsaw Open Data Hackathon 2026 (wyzwanie 1: Warsaw 2076); zajął pierwsze miejsce w swojej ścieżce i drugie w klasyfikacji ogólnej.',
+    intro: 'Find YOUR way, projekt „Warsaw 2076”: spokojny, prowadzony spacer po Warszawie oparty na otwartych danych. Zbudowany w 24 godziny na Warsaw Open Data Hackathon 2026 (wyzwanie 1: Warsaw 2076); znalazł się w pierwszej dziesiątce.',
     team: 'Zespół',
     teamNote: 'Role według repozytorium (AGENTS.md).',
     people: [
