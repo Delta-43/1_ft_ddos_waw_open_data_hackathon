@@ -1,5 +1,13 @@
 import type { Map, PaddingOptions } from 'maplibre-gl';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { Place, Source } from './api/contract';
+import { DEMO } from './demo/mode';
+import { DemoBar } from './demo/DemoBar';
+import { MockupPanel, type MockTab } from './demo/MockupPanel';
+import { captionVars, type ScenarioApi } from './demo/scenarios';
+import { ScenarioCaption } from './demo/ScenarioCaption';
+import { SearchPopup } from './demo/SearchPopup';
+import { useScenario } from './demo/useScenario';
 import { PlacePopup } from './components/places/PlacePopup';
 import { MapCredits } from './components/provenance/MapCredits';
 import { Agent, type AgentPhase } from './components/shell/Agent';
@@ -16,6 +24,15 @@ import { useLang, useT } from './i18n/useT';
 import { useOuting } from './useOuting';
 import './fonts.css';
 import './components/shell/shell.css';
+import './demo/demo.css';
+
+/** Scroll a panel section into view once it has rendered, so a scenario step shows what it talks about. */
+function reveal(selector: string): void {
+  window.setTimeout(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector(selector)?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+  }, 150);
+}
 
 const MOBILE_QUERY = '(max-width: 700px)';
 /** Warm amber, the streets' colour, until a mood picks its own. */
@@ -36,13 +53,14 @@ function useIsMobile(): boolean {
  * Map padding per view. Home shifts the map's centre into the spotlight (left of centre on a
  * desktop, upper half on a phone); a trip keeps the route clear of the docked panel.
  */
-function paddingFor(home: boolean, mobile: boolean, parked = false): PaddingOptions {
+function paddingFor(home: boolean, mobile: boolean, parked = false, captioned = false): PaddingOptions {
   const { innerWidth: width, innerHeight: height } = window;
   // A parked route sits in the home spotlight, clear of the orb and greeting.
   if (parked) return mobile ? { top: 110, bottom: Math.round(height * 0.38), left: 40, right: 40 } : { top: 120, bottom: 90, left: 90, right: Math.round(width * 0.46) };
   if (home) return mobile ? { top: 0, bottom: Math.round(height * 0.3), left: 0, right: 0 } : { top: 0, bottom: 0, left: 0, right: Math.round(width * 0.24) };
+  // On a phone, a running demo scenario's caption covers the top of the map: keep the route below it.
   return mobile
-    ? { top: 100, bottom: Math.round(height * 0.55), left: 30, right: 30 }
+    ? { top: captioned ? 175 : 100, bottom: Math.round(height * (captioned ? 0.4 : 0.55)), left: 30, right: 30 }
     : { top: 110, bottom: 70, left: 80, right: 470 };
 }
 
@@ -79,12 +97,19 @@ export function App() {
   const [amenities, setAmenities] = useState<Set<AmenityKind>>(new Set());
   const [amenityCounts, setAmenityCounts] = useState<Record<AmenityKind, number>>({ toilets: 0, aed: 0 });
   const [spotlight, setSpotlight] = useState<HTMLDivElement | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  /** Static demo only: a place picked in the search, and the roadmap mock-up panel. */
+  const [searched, setSearched] = useState<{ place: Place; sources: Source[] }>();
+  const [mockTab, setMockTab] = useState<MockTab | null>(null);
   const mobile = useIsMobile();
+  const [scenarioOn, setScenarioOn] = useState(false);
 
   const home = !result || parked;
+  // The home view is a still backdrop, except while a searched place is being looked at.
+  const still = home && !searched;
   const phase: AgentPhase = result && !parked ? 'result' : composing ? 'compose' : 'home';
   const accent = moodForTrack(result?.track?.id)?.accent ?? DEFAULT_ACCENT;
-  const padding = paddingFor(home, mobile, parked && !!result);
+  const padding = paddingFor(home, mobile, parked && !!result, DEMO && scenarioOn);
 
   // Safety net: if tiles never load (no network), lift the curtain and show the UI anyway.
   useEffect(() => {
@@ -119,13 +144,13 @@ export function App() {
   useEffect(() => {
     if (!map) return;
     const handlers = [map.dragPan, map.scrollZoom, map.boxZoom, map.dragRotate, map.keyboard, map.doubleClickZoom, map.touchZoomRotate, map.touchPitch];
-    for (const handler of handlers) (home ? handler.disable() : handler.enable());
+    for (const handler of handlers) (still ? handler.disable() : handler.enable());
     return showPins(map, false);
-  }, [map, home]);
+  }, [map, still]);
 
   // On the home view the camera leans towards the mouse and the spotlight drifts with it.
   useEffect(() => {
-    if (!map || !home || !introDone) return;
+    if (!map || !still || !introDone) return;
     return startParallax(map, {
       // A parked route keeps the angle it was fitted with (routes.ts fitRoute).
       bearing: parked ? -20 : INITIAL_VIEW.bearing,
@@ -135,7 +160,7 @@ export function App() {
         spotlight?.style.setProperty('--drift-y', `${(y * 3).toFixed(2)}%`);
       },
     });
-  }, [map, home, introDone, parked, spotlight]);
+  }, [map, still, introDone, parked, spotlight]);
 
   // Each new response selects its recommended route and closes the opening bubble.
   useEffect(() => {
@@ -144,6 +169,7 @@ export function App() {
     setComposing(false);
     setParked(false);
     setPopupPlaceId(undefined);
+    setSearched(undefined);
   }, [result]);
 
   const selectedRoute = result?.routes.find(route => route.id === selectedId);
@@ -197,6 +223,9 @@ export function App() {
   /** Forget the trip entirely and return to the opening view. */
   function goHome() {
     outing.reset();
+    setDetailsOpen(false);
+    setAmenities(new Set());
+    setSearched(undefined);
     setParked(false);
     setComposing(false);
     setSourcesOpen(false);
@@ -204,7 +233,79 @@ export function App() {
     setSelectedId(undefined);
   }
 
-  const shellClass = ['shell', home ? 'shell--home' : 'shell--trip', introDone && 'shell--in'].filter(Boolean).join(' ');
+  // ---- Static demo: scripted scenarios and place search (src/demo/) ----
+  const resultRef = useRef(result);
+  resultRef.current = result;
+  const routeIndex = (() => {
+    const ranked = [...(result?.routes ?? [])].sort((a, b) => a.rank - b.rank);
+    return Math.max(0, ranked.findIndex(route => route.id === selectedId));
+  })();
+  const live = useRef({ routeIndex, goHome, outing, map });
+  live.current = { routeIndex, goHome, outing, map };
+
+  const scenarioApi: ScenarioApi = {
+    async home() {
+      live.current.goHome();
+      setMockTab(null);
+      await new Promise(resolve => window.setTimeout(resolve, 500));
+    },
+    ask: prompt => live.current.outing.ask(prompt),
+    chooseTrack: trackId => live.current.outing.chooseTrack(trackId),
+    selectRoute(index) {
+      const ranked = [...(resultRef.current?.routes ?? [])].sort((a, b) => a.rank - b.rank);
+      if (ranked[index]) selectRoute(ranked[index].id);
+    },
+    showStop(which) {
+      const stops = [...(resultRef.current?.routes.find(route => route.recommended)?.stops ?? [])].sort((a, b) => a.order - b.order);
+      const stop = which === 'first' ? stops[0] : which === 'last' ? stops[stops.length - 1] : undefined;
+      setPopupPlaceId(stop?.place_id);
+    },
+    setDetails(open) {
+      setDetailsOpen(open);
+      if (open) reveal('.trip__details');
+    },
+    setSources(open) {
+      setSourcesOpen(open);
+      if (open) reveal('#sources-drawer');
+    },
+    setAmenities: (toilets, aed) => setAmenities(new Set<AmenityKind>([...(toilets ? ['toilets' as const] : []), ...(aed ? ['aed' as const] : [])])),
+    setMock: setMockTab,
+    result: () => resultRef.current,
+    selectedRouteIndex: () => live.current.routeIndex,
+    async waitForAnswer(ready) {
+      const before = resultRef.current;
+      for (let waited = 0; waited < 15_000; waited += 100) {
+        const now = resultRef.current;
+        if (now && now !== before && ready(now)) {
+          await new Promise(resolve => window.setTimeout(resolve, 900));
+          return;
+        }
+        await new Promise(resolve => window.setTimeout(resolve, 100));
+      }
+    },
+  };
+  const scenario = useScenario(scenarioApi);
+  const captioned = scenario.state.scenario !== undefined;
+  useEffect(() => setScenarioOn(captioned), [captioned]);
+
+  function pickSearched(place: Place, sources: Source[]) {
+    scenario.stop();
+    setPopupPlaceId(undefined);
+    setSearched({ place, sources });
+    map?.easeTo({
+      center: [place.longitude, place.latitude],
+      zoom: 16.2,
+      pitch: 55,
+      padding,
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1400,
+    });
+  }
+
+  function closeSearched() {
+    setSearched(undefined);
+  }
+
+  const shellClass = ['shell', home ? 'shell--home' : 'shell--trip', introDone && 'shell--in', DEMO && 'shell--demo', captioned && 'shell--captioned'].filter(Boolean).join(' ');
 
   return (
     <div className={shellClass} style={{ '--accent': accent } as CSSProperties}>
@@ -222,6 +323,9 @@ export function App() {
         onMapReady={setMap}
         onStopClick={setPopupPlaceId}
       />
+      {DEMO && map && searched && (
+        <SearchPopup key={searched.place.id} map={map} place={searched.place} sources={searched.sources} onClose={closeSearched} />
+      )}
       {map && selectedRoute && popupPlaceId && (
         <PlacePopup
           key={popupPlaceId}
@@ -236,6 +340,20 @@ export function App() {
         <div className={`intro-curtain intro-curtain--${curtain}`} aria-hidden="true" onTransitionEnd={() => setCurtain('up')} />
       )}
       <TitleBar onHome={result || composing ? goHome : undefined} />
+      {DEMO && (
+        <>
+          <DemoBar onStartScenario={scenario.start} onPickPlace={pickSearched} />
+          <ScenarioCaption
+            state={scenario.state}
+            vars={captionVars(result, routeIndex)}
+            onToggle={scenario.toggle}
+            onNext={scenario.next}
+            onReplay={scenario.replay}
+            onStop={scenario.stop}
+          />
+          {mockTab && <MockupPanel tab={mockTab} onTab={setMockTab} onClose={() => { setMockTab(null); }} />}
+        </>
+      )}
       <Agent
         phase={phase}
         status={status}
@@ -258,6 +376,8 @@ export function App() {
         amenities={amenities}
         amenityCounts={amenityCounts}
         onToggleAmenity={toggleAmenity}
+        detailsOpen={detailsOpen}
+        onToggleDetails={() => setDetailsOpen(open => !open)}
       />
       <Reports map={map} explore={!!result && !parked} />
       <p className="credits">

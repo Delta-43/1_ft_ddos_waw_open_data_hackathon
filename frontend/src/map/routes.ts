@@ -258,8 +258,14 @@ export function fitRoute(map: Map, route: Route, padding: PaddingOptions): numbe
   const lats = coordinates.map(([, lat]) => lat);
   const bounds: LngLatBoundsLike = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
   // Zoom: fit the route into the open area's size (symmetric padding, so only the size counts).
-  const x = ((padding.left ?? 0) + (padding.right ?? 0)) / 2;
-  const y = ((padding.top ?? 0) + (padding.bottom ?? 0)) / 2;
+  const wanted = { x: ((padding.left ?? 0) + (padding.right ?? 0)) / 2, y: ((padding.top ?? 0) + (padding.bottom ?? 0)) / 2 };
+  // cameraForBounds also subtracts the padding the map already has, and gives up (with a console warning)
+  // when nothing is left: e.g. a phone switching routes, with a tall panel and a caption above the route.
+  const current = map.getPadding();
+  const box = map.getContainer();
+  const room = (size: number, taken: number) => Math.max(0, Math.min(taken, (size - 48) / 2));
+  const x = room(box.clientWidth - (current.left ?? 0) - (current.right ?? 0), wanted.x);
+  const y = room(box.clientHeight - (current.top ?? 0) - (current.bottom ?? 0), wanted.y);
   const camera = map.cameraForBounds(bounds, { padding: { top: y, bottom: y, left: x, right: x }, bearing: -20, maxZoom: 16 });
   if (!camera) return undefined;
   // The fit is computed for a flat map; tilted, the route looks smaller, so move a little closer.

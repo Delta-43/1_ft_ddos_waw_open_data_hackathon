@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
+import { DEMO } from '../../demo/mode';
 import { sourceFor, type Route, type Source } from '../../api/contract';
 import type { TrackResponse } from '../../api/tracks';
 import type { Leg } from '../../api/transitExamples';
@@ -45,6 +46,9 @@ interface AgentProps {
   amenities: Set<AmenityKind>;
   amenityCounts: Record<AmenityKind, number>;
   onToggleAmenity: (kind: AmenityKind) => void;
+  /** The "Why this way" section; held by the app so a demo scenario can open it. */
+  detailsOpen: boolean;
+  onToggleDetails: () => void;
 }
 
 const PICKED_BY: Record<string, Key> = {
@@ -194,10 +198,9 @@ interface TripProps extends AgentProps {
   orbState: 'idle' | 'listening' | 'thinking';
 }
 
-function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, aiTrackId, selectedRouteId, selectedPlaceId, sourcesOpen, amenities, amenityCounts, ...actions }: TripProps) {
+function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, aiTrackId, selectedRouteId, selectedPlaceId, sourcesOpen, amenities, amenityCounts, detailsOpen: details, onToggleDetails, ...actions }: TripProps) {
   const t = useT();
   const lang = useLang();
-  const [details, setDetails] = useState(false);
   const [tweak, setTweak] = useState('');
   const route = result.routes.find(candidate => candidate.id === selectedRouteId) ?? result.routes[0];
   const track = localTrack(result.track, lang);
@@ -291,7 +294,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
       <fieldset className="moods" disabled={busy}>
         <legend className="moods__legend">
           {t('shellMood')}
-          <span className="moods__who">{activeMood && activeMood.trackId === aiTrackId ? t('shellSuggestedByAi') : activeMood ? t('shellSetByYou') : ''}</span>
+          <span className="moods__who">{activeMood && activeMood.trackId === aiTrackId ? t('shellSuggestedByAi') : activeMood && !(DEMO && track?.picked_by !== 'user') ? t('shellSetByYou') : ''}</span>
         </legend>
         <div className="moods__list">
           {MOODS.map(mood => {
@@ -339,7 +342,7 @@ function Trip({ result, busy, minimised, onMinimise, orbState, accent, status, a
 
       {status.state === 'error' && <p className="trip__error" role="alert">{status.message}</p>}
 
-      <button type="button" className="trip__more" aria-expanded={details} onClick={() => setDetails(open => !open)}>
+      <button type="button" className="trip__more" aria-expanded={details} onClick={onToggleDetails}>
         {details ? t('shellLess') : t('shellWhy')}
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
       </button>
