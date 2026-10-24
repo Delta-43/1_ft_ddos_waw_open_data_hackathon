@@ -1,4 +1,5 @@
 import { Popup, type ExpressionSpecification, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
+import { asset } from '../demo/mode';
 import { getLang } from '../i18n/language';
 import { translate, type Key } from '../i18n/translations';
 import type { Route } from '../api/contract';
@@ -11,7 +12,7 @@ import { focusRoute } from './routeFocus';
  * near the selected route; the rest of the city lies flat. The geometry is fixed, so nothing
  * changes or rescans with zoom, pan or tilt. Routes outside the cache fall back to routeFocus.ts.
  */
-const CACHE_URL = '/corridor-cache.json';
+const CACHE_URL = asset('corridor-cache.json');
 const CORRIDOR_M = 200;
 
 const SOURCE = 'corridor';

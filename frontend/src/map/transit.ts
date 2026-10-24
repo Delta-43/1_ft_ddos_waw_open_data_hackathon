@@ -1,4 +1,5 @@
 import { Popup, type GeoJSONSource, type Map, type MapLayerMouseEvent } from 'maplibre-gl';
+import { asset } from '../demo/mode';
 import type { Route } from '../api/contract';
 import { getLang } from '../i18n/language';
 import { translate, type Key } from '../i18n/translations';
@@ -14,7 +15,7 @@ const t = (key: Key, vars?: Record<string, string | number>) => translate(getLan
  * by its timetable: a scheduled position, not live GPS. Only trips heading towards the route's
  * destination or back towards its start are shown.
  */
-const CACHE_URL = '/transit-cache.json';
+const CACHE_URL = asset('transit-cache.json');
 const REACH_M = 250;
 /** A trip counts as heading somewhere when its next stop is at least this much closer to it. */
 const HEADING_M = 30;
