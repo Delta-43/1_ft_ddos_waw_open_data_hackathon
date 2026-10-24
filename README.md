@@ -1,5 +1,8 @@
 # Find YOUR way
 
+**[Open the demo →](https://delta-43.github.io/1_ft_ddos_waw_open_data_hackathon/)**
+(static GitHub Pages build with four replayable scenarios, an offline map and cached answers; no server or key needed)
+
 A calm, guided way through Warsaw, built on open data. Tell the guide how you feel, and it finds a
 walk through quieter, greener streets, lights up the city along it, and shows what is there to see,
 use and catch on the way.
