@@ -4,6 +4,7 @@
  * computed once from today's ZTM timetable. They are examples, not a live journey planner;
  * the response says so in its mode, notice and sources.
  */
+import { asset } from '../demo/mode';
 import { getLang } from '../i18n/language';
 import { CONTRACT_VERSION, type Route } from './contract';
 import type { TrackResponse } from './tracks';
@@ -48,7 +49,7 @@ export const TRANSIT_EXAMPLE_TRACK = 'transit-groceries';
 export const isTransitExample = (trackId: string | undefined) => !!trackId?.startsWith(TRANSIT_EXAMPLE_TRACK);
 
 let file: Promise<ExampleFile | null> | undefined;
-const load = () => (file ??= fetch('/transit-examples.json').then(r => (r.ok ? (r.json() as Promise<ExampleFile>) : null)).catch(() => null));
+const load = () => (file ??= fetch(asset('transit-examples.json')).then(r => (r.ok ? (r.json() as Promise<ExampleFile>) : null)).catch(() => null));
 
 /** The visible text in the current language; the English note comes from the file itself. */
 function text(data: ExampleFile, depart: string) {

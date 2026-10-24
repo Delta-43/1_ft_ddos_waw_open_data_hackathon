@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { DEMO } from './demo/mode';
 import { MOCK_ROUTES_ENABLED, mockRoutes } from './api/mockRoutes';
 import { requestRoutes } from './api/routes';
 import { runTrack, type TrackResponse } from './api/tracks';
@@ -67,7 +68,8 @@ export function useOuting() {
       if (MOCK_ROUTES_ENABLED) rebuild.current = () => mockRoutes();
       const coordinates = response.routes[0]?.geometry.coordinates;
       lastTrack.current = { id: response.track?.id, end: coordinates?.[coordinates.length - 1] };
-      if (!trackId) setAiTrackId(response.track?.id);
+      // The static demo has no model, so nothing there is an AI suggestion.
+      if (!trackId && !DEMO) setAiTrackId(response.track?.id);
       setStatus({ state: 'success' });
     } catch (error) {
       if (abort.signal.aborted) return;

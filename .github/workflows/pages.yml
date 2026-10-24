@@ -1,0 +1,52 @@
+name: Pages demo
+# Publishes the static, fixture-driven demo (frontend, `vite build --mode pages`) to GitHub Pages.
+# No backend and no secrets: every answer comes from files under frontend/public/demo/.
+# Pages must be switched on once in the repository settings (Source: GitHub Actions).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+      - run: pnpm run build:pages
+      # Pull requests only prove the demo builds; the steps below publish.
+      - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: frontend/dist
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

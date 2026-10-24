@@ -1,4 +1,5 @@
 import { getLang } from '../i18n/language';
+import { asset, DEMO } from '../demo/mode';
 import { translate, type Key } from '../i18n/translations';
 import { CAMERA_LIMITS } from '../map/config';
 
@@ -12,13 +13,19 @@ export interface ApiSource {
   method?: string | null;
 }
 
+/** Static demo: `/api/places?...` and `/api/layers/x?...` are bundled snapshots (scripts/build_demo_fixtures.py). */
+function demoUrl(path: string): string {
+  const [, kind, name] = /^\/api\/(places|layers)(?:\/([a-z_]+))?/.exec(path) ?? [];
+  return asset(kind === 'places' ? 'demo/places.json' : `demo/layers/${name}.json`);
+}
+
 /** The whole map area (Warsaw metro bounds) as the API's `bbox` parameter. */
 const [[minLon, minLat], [maxLon, maxLat]] = CAMERA_LIMITS.maxBounds as [[number, number], [number, number]];
 export const WARSAW_BBOX = [minLon, minLat, maxLon, maxLat].join(',');
 
 /** GET a relative `/api/...` URL (Vite proxies it to the backend); non-2xx throws. */
 export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { signal });
+  const response = await fetch(DEMO ? demoUrl(path) : path, { signal });
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }

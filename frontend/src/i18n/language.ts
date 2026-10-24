@@ -1,9 +1,11 @@
+import { DEMO } from '../demo/mode';
 export type Lang = 'en' | 'pl';
 
 const STORAGE_KEY = 'warsaw2076-lang';
 
 function detectDefault(): Lang {
   try {
+    if (DEMO) throw new Error('The static demo reads no stored choice.');
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'en' || saved === 'pl') return saved;
   } catch {
@@ -23,7 +25,7 @@ export function setLang(next: Lang): void {
   if (next === current) return;
   current = next;
   try {
-    localStorage.setItem(STORAGE_KEY, next);
+    if (!DEMO) localStorage.setItem(STORAGE_KEY, next);
   } catch {
     // Nothing to persist to; the choice still applies for this session.
   }

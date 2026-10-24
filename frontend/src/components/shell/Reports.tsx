@@ -1,4 +1,5 @@
 import { Marker, type Map } from 'maplibre-gl';
+import { DEMO } from '../../demo/mode';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { EXAMPLE_REPORTS, type CityReport, type ReportKind } from '../../data/cityNotes';
 import { localise } from '../../i18n/localised';
@@ -14,6 +15,7 @@ const STORAGE_KEY = 'find-your-way:reports';
 const KIND_TEXT: Record<ReportKind, Key> = { missing: 'reportMissing', issue: 'reportIssue' };
 
 function loadMine(): CityReport[] {
+  if (DEMO) return [];
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
     return Array.isArray(value) ? value : [];
@@ -23,6 +25,7 @@ function loadMine(): CityReport[] {
 }
 
 function saveMine(reports: CityReport[]): void {
+  if (DEMO) return; // The static demo keeps nothing on the device.
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
   } catch {

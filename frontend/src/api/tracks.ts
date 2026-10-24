@@ -3,6 +3,8 @@
  * predefined, simulated track from the message, or `track_id` forces one; the shared planner then
  * routes it. The response is a normal routes response plus `track`.
  */
+import { DEMO } from '../demo/mode';
+import { demoTrack } from './demoTracks';
 import type { RouteResponse } from './contract';
 import type { Leg } from './transitExamples';
 
@@ -22,6 +24,7 @@ export interface TrackInfo {
 export type TrackResponse = RouteResponse & { track?: TrackInfo; legs?: Leg[]; depart?: string; arrive?: string };
 
 export async function runTrack(query: string, trackId?: string, signal?: AbortSignal): Promise<TrackResponse> {
+  if (DEMO) return demoTrack(query, trackId, signal);
   const response = await fetch('/api/tracks/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
