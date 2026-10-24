@@ -1,4 +1,6 @@
-import { Map, NavigationControl, setWorkerUrl } from 'maplibre-gl';
+import { addProtocol, Map, NavigationControl, setWorkerUrl } from 'maplibre-gl';
+import { Protocol } from 'pmtiles';
+import { DEMO } from '../demo/mode';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre v6 cannot locate its worker inside a bundle; `?worker&url` makes Vite emit
 // a self-contained worker chunk (the dist worker imports a sibling shared file).
@@ -9,6 +11,7 @@ import { ResetViewControl } from './controls';
 import { buildStyle, palette } from './style';
 
 setWorkerUrl(workerUrl);
+if (DEMO) addProtocol('pmtiles', new Protocol().tile);
 
 /**
  * Creates the 3D Warsaw map inside `container`. Framework-free: React (or anything
